@@ -1,0 +1,28 @@
+{
+  "name": "btc-assets-proxy-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx ./src/index.ts",
+    "start": "node ./dist/index.js",
+    "build": "tsc -p tsconfig.json"
+  },
+  "keywords": [],
+  "author": "Yuexun Jiang <yuexunjiang@cryptape.com>",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/http-proxy": "^9.4.0",
+    "dotenv": "^16.4.2",
+    "fastify": "^4.26.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.17",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.56.0",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  }
+}
