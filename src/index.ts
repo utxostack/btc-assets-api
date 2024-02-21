@@ -1,16 +1,15 @@
 import process from 'node:process';
 import fastify from 'fastify';
-import proxy from '@fastify/http-proxy';
+import options from './options';
 import { env } from './env';
 
-const server = fastify();
+const port = parseInt(env.PORT || '3000', 10);
 
-server.register(proxy, {
-  upstream: env.ORDINALS_API_BASE_URL,
-  prefix: '/ordinals/v1',
-});
+const app = fastify(options);
 
-server.listen({ port: 8080 }, (err, address) => {
+app.register(import('./app'));
+
+app.listen({ port }, (err, address) => {
   if (err) {
     console.error(err);
     process.exit(1);
