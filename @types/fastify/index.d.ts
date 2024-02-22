@@ -9,6 +9,7 @@ declare module 'fastify' {
     HttpRequest = IncomingMessage,
     HttpResponse = ServerResponse,
   > {
+    electrs: ElectrsAPI;
     bitcoind: Bitcoind;
   }
 }

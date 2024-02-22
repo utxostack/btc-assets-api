@@ -1,5 +1,14 @@
 import axios, { AxiosInstance } from 'axios';
 
+export interface BlockchainInfo {
+  chain: string;
+  blocks: number;
+  headers: number;
+  bestblockhash: string;
+  difficulty: number;
+  mediantime: number;
+}
+
 export interface DescriptorInfo {
   descriptor: string;
   checksum: string;
@@ -69,6 +78,11 @@ export default class Bitcoind {
     return response.data.result;
   }
 
+  // https://developer.bitcoin.org/reference/rpc/getblockchaininfo.html
+  public async getBlockchainInfo() {
+    return this.callMethod<BlockchainInfo>('getblockchaininfo', []);
+  }
+
   // https://developer.bitcoin.org/reference/rpc/getdescriptorinfo.html
   public async getDescriptorInfo(descriptor: string) {
     return this.callMethod<DescriptorInfo>('getdescriptorinfo', [descriptor]);
@@ -93,5 +107,10 @@ export default class Bitcoind {
   // https://developer.bitcoin.org/reference/rpc/listunspent.html
   public async listUnspent(address: string) {
     return this.callMethod<void>('listunspent', [0, 9999999, [address]]);
+  }
+
+  // https://developer.bitcoin.org/reference/rpc/sendrawtransaction.html
+  public async sendRawTransaction(txHex: string) {
+    return this.callMethod<string>('sendrawtransaction', [txHex]);
   }
 }

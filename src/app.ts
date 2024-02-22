@@ -1,16 +1,32 @@
 import { FastifyInstance } from 'fastify';
-import proxy from '@fastify/http-proxy';
+import swagger from '@fastify/swagger';
+import swaggerUI from '@fastify/swagger-ui';
 import bitcoinRoutes from './routes/bitcoin';
-import { env } from './env';
+// import proxy from '@fastify/http-proxy';
+// import { env } from './env';
 import { AxiosError } from 'axios';
 
 async function routes(fastify: FastifyInstance) {
-  fastify.register(proxy, {
-    upstream: env.ORDINALS_API_BASE_URL,
-    prefix: '/ordinals/v1',
+  await fastify.register(swagger, {
+    swagger: {
+      info: {
+        title: 'Bitcoin API',
+        description: 'Bitcoin API Documentation',
+        version: '0.0.1',
+      },
+      consumes: ['application/json'],
+      produces: ['application/json'],
+    },
+  });
+  await fastify.register(swaggerUI, {
+    routePrefix: '/docs',
   });
 
-  fastify.register(bitcoinRoutes, { prefix: '/bitcoin' });
+  // fastify.register(proxy, {
+  //   upstream: env.ORDINALS_API_BASE_URL,
+  //   prefix: '/ordinals/v1',
+  // });
+
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
 
   fastify.setErrorHandler((error, _, reply) => {

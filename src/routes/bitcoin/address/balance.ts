@@ -1,7 +1,6 @@
 import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
-import { Unspent } from '../../../lib/bitcoind';
 
 const balanceRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
@@ -15,18 +14,20 @@ const balanceRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBoxT
         params: Type.Object({
           address: Type.String(),
         }),
+        response: {
+          200: Type.Object({
+            address: Type.String(),
+            satoshi: Type.Number(),
+            pendingSatoshi: Type.Number(),
+            utxoCount: Type.Number(),
+          }),
+        },
       },
     },
-    async function (request) {
+    async (request) => {
       const { address } = request.params;
-      const addressInfo = await fastify.bitcoind.getAddressInfo(address);
-      if (!addressInfo.isMine && !addressInfo.isWatchOnly) {
-        const descriptor = await fastify.bitcoind.getDescriptorInfo(`addr(${address})`);
-        await fastify.bitcoind.importDescriptors([descriptor]);
-      }
-      const unspent = await fastify.bitcoind.listUnspent(address);
-      const balance = unspent.reduce((acc: number, u: Unspent) => acc + u.amount, 0);
-      return balance;
+      const satoshis = await fastify.electrs.getBalanceByAddress(address);
+      return satoshis;
     },
   );
   done();
