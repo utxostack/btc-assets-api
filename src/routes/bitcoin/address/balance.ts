@@ -20,7 +20,7 @@ const balanceRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBoxT
     async function (request) {
       const { address } = request.params;
       const addressInfo = await fastify.bitcoind.getAddressInfo(address);
-      if (!addressInfo.isMine) {
+      if (!addressInfo.isMine && !addressInfo.isWatchOnly) {
         const descriptor = await fastify.bitcoind.getDescriptorInfo(`addr(${address})`);
         await fastify.bitcoind.importDescriptors([descriptor]);
       }

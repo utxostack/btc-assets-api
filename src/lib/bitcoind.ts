@@ -80,6 +80,7 @@ export default class Bitcoind {
       descriptors.map((d) => ({
         desc: d.descriptor,
         timestamp: 'now',
+        watchonly: true,
       })),
     ]);
   }
