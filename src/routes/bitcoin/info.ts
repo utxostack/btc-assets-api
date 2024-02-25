@@ -1,6 +1,7 @@
-import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
+import { ChainInfo } from './types';
 
 const infoRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
@@ -12,14 +13,7 @@ const infoRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBoxType
     {
       schema: {
         response: {
-          200: Type.Object({
-            chain: Type.String(),
-            blocks: Type.Number(),
-            headers: Type.Number(),
-            bestblockhash: Type.String(),
-            difficulty: Type.Number(),
-            mediantime: Type.Number(),
-          }),
+          200: ChainInfo,
         },
       },
     },

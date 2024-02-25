@@ -10,8 +10,7 @@ async function routes(fastify: FastifyInstance) {
   await fastify.register(swagger, {
     swagger: {
       info: {
-        title: 'Bitcoin API',
-        description: 'Bitcoin API Documentation',
+        title: 'Bitcoin Assets API',
         version: '0.0.1',
       },
       consumes: ['application/json'],

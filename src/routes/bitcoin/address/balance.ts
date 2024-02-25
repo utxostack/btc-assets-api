@@ -1,6 +1,7 @@
 import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
+import { Balance, BalanceType, UTXOType } from '../types';
 
 const balanceRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
@@ -15,19 +16,29 @@ const balanceRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBoxT
           address: Type.String(),
         }),
         response: {
-          200: Type.Object({
-            address: Type.String(),
-            satoshi: Type.Number(),
-            pendingSatoshi: Type.Number(),
-            utxoCount: Type.Number(),
-          }),
+          200: Balance,
         },
       },
     },
     async (request) => {
       const { address } = request.params;
-      const satoshis = await fastify.electrs.getBalanceByAddress(address);
-      return satoshis;
+      const utxos = await fastify.electrs.getUtxoByAddress(address);
+      return utxos.reduce(
+        (acc: BalanceType, utxo: UTXOType) => {
+          if (utxo.status.confirmed) {
+            acc.satoshi += utxo.value;
+          } else {
+            acc.pendingSatoshi += utxo.value;
+          }
+          return acc;
+        },
+        {
+          address,
+          satoshi: 0,
+          pendingSatoshi: 0,
+          utxoCount: utxos.length,
+        },
+      );
     },
   );
   done();

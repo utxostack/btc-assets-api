@@ -3,6 +3,7 @@ import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import balanceRoute from './balance';
 import unspentRoute from './unspent';
+import transactionsRoute from './txs';
 
 const addressRoutes: FastifyPluginCallback<
   Record<never, never>,
@@ -11,6 +12,7 @@ const addressRoutes: FastifyPluginCallback<
 > = (fastify, _, done) => {
   fastify.register(balanceRoute);
   fastify.register(unspentRoute);
+  fastify.register(transactionsRoute);
   done();
 };
 

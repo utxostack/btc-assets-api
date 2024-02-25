@@ -8,7 +8,7 @@ const transactionRoutes: FastifyPluginCallback<
   TypeBoxTypeProvider
 > = (fastify, _, done) => {
   fastify.post(
-    '/',
+    '',
     {
       schema: {
         body: Type.Object({
