@@ -9,6 +9,22 @@ export const ChainInfo = Type.Object({
   mediantime: Type.Number(),
 });
 
+export const Block = Type.Object({
+  id: Type.String(),
+  height: Type.Number(),
+  version: Type.Number(),
+  timestamp: Type.Number(),
+  tx_count: Type.Number(),
+  size: Type.Number(),
+  weight: Type.Number(),
+  merkle_root: Type.String(),
+  previousblockhash: Type.String(),
+  mediantime: Type.Number(),
+  nonce: Type.Number(),
+  bits: Type.Number(),
+  difficulty: Type.Number(),
+});
+
 export const Status = Type.Object({
   confirmed: Type.Boolean(),
   block_height: Type.Number(),
@@ -61,6 +77,8 @@ export const Transaction = Type.Object({
   status: Status,
 });
 
+export type ChainInfoType = Static<typeof ChainInfo>;
+export type BlockType = Static<typeof Block>;
 export type BalanceType = Static<typeof Balance>;
 export type UTXOType = Static<typeof UTXO>;
 export type TransactionType = Static<typeof Transaction>;

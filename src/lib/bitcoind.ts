@@ -1,58 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-
-export interface BlockchainInfo {
-  chain: string;
-  blocks: number;
-  headers: number;
-  bestblockhash: string;
-  difficulty: number;
-  mediantime: number;
-}
-
-export interface DescriptorInfo {
-  descriptor: string;
-  checksum: string;
-  isrange: boolean;
-  issolvable: boolean;
-  hasprivatekeys: boolean;
-}
-
-export interface Unspent {
-  txid: string;
-  vout: number;
-  address: string;
-  label: string;
-  scriptPubKey: string;
-  amount: number;
-  confirmations: number;
-  redeemScript: string;
-  spendable: boolean;
-  solvable: boolean;
-  safe: boolean;
-}
-
-export interface AddressInfo {
-  address: string;
-  scriptPubKey: string;
-  ismine: boolean;
-  iswatchonly: boolean;
-  solvable: boolean;
-  desc: string;
-  isscript: boolean;
-  iswitness: boolean;
-  witness_version: number;
-  witness_program: string;
-  script: string;
-  hex: string;
-  pubkeys: string[];
-  sigsrequired: number;
-  pubkey: string;
-  iscompressed: boolean;
-  ischange: boolean;
-  timestamp: number;
-  hdkeypath: string;
-  hdmasterkeyid: string;
-}
+import { ChainInfoType } from '../routes/bitcoin/types';
 
 export default class Bitcoind {
   private request: AxiosInstance;
@@ -80,33 +27,7 @@ export default class Bitcoind {
 
   // https://developer.bitcoin.org/reference/rpc/getblockchaininfo.html
   public async getBlockchainInfo() {
-    return this.callMethod<BlockchainInfo>('getblockchaininfo', []);
-  }
-
-  // https://developer.bitcoin.org/reference/rpc/getdescriptorinfo.html
-  public async getDescriptorInfo(descriptor: string) {
-    return this.callMethod<DescriptorInfo>('getdescriptorinfo', [descriptor]);
-  }
-
-  // https://developer.bitcoin.org/reference/rpc/importdescriptors.html
-  public async importDescriptors(descriptors: DescriptorInfo[]) {
-    return this.callMethod<void>('importdescriptors', [
-      descriptors.map((d) => ({
-        desc: d.descriptor,
-        timestamp: 'now',
-        watchonly: true,
-      })),
-    ]);
-  }
-
-  // https://developer.bitcoin.org/reference/rpc/getaddressinfo.html
-  public async getAddressInfo(address: string) {
-    return this.callMethod<AddressInfo>('getaddressinfo', [address]);
-  }
-
-  // https://developer.bitcoin.org/reference/rpc/listunspent.html
-  public async listUnspent(address: string) {
-    return this.callMethod<void>('listunspent', [0, 9999999, [address]]);
+    return this.callMethod<ChainInfoType>('getblockchaininfo', []);
   }
 
   // https://developer.bitcoin.org/reference/rpc/sendrawtransaction.html

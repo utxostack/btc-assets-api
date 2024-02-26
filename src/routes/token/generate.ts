@@ -21,10 +21,10 @@ const generateRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBox
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { app } = request.body;
       const token = fastify.jwt.sign({ app });
-      reply.send({ token });
+      return { token };
     },
   );
   done();

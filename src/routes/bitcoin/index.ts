@@ -1,11 +1,13 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
+import ElectrsAPI from '../../lib/electrs';
+import Bitcoind from '../../lib/bitcoind';
+import infoRoute from './info';
+import blockRoutes from './block';
+import transactionRoutes from './transaction';
 import addressRoutes from './address';
 import { env } from '../../env';
-import ElectrsAPI from '../../lib/electrs';
-import infoRoute from './info';
-import transactionRoutes from './transaction';
 
 const bitcoinRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
@@ -13,7 +15,17 @@ const bitcoinRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBox
   done,
 ) => {
   fastify.decorate('electrs', new ElectrsAPI(env.BITCOIN_ELECTRS_API_URL));
+  fastify.decorate(
+    'bitcoind',
+    new Bitcoind(
+      env.BITCOIN_JSON_RPC_URL,
+      env.BITCOIN_JSON_RPC_USERNAME,
+      env.BITCOIN_JSON_RPC_PASSWORD,
+    ),
+  );
+
   fastify.register(infoRoute);
+  fastify.register(blockRoutes, { prefix: '/block' });
   fastify.register(transactionRoutes, { prefix: '/transaction' });
   fastify.register(addressRoutes, { prefix: '/address' });
   done();

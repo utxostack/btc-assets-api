@@ -17,7 +17,7 @@ const infoRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBoxType
         },
       },
     },
-    async function () {
+    async () => {
       const blockchainInfo = await fastify.bitcoind.getBlockchainInfo();
       return blockchainInfo;
     },
