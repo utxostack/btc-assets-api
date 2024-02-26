@@ -6,6 +6,7 @@ const envSchema = z.object({
   NODE_ENV: z.string().default('development'),
   PORT: z.string().optional(),
   SENTRY_DSN_URL: z.string().optional(),
+  REDIS_URL: z.string().optional(),
 
   /**
    * JWT_SECRET is used to sign the JWT token for authentication.

@@ -1,11 +1,11 @@
-import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import jwt from '@fastify/jwt';
+import { FastifyInstance } from 'fastify';
 import { AxiosError } from 'axios';
 import bitcoinRoutes from './routes/bitcoin';
-import swagger from '@fastify/swagger';
-import swaggerUI from '@fastify/swagger-ui';
 import { env } from './env';
 import tokenRoutes from './routes/token';
+import swaggerPlugin from './plugins/swagger';
+import jwtPlugin from './plugins/jwt';
+import cachePlugin from './plugins/cache';
 import * as Sentry from '@sentry/node';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
@@ -16,39 +16,9 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
 }
 
 async function routes(fastify: FastifyInstance) {
-  fastify.register(swagger, {
-    swagger: {
-      info: {
-        title: 'Bitcoin Assets API',
-        version: '0.0.1',
-      },
-      consumes: ['application/json'],
-      produces: ['application/json'],
-      security: [{ apiKey: [] }],
-      securityDefinitions: {
-        apiKey: {
-          type: 'apiKey',
-          name: 'Authorization',
-          in: 'header',
-        },
-      },
-    },
-  });
-  fastify.register(swaggerUI, {
-    routePrefix: '/docs',
-  });
-
-  fastify.register(jwt, {
-    secret: env.JWT_SECRET,
-  });
-  fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (request.url.startsWith('/token') || request.url.startsWith('/docs')) return;
-    try {
-      await request.jwtVerify();
-    } catch (err) {
-      reply.status(401).send(err);
-    }
-  });
+  fastify.register(swaggerPlugin);
+  fastify.register(jwtPlugin);
+  fastify.register(cachePlugin);
 
   fastify.register(tokenRoutes, { prefix: '/token' });
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });

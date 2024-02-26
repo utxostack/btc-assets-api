@@ -17,15 +17,22 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
         }),
         response: {
           200: Block,
-        }
+        },
       },
     },
-    async (request) => {
+    async (request, reply) => {
       const { hash } = request.params;
-      const blockchainInfo = await fastify.electrs.getBlockByHash(hash);
-      return blockchainInfo;
+      const [block, chain] = await Promise.all([
+        fastify.electrs.getBlockByHash(hash),
+        fastify.bitcoind.getBlockchainInfo(),
+      ]);
+      if (block.height < chain.blocks) {
+        reply.header('x-block-confirmed', 'true');
+      }
+      return block;
     },
   );
+
   done();
 };
 

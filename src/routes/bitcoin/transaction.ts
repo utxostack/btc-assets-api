@@ -39,9 +39,12 @@ const transactionRoutes: FastifyPluginCallback<
         },
       },
     },
-    async (request) => {
+    async (request, reply) => {
       const { txid } = request.params;
       const transaction = await fastify.electrs.getTransaction(txid);
+      if (transaction.status.confirmed) {
+        reply.header('x-block-confirmed', 'true');
+      }
       return transaction;
     },
   );
