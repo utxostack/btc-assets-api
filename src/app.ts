@@ -6,6 +6,14 @@ import swagger from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
 import { env } from './env';
 import tokenRoutes from './routes/token';
+import * as Sentry from '@sentry/node';
+
+if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
+  Sentry.init({
+    dsn: env.SENTRY_DSN_URL,
+    tracesSampleRate: 1.0,
+  });
+}
 
 async function routes(fastify: FastifyInstance) {
   fastify.register(swagger, {
@@ -46,6 +54,7 @@ async function routes(fastify: FastifyInstance) {
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
 
   fastify.setErrorHandler((error, _, reply) => {
+    Sentry.captureException(error);
     if (error instanceof AxiosError) {
       reply
         .status(error.response?.status || 500)
