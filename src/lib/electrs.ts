@@ -19,4 +19,9 @@ export default class ElectrsAPI {
     const response = await this.request.get(`/address/${address}/txs`);
     return response.data;
   }
+
+  async getTransaction(txid: string): Promise<TransactionType> {
+    const response = await this.request.get(`/tx/${txid}`);
+    return response.data;
+  }
 }

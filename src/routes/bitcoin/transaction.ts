@@ -1,6 +1,7 @@
 import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
+import { Transaction } from './types';
 
 const transactionRoutes: FastifyPluginCallback<
   Record<never, never>,
@@ -23,6 +24,25 @@ const transactionRoutes: FastifyPluginCallback<
       const { txHex } = request.body;
       const txid = await fastify.bitcoind.sendRawTransaction(txHex);
       return txid;
+    },
+  );
+
+  fastify.get(
+    '/:txid',
+    {
+      schema: {
+        params: Type.Object({
+          txid: Type.String(),
+        }),
+        response: {
+          200: Transaction,
+        },
+      },
+    },
+    async (request) => {
+      const { txid } = request.params;
+      const transaction = await fastify.electrs.getTransaction(txid);
+      return transaction;
     },
   );
   done();

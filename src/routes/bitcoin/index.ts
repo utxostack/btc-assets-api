@@ -17,7 +17,7 @@ const bitcoinRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBox
 
   fastify.register(infoRoute);
   fastify.register(transactionRoutes, { prefix: '/transaction' });
-  fastify.register(addressRoutes, { prefix: '/address/:address' });
+  fastify.register(addressRoutes, { prefix: '/address' });
   done();
 };
 
