@@ -1,13 +1,14 @@
 import { FastifyInstance } from 'fastify';
 import { AxiosError } from 'axios';
+import cors from '@fastify/cors';
+import * as Sentry from '@sentry/node';
 import bitcoinRoutes from './routes/bitcoin';
-import { env } from './env';
 import tokenRoutes from './routes/token';
 import swaggerPlugin from './plugins/swagger';
 import jwtPlugin from './plugins/jwt';
 import cachePlugin from './plugins/cache';
 import rateLimitPlugin from './plugins/rate-limit';
-import * as Sentry from '@sentry/node';
+import { env } from './env';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   Sentry.init({
@@ -17,6 +18,10 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
 }
 
 async function routes(fastify: FastifyInstance) {
+  await fastify.register(cors, {
+    origin: '*',
+  });
+
   fastify.register(rateLimitPlugin);
   fastify.register(swaggerPlugin);
   fastify.register(jwtPlugin);

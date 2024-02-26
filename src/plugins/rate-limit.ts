@@ -9,7 +9,6 @@ export default fp(async (fastify) => {
 
   fastify.register(import('@fastify/rate-limit'), {
     max: env.RATE_LIMIT_PER_MINUTE,
-    hook: 'preHandler',
     redis: new Redis(env.REDIS_URL),
   });
 });
