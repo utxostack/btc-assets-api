@@ -1,7 +1,6 @@
 import fp from 'fastify-plugin';
 import { env } from '../env';
 import { FastifyRequest } from 'fastify';
-import FastifyRedis from '@fastify/redis';
 import * as Sentry from '@sentry/node';
 import { Redis } from 'ioredis';
 
@@ -12,7 +11,7 @@ export default fp(async (fastify) => {
     return;
   }
 
-  fastify.register(FastifyRedis, {
+  fastify.register(import('@fastify/redis'), {
     client: new Redis(env.REDIS_URL),
   });
 
@@ -24,6 +23,7 @@ export default fp(async (fastify) => {
         reply.header('x-api-cache', 'HIT');
         reply.header('Content-Type', 'application/json');
         reply.send(response);
+        return;
       }
       if (err) {
         fastify.log.error(err);

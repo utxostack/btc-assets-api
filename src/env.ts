@@ -7,6 +7,7 @@ const envSchema = z.object({
   PORT: z.string().optional(),
   SENTRY_DSN_URL: z.string().optional(),
   REDIS_URL: z.string().optional(),
+  RATE_LIMIT_PER_MINUTE: z.number().default(100),
 
   /**
    * JWT_SECRET is used to sign the JWT token for authentication.

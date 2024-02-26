@@ -6,6 +6,7 @@ import tokenRoutes from './routes/token';
 import swaggerPlugin from './plugins/swagger';
 import jwtPlugin from './plugins/jwt';
 import cachePlugin from './plugins/cache';
+import rateLimitPlugin from './plugins/rate-limit';
 import * as Sentry from '@sentry/node';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
@@ -16,6 +17,7 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
 }
 
 async function routes(fastify: FastifyInstance) {
+  fastify.register(rateLimitPlugin);
   fastify.register(swaggerPlugin);
   fastify.register(jwtPlugin);
   fastify.register(cachePlugin);
