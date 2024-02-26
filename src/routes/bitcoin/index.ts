@@ -12,9 +12,7 @@ const bitcoinRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBox
   _,
   done,
 ) => {
-
   fastify.decorate('electrs', new ElectrsAPI(env.BITCOIN_ELECTRS_API_URL));
-
   fastify.register(infoRoute);
   fastify.register(transactionRoutes, { prefix: '/transaction' });
   fastify.register(addressRoutes, { prefix: '/address' });

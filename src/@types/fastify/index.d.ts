@@ -8,7 +8,8 @@ declare module 'fastify' {
     HttpServer = Server,
     HttpRequest = IncomingMessage,
     HttpResponse = ServerResponse,
-  > {
+  > extends FastifyJwtNamespace<{ namespace: 'security' }> {
+    authenticate: FastifyMiddleware;
     electrs: ElectrsAPI;
     bitcoind: Bitcoind;
   }

@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@fastify/http-proxy": "^9.4.0",
+    "@fastify/jwt": "^8.0.0",
     "@fastify/swagger": "^8.14.0",
     "@fastify/swagger-ui": "^3.0.0",
     "@fastify/type-provider-typebox": "^4.0.0",
