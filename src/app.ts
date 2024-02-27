@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { AxiosError } from 'axios';
 import cors from '@fastify/cors';
 import * as Sentry from '@sentry/node';
+import { ProfilingIntegration } from '@sentry/profiling-node';
 import bitcoinRoutes from './routes/bitcoin';
 import tokenRoutes from './routes/token';
 import swaggerPlugin from './plugins/swagger';
@@ -14,6 +15,10 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   Sentry.init({
     dsn: env.SENTRY_DSN_URL,
     tracesSampleRate: 1.0,
+    profilesSampleRate: 1.0,
+    integrations: [
+      new ProfilingIntegration(),
+    ],
   });
 }
 

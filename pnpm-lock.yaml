@@ -55,6 +55,9 @@ dependencies:
     version: 3.22.4
 
 devDependencies:
+  '@sentry/profiling-node':
+    specifier: ^7.102.1
+    version: 7.102.1
   '@types/node':
     specifier: ^20.11.17
     version: 20.11.17
@@ -645,6 +648,16 @@ packages:
       '@sentry/types': 7.102.1
       '@sentry/utils': 7.102.1
     dev: false
+
+  /@sentry/profiling-node@7.102.1:
+    resolution: {integrity: sha512-eqOUdu04eI4ODqeh/nHvC/mdwm3tWkqm02anR2ITEjKVJxHliHH6+jr+3M2X56e1hIxOibtL+JrR89Du9HEl9w==}
+    engines: {node: '>=8.0.0'}
+    hasBin: true
+    requiresBuild: true
+    dependencies:
+      detect-libc: 2.0.2
+      node-abi: 3.56.0
+    dev: true
 
   /@sentry/types@7.102.1:
     resolution: {integrity: sha512-htKorf3t/D0XYtM7foTcmG+rM47rDP6XdbvCcX5gBCuCYlzpM1vqCt2rl3FLktZC6TaIpFRJw1TLfx6m+x5jdA==}
@@ -2730,6 +2743,13 @@ packages:
 
   /natural-compare@1.4.0:
     resolution: {integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==}
+    dev: true
+
+  /node-abi@3.56.0:
+    resolution: {integrity: sha512-fZjdhDOeRcaS+rcpve7XuwHBmktS1nS1gzgghwKUQQ8nTy2FdSDr6ZT8k6YhvlJeHmmQMYiT/IH9hfco5zeW2Q==}
+    engines: {node: '>=10'}
+    dependencies:
+      semver: 7.6.0
     dev: true
 
   /node-fetch@2.6.7:
