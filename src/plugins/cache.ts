@@ -47,7 +47,7 @@ export default fp(async (fastify) => {
         return;
       }
       const key = getCacheKey(request);
-      const value = JSON.stringify(response);
+      const value = JSON.stringify(payload);
       if (value.length === 0) {
         next();
         return;
