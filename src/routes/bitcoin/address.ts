@@ -28,15 +28,15 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBox
           if (utxo.status.confirmed) {
             acc.satoshi += utxo.value;
           } else {
-            acc.pendingSatoshi += utxo.value;
+            acc.pending_satoshi += utxo.value;
           }
           return acc;
         },
         {
           address,
           satoshi: 0,
-          pendingSatoshi: 0,
-          utxoCount: utxos.length,
+          pending_satoshi: 0,
+          utxo_count: utxos.length,
         },
       );
     },

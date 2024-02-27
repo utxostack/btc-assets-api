@@ -35,8 +35,8 @@ export const Status = Type.Object({
 export const Balance = Type.Object({
   address: Type.String(),
   satoshi: Type.Number(),
-  pendingSatoshi: Type.Number(),
-  utxoCount: Type.Number(),
+  pending_satoshi: Type.Number(),
+  utxo_count: Type.Number(),
 });
 
 export const UTXO = Type.Object({
