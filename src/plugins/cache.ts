@@ -47,7 +47,12 @@ export default fp(async (fastify) => {
         return;
       }
       const key = getCacheKey(request);
-      fastify.redis.set(key, JSON.stringify(payload), (err) => {
+      const value = JSON.stringify(response);
+      if (value.length === 0) {
+        next();
+        return;
+      }
+      fastify.redis.set(key, value, (err) => {
         if (err) {
           fastify.log.error(err);
           Sentry.captureException(err);
