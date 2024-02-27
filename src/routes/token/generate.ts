@@ -13,6 +13,7 @@ const generateRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBox
       schema: {
         body: Type.Object({
           app: Type.String(),
+          domain: Type.String(),
         }),
         response: {
           200: Type.Object({
@@ -22,8 +23,8 @@ const generateRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBox
       },
     },
     async (request) => {
-      const { app } = request.body;
-      const token = fastify.jwt.sign({ app });
+      const { app, domain } = request.body;
+      const token = fastify.jwt.sign({ sub: app, aud: domain });
       return { token };
     },
   );
