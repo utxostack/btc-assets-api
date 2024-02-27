@@ -31,6 +31,7 @@ async function routes(fastify: FastifyInstance) {
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
 
   fastify.setErrorHandler((error, _, reply) => {
+    fastify.log.error(error);
     Sentry.captureException(error);
     if (error instanceof AxiosError) {
       reply

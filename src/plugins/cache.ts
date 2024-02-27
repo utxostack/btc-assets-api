@@ -40,7 +40,12 @@ export default fp(async (fastify) => {
       next();
       return;
     }
-    if (reply.getHeader('x-block-confirmed') === 'true') {
+    if (reply.getHeader('x-block-confirmed') === 'true' && payload) {
+      const response = JSON.parse(payload as string);
+      if (response.ok === false) {
+        next();
+        return;
+      }
       const key = getCacheKey(request);
       fastify.redis.set(key, JSON.stringify(payload), (err) => {
         if (err) {

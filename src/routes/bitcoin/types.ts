@@ -50,7 +50,7 @@ const Output = Type.Object({
   scriptpubkey: Type.String(),
   scriptpubkey_asm: Type.String(),
   scriptpubkey_type: Type.String(),
-  scriptpubkey_address: Type.String(),
+  scriptpubkey_address: Type.Optional(Type.String()),
   value: Type.Number(),
 });
 
