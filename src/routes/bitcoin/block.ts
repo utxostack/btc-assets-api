@@ -2,6 +2,7 @@ import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import { Block } from './types';
+import { CUSTOM_HEADERS } from '../../constants';
 
 const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
@@ -27,7 +28,7 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
         fastify.bitcoind.getBlockchainInfo(),
       ]);
       if (block.height < chain.blocks) {
-        reply.header('x-block-confirmed', 'true');
+        reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
       }
       return block;
     },

@@ -16,14 +16,18 @@ const transactionRoutes: FastifyPluginCallback<
           txHex: Type.String(),
         }),
         response: {
-          200: Type.String(),
+          200: Type.Object({
+            txid: Type.String(),
+          }),
         },
       },
     },
     async (request) => {
       const { txHex } = request.body;
       const txid = await fastify.bitcoind.sendRawTransaction(txHex);
-      return txid;
+      return {
+        txid,
+      };
     },
   );
 
@@ -43,7 +47,7 @@ const transactionRoutes: FastifyPluginCallback<
       const { txid } = request.params;
       const transaction = await fastify.electrs.getTransaction(txid);
       if (transaction.status.confirmed) {
-        reply.header('x-block-confirmed', 'true');
+        reply.header('x-response-cache', 'true');
       }
       return transaction;
     },
