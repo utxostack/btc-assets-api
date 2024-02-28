@@ -41,7 +41,7 @@ async function routes(fastify: FastifyInstance) {
     if (error instanceof AxiosError) {
       reply
         .status(error.response?.status || 500)
-        .send({ ok: false, error: error.response?.data.error ?? error.message });
+        .send({ ok: false, error: error.response?.data ?? error.message });
       return;
     }
     reply
