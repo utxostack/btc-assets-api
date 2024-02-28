@@ -27,9 +27,9 @@ export const Block = Type.Object({
 
 export const Status = Type.Object({
   confirmed: Type.Boolean(),
-  block_height: Type.Number(),
-  block_hash: Type.String(),
-  block_time: Type.Number(),
+  block_height: Type.Optional(Type.Number()),
+  block_hash: Type.Optional(Type.String()),
+  block_time: Type.Optional(Type.Number()),
 });
 
 export const Balance = Type.Object({

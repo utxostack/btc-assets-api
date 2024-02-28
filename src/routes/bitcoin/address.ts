@@ -1,7 +1,7 @@
 import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
-import { Balance, BalanceType, Transaction, UTXOType } from './types';
+import { Balance, BalanceType, Transaction, UTXO, UTXOType } from './types';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
   fastify,
@@ -50,19 +50,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBox
           address: Type.String(),
         }),
         response: {
-          200: Type.Array(
-            Type.Object({
-              txid: Type.String(),
-              vout: Type.Number(),
-              value: Type.Number(),
-              status: Type.Object({
-                confirmed: Type.Boolean(),
-                block_height: Type.Number(),
-                block_hash: Type.String(),
-                block_time: Type.Number(),
-              }),
-            }),
-          ),
+          200: Type.Array(UTXO),
         },
       },
     },
@@ -82,7 +70,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBox
         }),
         response: {
           200: Type.Array(Transaction),
-        }
+        },
       },
     },
     async (request) => {
