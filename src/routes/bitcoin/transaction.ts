@@ -2,6 +2,7 @@ import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import { Transaction } from './types';
+import { CUSTOM_HEADERS } from '../../constants';
 
 const transactionRoutes: FastifyPluginCallback<
   Record<never, never>,
@@ -47,7 +48,7 @@ const transactionRoutes: FastifyPluginCallback<
       const { txid } = request.params;
       const transaction = await fastify.electrs.getTransaction(txid);
       if (transaction.status.confirmed) {
-        reply.header('x-response-cache', 'true');
+        reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
       }
       return transaction;
     },
