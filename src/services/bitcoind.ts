@@ -1,17 +1,12 @@
-import axios, { AxiosInstance } from 'axios';
 import { ChainInfoType } from '../routes/bitcoin/types';
+import { BaseRequestService } from './base';
 
-export default class Bitcoind {
-  private request: AxiosInstance;
-
+export default class Bitcoind extends BaseRequestService {
   constructor(baseURL: string, username: string, password: string) {
     const credentials = `${username}:${password}`;
     const token = Buffer.from(credentials, 'utf-8').toString('base64');
-    this.request = axios.create({
-      baseURL,
-      headers: {
-        Authorization: `Basic ${token}`,
-      },
+    super(baseURL, {
+      Authorization: `Basic ${token}`,
     });
   }
 

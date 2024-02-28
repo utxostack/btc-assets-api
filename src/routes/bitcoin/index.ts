@@ -1,8 +1,8 @@
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
-import ElectrsAPI from '../../lib/electrs';
-import Bitcoind from '../../lib/bitcoind';
+import ElectrsAPI from '../../services/electrs';
+import Bitcoind from '../../services/bitcoind';
 import infoRoute from './info';
 import blockRoutes from './block';
 import transactionRoutes from './transaction';
@@ -14,15 +14,17 @@ const bitcoinRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBox
   _,
   done,
 ) => {
-  fastify.decorate('electrs', new ElectrsAPI(env.BITCOIN_ELECTRS_API_URL));
-  fastify.decorate(
-    'bitcoind',
-    new Bitcoind(
-      env.BITCOIN_JSON_RPC_URL,
-      env.BITCOIN_JSON_RPC_USERNAME,
-      env.BITCOIN_JSON_RPC_PASSWORD,
-    ),
+  const electrs = new ElectrsAPI(env.BITCOIN_ELECTRS_API_URL);
+  electrs.setLogger(fastify.log);
+  fastify.decorate('electrs', electrs);
+
+  const bitcoind = new Bitcoind(
+    env.BITCOIN_JSON_RPC_URL,
+    env.BITCOIN_JSON_RPC_USERNAME,
+    env.BITCOIN_JSON_RPC_PASSWORD,
   );
+  bitcoind.setLogger(fastify.log);
+  fastify.decorate('bitcoind', bitcoind);
 
   fastify.register(infoRoute);
   fastify.register(blockRoutes, { prefix: '/block' });
