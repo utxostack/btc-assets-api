@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { AxiosError } from 'axios';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
+import compress from '@fastify/compress'
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import bitcoinRoutes from './routes/bitcoin';
@@ -23,6 +24,7 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
 
 async function routes(fastify: FastifyInstance) {
   fastify.register(sensible);
+  fastify.register(compress);
   await fastify.register(cors, {
     origin: '*',
   });
