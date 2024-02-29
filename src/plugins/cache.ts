@@ -23,21 +23,23 @@ export default fp(async (fastify) => {
 
     fastify.addHook('onRequest', (request, reply, done) => {
       const key = getCacheKey(request);
-      fastify.redis.get(key, (err, result) => {
-        if (!err && result) {
-          const response = JSON.parse(result);
-          reply.header('Content-Type', 'application/json');
-          reply.header(CUSTOM_HEADERS.ApiCache, ApiCacheStatus.Hit);
-          reply.send(response);
-          return;
-        }
-        if (err) {
-          fastify.log.error(err);
-          Sentry.captureException(err);
-        }
+      Sentry.startSpan({ op: 'cache/get', name: key }, () => {
+        fastify.redis.get(key, (err, result) => {
+          if (!err && result) {
+            const response = JSON.parse(result);
+            reply.header('Content-Type', 'application/json');
+            reply.header(CUSTOM_HEADERS.ApiCache, ApiCacheStatus.Hit);
+            reply.send(response);
+            return;
+          }
+          if (err) {
+            fastify.log.error(err);
+            Sentry.captureException(err);
+          }
 
-        reply.header(CUSTOM_HEADERS.ApiCache, ApiCacheStatus.Miss);
-        done();
+          reply.header(CUSTOM_HEADERS.ApiCache, ApiCacheStatus.Miss);
+          done();
+        });
       });
     });
 
@@ -58,14 +60,16 @@ export default fp(async (fastify) => {
         }
         const key = getCacheKey(request);
         const value = JSON.stringify(payload);
-        fastify.redis.set(key, value, (err) => {
-          if (err) {
-            fastify.log.error(err);
-            Sentry.captureException(err);
-          }
-          reply.removeHeader(CUSTOM_HEADERS.ResponseCacheable);
-          reply.cacheControl('max-age', MAX_AGE_FOREVER);
-          next();
+        Sentry.startSpan({ op: 'cache/set', name: key }, () => {
+          fastify.redis.set(key, value, (err) => {
+            if (err) {
+              fastify.log.error(err);
+              Sentry.captureException(err);
+            }
+            reply.removeHeader(CUSTOM_HEADERS.ResponseCacheable);
+            reply.cacheControl('max-age', MAX_AGE_FOREVER);
+            next();
+          });
         });
         return;
       }
