@@ -2,6 +2,8 @@ import fp from 'fastify-plugin';
 import swagger from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
 
+export const DOCS_ROUTE_PREFIX = '/docs';
+
 export default fp(async (fastify) => {
   fastify.register(swagger, {
     swagger: {
@@ -22,6 +24,6 @@ export default fp(async (fastify) => {
     },
   });
   fastify.register(swaggerUI, {
-    routePrefix: '/docs',
+    routePrefix: DOCS_ROUTE_PREFIX,
   });
 });

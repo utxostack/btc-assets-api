@@ -3,6 +3,7 @@ import { env } from '../env';
 import { FastifyRequest } from 'fastify';
 import * as Sentry from '@sentry/node';
 import { ApiCacheStatus, CUSTOM_HEADERS } from '../constants';
+import { DOCS_ROUTE_PREFIX } from './swagger';
 
 const getCacheKey = (request: FastifyRequest) => env.NODE_ENV + '@' + request.url;
 const MAX_AGE_FOREVER = 60 * 60 * 24 * 365 * 5;
@@ -22,6 +23,11 @@ export default fp(async (fastify) => {
     fastify.register(import('@fastify/redis'), { client: redis });
 
     fastify.addHook('onRequest', (request, reply, done) => {
+      if (request.url.startsWith(DOCS_ROUTE_PREFIX)) {
+        done();
+        return;
+      }
+
       const key = getCacheKey(request);
       Sentry.startSpan({ op: 'cache/get', name: key }, () => {
         fastify.redis.get(key, (err, result) => {
@@ -44,6 +50,11 @@ export default fp(async (fastify) => {
     });
 
     fastify.addHook('onSend', (request, reply, payload, next) => {
+      if (request.url.startsWith(DOCS_ROUTE_PREFIX)) {
+        next();
+        return;
+      }
+
       reply.cacheControl('public');
 
       if (reply.getHeader(CUSTOM_HEADERS.ApiCache) === ApiCacheStatus.Hit) {
