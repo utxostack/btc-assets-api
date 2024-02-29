@@ -1,5 +1,6 @@
 import { ChainInfoType } from '../routes/bitcoin/types';
 import axios, { AxiosInstance } from 'axios';
+import * as Sentry from '@sentry/node';
 import { addLoggerInterceptor } from '../utils/interceptors';
 import { Cradle } from '../container';
 
@@ -25,13 +26,15 @@ export default class Bitcoind {
   }
 
   private async callMethod<T>(method: string, params: unknown): Promise<T> {
-    const response = await this.request.post('', {
-      jsonrpc: '1.0',
-      id: Date.now(),
-      method,
-      params,
+    return Sentry.startSpan({ op: this.constructor.name, name: method }, async () => {
+      const response = await this.request.post('', {
+        jsonrpc: '1.0',
+        id: Date.now(),
+        method,
+        params,
+      });
+      return response.data.result;
     });
-    return response.data.result;
   }
 
   // https://developer.bitcoin.org/reference/rpc/getblockchaininfo.html

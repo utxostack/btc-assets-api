@@ -1,14 +1,14 @@
-import Bitcoind from './services/bitcoind';
-import { env } from './env';
-import pino from 'pino';
-import ElectrsAPI from './services/electrs';
 import { createContainer, InjectionMode, asValue, asClass, asFunction } from 'awilix';
 import { Redis } from 'ioredis';
+import pino from 'pino';
+import Bitcoind from './services/bitcoind';
+import ElectrsAPI from './services/electrs';
+import { env } from './env';
 
 export interface Cradle {
   env: typeof env;
   logger: pino.BaseLogger;
-  redis?: Redis;
+  redis: Redis | undefined;
   bitcoind: Bitcoind;
   electrs: ElectrsAPI;
 }
