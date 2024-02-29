@@ -23,13 +23,8 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     },
     async (request, reply) => {
       const { hash } = request.params;
-      const [block, chain] = await Promise.all([
-        fastify.electrs.getBlockByHash(hash),
-        fastify.bitcoind.getBlockchainInfo(),
-      ]);
-      if (block.height < chain.blocks) {
-        reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
-      }
+      const block = await fastify.electrs.getBlockByHash(hash);
+      reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
       return block;
     },
   );
@@ -48,9 +43,10 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
         },
       },
     },
-    async (request) => {
+    async (request, reply) => {
       const { hash } = request.params;
       const header = await fastify.electrs.getBlockHeaderByHash(hash);
+      reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
       return {
         header,
       };
