@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import fastify from 'fastify';
+import { AwilixContainer, Cradle } from '../../container';
 import Bitcoind from '../../services/bitcoind';
 import ElectrsAPI from '../../services/electrs';
 
@@ -10,7 +11,7 @@ declare module 'fastify' {
     HttpRequest = IncomingMessage,
     HttpResponse = ServerResponse,
   > extends FastifyJwtNamespace<{ namespace: 'security' }> {
-    authenticate: FastifyMiddleware;
+    container: AwilixContainer<Cradle>;
     electrs: ElectrsAPI;
     bitcoind: Bitcoind;
   }

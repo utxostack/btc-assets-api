@@ -25,13 +25,14 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
 }
 
 async function routes(fastify: FastifyInstance) {
-  container.register({ logger: asValue(fastify.log) });
-
   fastify.register(sensible);
   fastify.register(compress);
   await fastify.register(cors, {
     origin: '*',
   });
+
+  container.register({ logger: asValue(fastify.log) });
+  fastify.decorate('container', container);
 
   fastify.register(rateLimitPlugin);
   fastify.register(swaggerPlugin);
