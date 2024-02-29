@@ -1,13 +1,27 @@
 import { ChainInfoType } from '../routes/bitcoin/types';
-import { BaseRequestService } from './base';
+import axios, { AxiosInstance } from 'axios';
+import { addLoggerInterceptor } from '../utils/interceptors';
+import { Cradle } from '../container';
 
-export default class Bitcoind extends BaseRequestService {
-  constructor(baseURL: string, username: string, password: string) {
+export default class Bitcoind {
+  private request: AxiosInstance;
+
+  constructor({ env, logger }: Cradle) {
+    const {
+      BITCOIN_JSON_RPC_USERNAME: username,
+      BITCOIN_JSON_RPC_PASSWORD: password,
+      BITCOIN_JSON_RPC_URL: baseURL,
+    } = env;
     const credentials = `${username}:${password}`;
     const token = Buffer.from(credentials, 'utf-8').toString('base64');
-    super(baseURL, {
-      Authorization: `Basic ${token}`,
+
+    this.request = axios.create({
+      baseURL,
+      headers: {
+        Authorization: `Basic ${token}`,
+      },
     });
+    addLoggerInterceptor(this.request, logger);
   }
 
   private async callMethod<T>(method: string, params: unknown): Promise<T> {

@@ -1,9 +1,16 @@
+import axios, { AxiosInstance } from 'axios';
 import { BlockType, TransactionType, UTXOType } from '../routes/bitcoin/types';
-import { BaseRequestService } from './base';
+import { Cradle } from '../container';
+import { addLoggerInterceptor } from '../utils/interceptors';
 
-export default class ElectrsAPI extends BaseRequestService {
-  constructor(baseURL: string) {
-    super(baseURL);
+export default class ElectrsAPI {
+  private request: AxiosInstance;
+
+  constructor({ env, logger }: Cradle) {
+    this.request = axios.create({
+      baseURL: env.BITCOIN_ELECTRS_API_URL,
+    });
+    addLoggerInterceptor(this.request, logger);
   }
 
   // https://github.com/blockstream/esplora/blob/master/API.md#get-addressaddressutxo

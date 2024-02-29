@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { AxiosError } from 'axios';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
-import compress from '@fastify/compress'
+import compress from '@fastify/compress';
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import bitcoinRoutes from './routes/bitcoin';
@@ -12,6 +12,8 @@ import jwtPlugin from './plugins/jwt';
 import cachePlugin from './plugins/cache';
 import rateLimitPlugin from './plugins/rate-limit';
 import { env } from './env';
+import container from './container';
+import { asValue } from 'awilix';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   Sentry.init({
@@ -23,6 +25,8 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
 }
 
 async function routes(fastify: FastifyInstance) {
+  container.register({ logger: asValue(fastify.log) });
+
   fastify.register(sensible);
   fastify.register(compress);
   await fastify.register(cors, {
