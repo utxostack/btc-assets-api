@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import fastify from 'fastify';
-import Bitcoind from '../../lib/bitcoind';
-import ElectrsAPI from '../../lib/electrs';
+import Bitcoind from '../../services/bitcoind';
+import ElectrsAPI from '../../services/electrs';
 
 declare module 'fastify' {
   export interface FastifyInstance<

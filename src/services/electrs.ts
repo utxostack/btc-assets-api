@@ -29,4 +29,16 @@ export default class ElectrsAPI extends BaseRequestService {
     const response = await this.request.get(`/block/${hash}`);
     return response.data;
   }
+
+  // https://github.com/blockstream/esplora/blob/master/API.md#get-block-heightheight
+  public async getBlockByHeight(height: number): Promise<string> {
+    const response = await this.request.get(`/block-height/${height}`);
+    return response.data;
+  }
+
+  // https://github.com/blockstream/esplora/blob/master/API.md#get-blockhashheader
+  public async getBlockHeaderByHash(hash: string): Promise<string> {
+    const response = await this.request.get(`/block/${hash}/header`);
+    return response.data;
+  }
 }

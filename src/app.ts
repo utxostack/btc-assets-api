@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { AxiosError } from 'axios';
 import cors from '@fastify/cors';
+import sensible from '@fastify/sensible';
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import bitcoinRoutes from './routes/bitcoin';
@@ -16,13 +17,12 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
     dsn: env.SENTRY_DSN_URL,
     tracesSampleRate: 1.0,
     profilesSampleRate: 1.0,
-    integrations: [
-      new ProfilingIntegration(),
-    ],
+    integrations: [new ProfilingIntegration()],
   });
 }
 
 async function routes(fastify: FastifyInstance) {
+  fastify.register(sensible);
   await fastify.register(cors, {
     origin: '*',
   });
