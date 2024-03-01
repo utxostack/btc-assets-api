@@ -8,10 +8,10 @@ import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import bitcoinRoutes from './routes/bitcoin';
 import tokenRoutes from './routes/token';
-import swaggerPlugin from './plugins/swagger';
-import jwtPlugin from './plugins/jwt';
-import cachePlugin from './plugins/cache';
-import rateLimitPlugin from './plugins/rate-limit';
+import swagger from './plugins/swagger';
+import jwt from './plugins/jwt';
+import cache from './plugins/cache';
+import rateLimit from './plugins/rate-limit';
 import { env } from './env';
 import container from './container';
 import { asValue } from 'awilix';
@@ -35,10 +35,10 @@ async function routes(fastify: FastifyInstance) {
   container.register({ logger: asValue(fastify.log) });
   fastify.decorate('container', container);
 
-  fastify.register(rateLimitPlugin);
-  fastify.register(swaggerPlugin);
-  fastify.register(jwtPlugin);
-  fastify.register(cachePlugin);
+  fastify.register(swagger);
+  fastify.register(jwt);
+  fastify.register(cache);
+  fastify.register(rateLimit);
 
   fastify.register(tokenRoutes, { prefix: '/token' });
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });

@@ -13,7 +13,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBox
     const { address } = request.params as { address: string };
     const valid = validateBitcoinAddress(address);
     if (!valid) {
-      throw fastify.httpErrors.badRequest('invalid bitcoin address');
+      throw fastify.httpErrors.badRequest('Invalid bitcoin address');
     }
     done();
   });

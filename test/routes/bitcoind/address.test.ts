@@ -45,6 +45,25 @@ test('`/address/:address/balance` - 200', async () => {
   await fastify.close();
 });
 
+test('`/address/:address/balance` - 400', async () => {
+  const fastify = buildFastify();
+  await fastify.ready();
+
+  const response = await fastify.inject({
+    method: 'GET',
+    url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0try/balance',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const data = response.json();
+
+  expect(response.statusCode).toBe(400);
+  expect(data.message).toBe('Invalid bitcoin address');
+
+  await fastify.close();
+});
+
 test('`/address/:address/unspent` - 200', async () => {
   const fastify = buildFastify();
   await fastify.ready();

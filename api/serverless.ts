@@ -1,6 +1,3 @@
-import * as dotenv from 'dotenv';
-dotenv.config();
-
 import { buildFastify } from '../src/app';
 
 const app = buildFastify();
