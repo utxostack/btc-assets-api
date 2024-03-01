@@ -1,3 +1,4 @@
+import fastify from 'fastify';
 import { FastifyInstance } from 'fastify';
 import { AxiosError } from 'axios';
 import cors from '@fastify/cors';
@@ -14,6 +15,8 @@ import rateLimitPlugin from './plugins/rate-limit';
 import { env } from './env';
 import container from './container';
 import { asValue } from 'awilix';
+import options from './options';
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   Sentry.init({
@@ -55,4 +58,8 @@ async function routes(fastify: FastifyInstance) {
   });
 }
 
-export default routes;
+export function buildFastify() {
+  const app = fastify(options).withTypeProvider<TypeBoxTypeProvider>();
+  app.register(routes);
+  return app;
+}

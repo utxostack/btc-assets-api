@@ -26,3 +26,4 @@ dist
 
 yarn.lock
 .vercel
+coverage
