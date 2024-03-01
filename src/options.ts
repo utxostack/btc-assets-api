@@ -1,5 +1,6 @@
 import { FastifyBaseLogger, FastifyHttpOptions } from 'fastify';
 import { Server } from 'http';
+import { env } from './env';
 
 const envToLogger = {
   development: {
@@ -15,7 +16,7 @@ const envToLogger = {
 }
 
 const options: FastifyHttpOptions<Server, FastifyBaseLogger> = {
-  logger: envToLogger[process.env.NODE_ENV as 'development' | 'production'],
+  logger: envToLogger[env.NODE_ENV as keyof typeof envToLogger],
 };
 
 export default options;
