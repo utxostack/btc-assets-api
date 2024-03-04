@@ -28,13 +28,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Use .env file
-        run: |
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" > .env
-          echo "BITCOIN_JSON_RPC_URL=${{ secrets.BITCOIN_JSON_RPC_URL }}" > .env
-          echo "BITCOIN_JSON_RPC_USERNAME=${{ secrets.BITCOIN_JSON_RPC_USERNAME }}" > .env
-          echo "BITCOIN_JSON_RPC_PASSWORD=${{ secrets.BITCOIN_JSON_RPC_PASSWORD }}" > .env
-          echo "BITCOIN_ELECTRS_API_URL=${{ secrets.BITCOIN_ELECTRS_API_URL }}" > .env
-
       - name: Run Unit Tests
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          BITCOIN_JSON_RPC_URL: ${{ secrets.BITCOIN_JSON_RPC_URL }}
+          BITCOIN_JSON_RPC_USERNAME: ${{ secrets.BITCOIN_JSON_RPC_USERNAME }}
+          BITCOIN_JSON_RPC_PASSWORD: ${{ secrets.BITCOIN_JSON_RPC_PASSWORD }}
+          BITCOIN_ELECTRS_API_URL: ${{ secrets.BITCOIN_ELECTRS_API_URL }}
         run: pnpm test
