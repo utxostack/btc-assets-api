@@ -2,15 +2,12 @@
 name: Unit Tests
 
 on:
-  push:
-    branches:
-      - '*'
   pull_request:
     branches:
       - main
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
 
     steps:
