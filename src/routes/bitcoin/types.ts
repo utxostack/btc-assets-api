@@ -36,6 +36,7 @@ export const Balance = Type.Object({
   address: Type.String(),
   satoshi: Type.Number(),
   pending_satoshi: Type.Number(),
+  dust_satoshi: Type.Number(),
   utxo_count: Type.Number(),
 });
 

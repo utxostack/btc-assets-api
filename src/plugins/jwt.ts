@@ -17,10 +17,17 @@ export default fp(async (fastify) => {
     }
     try {
       await request.jwtVerify();
-      const { origin } = request.headers;
       const jwt = (await request.jwtDecode()) as { aud: string };
-      if (!origin || new URL(origin).hostname !== jwt.aud) {
-        reply.status(401).send('Invalid token');
+
+      const { origin, referer } = request.headers;
+      let domain = '';
+      if (origin) {
+        domain = new URL(origin).hostname;
+      } else if (referer) {
+        domain = new URL(referer).hostname;
+      }
+      if (!domain || domain !== jwt.aud) {
+        reply.status(401).send('Invalid request origin or referer');
       }
     } catch (err) {
       reply.status(401).send(err);
