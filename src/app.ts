@@ -46,7 +46,8 @@ async function routes(fastify: FastifyInstance) {
     fastify.log.error(error);
     Sentry.captureException(error);
     if (error instanceof AxiosError) {
-      reply.status(error.response?.status || 500).send({ ok: false, error: error.response?.data ?? error.message });
+      const { response } = error;
+      reply.status(response?.status ?? 500).send({ ok: false, error: response?.data ?? error.message });
       return;
     }
     reply.status(error.statusCode ?? 500).send({ ok: false, statusCode: error.statusCode, message: error.message });

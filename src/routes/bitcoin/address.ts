@@ -5,13 +5,12 @@ import { Balance, BalanceType, Transaction, UTXO, UTXOType } from './types';
 import validateBitcoinAddress from '../../utils/validators';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (fastify, _, done) => {
-  fastify.addHook('preHandler', (request, _, done) => {
+  fastify.addHook('preHandler', async (request) => {
     const { address } = request.params as { address: string };
     const valid = validateBitcoinAddress(address);
     if (!valid) {
       throw fastify.httpErrors.badRequest('Invalid bitcoin address');
     }
-    done();
   });
 
   fastify.get(
