@@ -17,6 +17,11 @@ export default fp(async (fastify) => {
     }
     try {
       await request.jwtVerify();
+      const { origin } = request.headers;
+      const jwt = (await request.jwtDecode()) as { aud: string };
+      if (!origin || new URL(origin).hostname !== jwt.aud) {
+        reply.status(401).send('Invalid token');
+      }
     } catch (err) {
       reply.status(401).send(err);
     }
