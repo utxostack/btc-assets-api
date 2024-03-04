@@ -1,7 +1,6 @@
 import fastify from 'fastify';
 import { FastifyInstance } from 'fastify';
 import { AxiosError } from 'axios';
-import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
 import compress from '@fastify/compress';
 import * as Sentry from '@sentry/node';
@@ -17,6 +16,7 @@ import container from './container';
 import { asValue } from 'awilix';
 import options from './options';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import cors from './plugins/cors';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   Sentry.init({
@@ -28,13 +28,12 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
 }
 
 async function routes(fastify: FastifyInstance) {
-  fastify.register(sensible);
-  fastify.register(compress);
-  await fastify.register(cors, { origin: '*' });
-
   container.register({ logger: asValue(fastify.log) });
   fastify.decorate('container', container);
 
+  await fastify.register(cors);
+  fastify.register(sensible);
+  fastify.register(compress);
   fastify.register(swagger);
   fastify.register(jwt);
   fastify.register(cache);
@@ -47,14 +46,10 @@ async function routes(fastify: FastifyInstance) {
     fastify.log.error(error);
     Sentry.captureException(error);
     if (error instanceof AxiosError) {
-      reply
-        .status(error.response?.status || 500)
-        .send({ ok: false, error: error.response?.data ?? error.message });
+      reply.status(error.response?.status || 500).send({ ok: false, error: error.response?.data ?? error.message });
       return;
     }
-    reply
-      .status(error.statusCode ?? 500)
-      .send({ ok: false, statusCode: error.statusCode, message: error.message });
+    reply.status(error.statusCode ?? 500).send({ ok: false, statusCode: error.statusCode, message: error.message });
   });
 }
 

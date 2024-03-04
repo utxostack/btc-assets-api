@@ -7,3 +7,5 @@ export enum ApiCacheStatus {
   Hit = 'HIT',
   Miss = 'MISS',
 }
+
+export const JWT_IGNORE_URLS = ['/token', '/docs'];
