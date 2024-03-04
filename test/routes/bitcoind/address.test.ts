@@ -31,6 +31,7 @@ describe('/bitcoin/v1/address', () => {
       url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp/balance',
       headers: {
         Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
       },
     });
     const data = response.json();
@@ -55,6 +56,7 @@ describe('/bitcoin/v1/address', () => {
       url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0try/balance',
       headers: {
         Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
       },
     });
     const data = response.json();
@@ -74,6 +76,7 @@ describe('/bitcoin/v1/address', () => {
       url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp/unspent',
       headers: {
         Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
       },
     });
     const data = response.json();
@@ -99,6 +102,7 @@ describe('/bitcoin/v1/address', () => {
       url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp/txs',
       headers: {
         Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
       },
     });
     const data = response.json();

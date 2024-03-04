@@ -32,6 +32,7 @@ describe('/bitcoin/v1/info', () => {
       url: '/bitcoin/v1/info',
       headers: {
         Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
       },
     });
     const data = response.json();

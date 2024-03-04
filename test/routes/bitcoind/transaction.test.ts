@@ -32,6 +32,7 @@ describe('/bitcoin/v1/transaction', () => {
       url: '/bitcoin/v1/transaction/9706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
       headers: {
         Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
       },
     });
     const data = response.json();
@@ -51,6 +52,7 @@ describe('/bitcoin/v1/transaction', () => {
       url: '/bitcoin/v1/transaction',
       headers: {
         Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
       },
       body: {
         txHex:
@@ -60,7 +62,7 @@ describe('/bitcoin/v1/transaction', () => {
     const data = response.json();
 
     expect(response.statusCode).toBe(500);
-    expect(data.error.error.message).toBe('Transaction already in block chain');
+    expect(data.error.error.message).toBe('bad-txns-inputs-missingorspent');
 
     await fastify.close();
   });

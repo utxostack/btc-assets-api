@@ -32,6 +32,7 @@ describe('/bitcoin/v1/block', () => {
       url: '/bitcoin/v1/block/0000000000000005ae0b929ee3afbf2956aaa0059f9d7608dc396cf5f8f4dda6',
       headers: {
         Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
       },
     });
     const data = response.json();
@@ -51,6 +52,7 @@ describe('/bitcoin/v1/block', () => {
       url: '/bitcoin/v1/block/0000000000000005ae0b929ee3afbf2956aaa0059f9d7608dc396cf5f8f4dda6/header',
       headers: {
         Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
       },
     });
     const data = response.json();
@@ -70,6 +72,7 @@ describe('/bitcoin/v1/block', () => {
       url: '/bitcoin/v1/block/height/0',
       headers: {
         Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
       },
     });
     const data = response.json();
