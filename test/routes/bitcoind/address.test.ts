@@ -41,6 +41,33 @@ describe('/bitcoin/v1/address', () => {
       address: 'tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp',
       satoshi: 181652,
       pending_satoshi: 0,
+      dust_satoshi: 0,
+      utxo_count: 2,
+    });
+
+    await fastify.close();
+  });
+
+  test('Get address balance with min_satoshi param', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp/balance?min_satoshi=10000',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
+      },
+    });
+    const data = response.json();
+
+    expect(response.statusCode).toBe(200);
+    expect(data).toStrictEqual({
+      address: 'tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp',
+      satoshi: 180652,
+      pending_satoshi: 0,
+      dust_satoshi: 1000,
       utxo_count: 2,
     });
 
