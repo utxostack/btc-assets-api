@@ -9,6 +9,7 @@ export default fp(async (fastify) => {
       const corsOptions: FastifyCorsOptions = {
         hook: 'preHandler',
         origin: false,
+        maxAge: 60 * 60 * 24,
       };
 
       if (
