@@ -1,8 +1,7 @@
 import { FastifyRequest } from 'fastify';
 import cors, { FastifyCorsOptions } from '@fastify/cors';
 import fp from 'fastify-plugin';
-
-export const ALLOWED_URLS = ['/token', '/docs'];
+import { JWT_IGNORE_URLS } from '../constants';
 
 export default fp(async (fastify) => {
   await fastify.register(cors, () => {
@@ -12,7 +11,10 @@ export default fp(async (fastify) => {
         origin: false,
       };
 
-      if (request.method.toLowerCase() === 'options' || ALLOWED_URLS.some((prefix) => request.url.startsWith(prefix))) {
+      if (
+        request.method.toLowerCase() === 'options' ||
+        JWT_IGNORE_URLS.some((prefix) => request.url.startsWith(prefix))
+      ) {
         corsOptions.origin = true;
         return corsOptions;
       }
