@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`\`/address/:address/txs\` - 200 1`] = `
+exports[`/bitcoin/v1/address > Get address transactions 1`] = `
 [
   {
     "fee": 141,

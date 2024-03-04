@@ -1,109 +1,111 @@
-import { beforeAll, expect, test } from 'vitest';
+import { describe, beforeAll, expect, test } from 'vitest';
 import { buildFastify } from '../../../src/app';
 
 let token: string;
 
-beforeAll(async () => {
-  const fastify = buildFastify();
-  await fastify.ready();
+describe('/bitcoin/v1/address', () => {
+  beforeAll(async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
 
-  const response = await fastify.inject({
-    method: 'POST',
-    url: '/token/generate',
-    payload: {
-      app: 'test',
-      domain: 'test.com',
-    },
-  });
-  const data = response.json();
-  token = data.token;
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/token/generate',
+      payload: {
+        app: 'test',
+        domain: 'test.com',
+      },
+    });
+    const data = response.json();
+    token = data.token;
 
-  await fastify.close();
-});
-
-test('`/address/:address/balance` - 200', async () => {
-  const fastify = buildFastify();
-  await fastify.ready();
-
-  const response = await fastify.inject({
-    method: 'GET',
-    url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp/balance',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  const data = response.json();
-
-  expect(response.statusCode).toBe(200);
-  expect(data).toStrictEqual({
-    address: 'tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp',
-    satoshi: 181652,
-    pending_satoshi: 0,
-    utxo_count: 2,
+    await fastify.close();
   });
 
-  await fastify.close();
-});
+  test('Get address balance', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
 
-test('`/address/:address/balance` - 400', async () => {
-  const fastify = buildFastify();
-  await fastify.ready();
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp/balance',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = response.json();
 
-  const response = await fastify.inject({
-    method: 'GET',
-    url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0try/balance',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    expect(response.statusCode).toBe(200);
+    expect(data).toStrictEqual({
+      address: 'tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp',
+      satoshi: 181652,
+      pending_satoshi: 0,
+      utxo_count: 2,
+    });
+
+    await fastify.close();
   });
-  const data = response.json();
 
-  expect(response.statusCode).toBe(400);
-  expect(data.message).toBe('Invalid bitcoin address');
+  test('Get address balance with invalid address', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
 
-  await fastify.close();
-});
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0try/balance',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = response.json();
 
-test('`/address/:address/unspent` - 200', async () => {
-  const fastify = buildFastify();
-  await fastify.ready();
+    expect(response.statusCode).toBe(400);
+    expect(data.message).toBe('Invalid bitcoin address');
 
-  const response = await fastify.inject({
-    method: 'GET',
-    url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp/unspent',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    await fastify.close();
   });
-  const data = response.json();
-  const txids = data.map((tx: { txid: string }) => tx.txid).sort();
 
-  expect(response.statusCode).toBe(200);
-  expect(txids).toEqual(
-    [
-      '85fdce5f5d7fd3ff73ce70e3e0a786f50cc1124830cc07341738d76fa7c3a6a9',
-      '9706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
-    ].sort(),
-  );
+  test('Get address unspent transaction outputs', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
 
-  await fastify.close();
-});
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp/unspent',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = response.json();
+    const txids = data.map((tx: { txid: string }) => tx.txid).sort();
 
-test('`/address/:address/txs` - 200', async () => {
-  const fastify = buildFastify();
-  await fastify.ready();
+    expect(response.statusCode).toBe(200);
+    expect(txids).toEqual(
+      [
+        '85fdce5f5d7fd3ff73ce70e3e0a786f50cc1124830cc07341738d76fa7c3a6a9',
+        '9706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
+      ].sort(),
+    );
 
-  const response = await fastify.inject({
-    method: 'GET',
-    url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp/txs',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    await fastify.close();
   });
-  const data = response.json();
 
-  expect(response.statusCode).toBe(200);
-  expect(data).toMatchSnapshot();
+  test('Get address transactions', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
 
-  await fastify.close();
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/bitcoin/v1/address/tb1qlrg2mhyxrq7ns5rpa6qvrvttr9674n6z0trymp/txs',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data = response.json();
+
+    expect(response.statusCode).toBe(200);
+    expect(data).toMatchSnapshot();
+
+    await fastify.close();
+  });
 });

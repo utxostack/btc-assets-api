@@ -1,4 +1,4 @@
-import { createContainer, InjectionMode, asValue, asClass, asFunction } from 'awilix';
+import { createContainer, InjectionMode, asValue, asClass, asFunction, Lifetime } from 'awilix';
 import { Redis } from 'ioredis';
 import pino from 'pino';
 import Bitcoind from './services/bitcoind';
@@ -21,9 +21,9 @@ const container = createContainer<Cradle>({
 container.register({
   env: asValue(env),
   logger: asValue(pino()),
-  redis: asFunction(() => env.REDIS_URL ? new Redis(env.REDIS_URL) : undefined),
-  bitcoind: asClass(Bitcoind),
-  electrs: asClass(ElectrsAPI),
+  redis: asFunction(() => (env.REDIS_URL ? new Redis(env.REDIS_URL) : undefined)),
+  bitcoind: asClass(Bitcoind, { lifetime: Lifetime.SINGLETON }),
+  electrs: asClass(ElectrsAPI, { lifetime: Lifetime.SINGLETON }),
 });
 
 export default container;

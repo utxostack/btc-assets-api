@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`\`/transaction/:txid\` - 200 1`] = `
+exports[`Get transaction by txid 1`] = `
 {
   "fee": 141,
   "locktime": 0,
