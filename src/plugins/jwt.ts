@@ -18,6 +18,10 @@ export default fp(async (fastify) => {
     try {
       await request.jwtVerify();
       const jwt = (await request.jwtDecode()) as { aud: string };
+      if (!jwt.aud) {
+        reply.status(401).send('Invalid audience');
+        return;
+      }
 
       const { origin, referer } = request.headers;
       let domain = '';
