@@ -27,6 +27,8 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   });
 }
 
+const isTokenRoutesEnable = env.NODE_ENV === 'production' ? env.ADMIN_USERNAME && env.ADMIN_PASSWORD : true;
+
 async function routes(fastify: FastifyInstance) {
   container.register({ logger: asValue(fastify.log) });
   fastify.decorate('container', container);
@@ -39,7 +41,9 @@ async function routes(fastify: FastifyInstance) {
   fastify.register(cache);
   fastify.register(rateLimit);
 
-  fastify.register(tokenRoutes, { prefix: '/token' });
+  if (isTokenRoutesEnable) {
+    fastify.register(tokenRoutes, { prefix: '/token' });
+  }
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
 
   fastify.setErrorHandler((error, _, reply) => {
