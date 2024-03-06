@@ -12,7 +12,7 @@ const envSchema = z.object({
   DOMAIN: z.string().optional(),
 
   SENTRY_DSN_URL: z.string().optional(),
-  REDIS_URL: z.string().optional(),
+  REDIS_URL: z.string(),
   RATE_LIMIT_PER_MINUTE: z.number().default(100),
 
   ADMIN_USERNAME: z.string().optional(),

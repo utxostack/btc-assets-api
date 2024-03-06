@@ -18,6 +18,7 @@ import options from './options';
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import cors from './plugins/cors';
 import { NetworkType } from './constants';
+import rgbppRoutes from './routes/rgbpp';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   Sentry.init({
@@ -53,6 +54,7 @@ async function routes(fastify: FastifyInstance) {
     fastify.register(tokenRoutes, { prefix: '/token' });
   }
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
+  fastify.register(rgbppRoutes, { prefix: '/rgbpp/v1' });
 
   fastify.setErrorHandler((error, _, reply) => {
     fastify.log.error(error);
