@@ -13,22 +13,11 @@ export default class TransactionQueue {
     this.queue = new Queue(this.queueName, {
       connection: redis,
     });
-    this.worker = new Worker(
-      this.queueName,
-      async (job) => {
-        // TODO: handle rgb++ ckb transaction
-        console.log('Processing job', job.id);
-        console.log('Job data', job.data);
-      },
-      {
-        connection: redis,
-        autorun: false,
-        concurrency: 10,
-        // FIXME: for local development
-        removeOnComplete: { count: 0 },
-        removeOnFail: { count: 0 },
-      },
-    );
+    this.worker = new Worker(this.queueName, this.process.bind(this), {
+      connection: redis,
+      autorun: false,
+      concurrency: 10,
+    });
   }
 
   async add(txid: BtcTxid, ckbTx: CKBTransaction) {
@@ -38,6 +27,12 @@ export default class TransactionQueue {
   async getJob(txid: BtcTxid) {
     const job = await Job.fromId(this.queue, txid);
     return job;
+  }
+
+  async process(job: Job<CKBTransaction>) {
+    // TODO: handle rgb++ ckb transaction
+    console.log('Processing job', job.id);
+    console.log('Job data', job.data);
   }
 
   async startProcess(onCompleted?: (job: Job<CKBTransaction>) => void) {

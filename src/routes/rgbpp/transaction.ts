@@ -24,6 +24,23 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, Type
     },
   );
 
+  fastify.get(
+    '/:txid',
+    {
+      schema: {
+        params: Type.Object({
+          txid: Type.String(),
+        }),
+      },
+    },
+    async (request, reply) => {
+      const { txid } = request.params;
+      const job = await fastify.transactionQueue.getJob(txid);
+      // TODO: get ckb tx hash from job return value, and query ckb node for tx status
+      reply.send({ job });
+    },
+  );
+
   done();
 };
 
