@@ -1,8 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/api/cron/process-transactions",
+      "destination": "/api/cron/process-transactions.ts"
+    },
+    {
       "source": "/(.*)",
       "destination": "/api/serverless.ts"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/process-transactions",
+      "schedule": "* * * * *"
     }
   ]
 }
