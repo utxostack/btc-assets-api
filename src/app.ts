@@ -72,6 +72,10 @@ export function buildFastify() {
   const app = fastify(options).withTypeProvider<ZodTypeProvider>();
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+
+  container.register({ logger: asValue(app.log) });
+  app.decorate('container', container);
+
   app.register(routes);
   return app;
 }
