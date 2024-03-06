@@ -9,7 +9,7 @@ export default async () => {
   const transactionQueue = container.resolve<TransactionQueue>('transactionQueue');
   await Promise.race([
     transactionQueue.startProcess((job) => {
-      logger.info('Job completed', job.id);
+      logger.info(`Job completed: ${job.id}`);
     }),
     new Promise((resolve) => setTimeout(resolve, VERCEL_MAX_DURATION)),
   ]);

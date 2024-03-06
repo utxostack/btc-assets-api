@@ -24,20 +24,6 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, Type
     },
   );
 
-  fastify.get(
-    '/ckb-tx',
-    {
-      schema: {},
-    },
-    async () => {
-      await Promise.race([
-        fastify.transactionQueue.process(),
-        new Promise((resolve) => setTimeout(resolve, 10 * 1000)),
-      ]);
-      await fastify.transactionQueue.close();
-    },
-  );
-
   done();
 };
 
