@@ -1,0 +1,38 @@
+---
+name: Unit Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install PNPM
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "21"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run Unit Tests
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          BITCOIN_JSON_RPC_URL: ${{ secrets.BITCOIN_JSON_RPC_URL }}
+          BITCOIN_JSON_RPC_USERNAME: ${{ secrets.BITCOIN_JSON_RPC_USERNAME }}
+          BITCOIN_JSON_RPC_PASSWORD: ${{ secrets.BITCOIN_JSON_RPC_PASSWORD }}
+          BITCOIN_ELECTRS_API_URL: ${{ secrets.BITCOIN_ELECTRS_API_URL }}
+        run: pnpm test
