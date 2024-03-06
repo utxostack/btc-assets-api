@@ -14,5 +14,10 @@
       "path": "/api/cron/process-transactions",
       "schedule": "* * * * *"
     }
-  ]
+  ],
+  "functions": {
+    "api/cron/process-transactions.ts": {
+      "maxDuration": 61
+    }
+  }
 }
