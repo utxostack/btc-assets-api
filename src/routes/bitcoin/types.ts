@@ -61,7 +61,7 @@ const Input = Type.Object({
   prevout: Output,
   scriptsig: Type.String(),
   scriptsig_asm: Type.String(),
-  witness: Type.Array(Type.String()),
+  witness: Type.Optional(Type.Array(Type.String())),
   is_coinbase: Type.Boolean(),
   sequence: Type.Number(),
 });
