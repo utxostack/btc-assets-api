@@ -1,17 +1,19 @@
 import fp from 'fastify-plugin';
 import * as Sentry from '@sentry/node';
-import TransactionQueue from '../services/transaction-queue';
+import TransactionManager from '../services/transaction';
 
 export default fp(async (fastify) => {
   try {
-    const transactionQueue: TransactionQueue = fastify.container.resolve('transactionQueue');
+    const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
     fastify.addHook('onReady', async () => {
-      transactionQueue.startProcess((job) => {
-        fastify.log.info(`Job completed: ${job.id}`);
+      transactionManager.startProcess({
+        onCompleted: (job) => {
+          fastify.log.info(`Job completed: ${job.id}`);
+        },
       });
     });
     fastify.addHook('onClose', async () => {
-      transactionQueue.close();
+      transactionManager.dispose();
     });
   } catch (err) {
     fastify.log.error(err);
