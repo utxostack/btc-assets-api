@@ -22,7 +22,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           address: z.string(),
         }),
         querystring: z.object({
-          min_satoshi: z.number().optional(),
+          min_satoshi: z.coerce.number().optional(),
         }),
         response: {
           200: Balance,
@@ -65,7 +65,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           address: z.string(),
         }),
         querystring: z.object({
-          min_satoshi: z.number().optional(),
+          min_satoshi: z.coerce.number().optional(),
         }),
         response: {
           200: z.array(UTXO),
