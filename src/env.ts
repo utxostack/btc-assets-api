@@ -35,6 +35,9 @@ const envSchema = z.object({
    * It is used to query the Bitcoin blockchain (balance, transactions, etc).
    */
   BITCOIN_ELECTRS_API_URL: z.string(),
+
+  CKB_RPC_URL: z.string(),
+  CKB_INDEXER_URL: z.string(),
 });
 
 export type Env = z.infer<typeof envSchema>;

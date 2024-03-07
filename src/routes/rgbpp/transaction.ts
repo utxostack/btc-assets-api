@@ -33,8 +33,15 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     async (request, reply) => {
       const { txid } = request.params;
       const job = await fastify.transactionManager.getTransactionRequest(txid);
+      if (!job) {
+        reply.status(404).send({ message: 'Transaction not found' });
+        return;
+      }
+      const ckbTxhash = job.returnvalue;
+      const tx = await fastify.ckbRPC.getTransaction(ckbTxhash);
+      console.log('tx', tx);
       // TODO: get ckb tx hash from job return value, and query ckb node for tx status
-      reply.send({ job });
+      reply.send(tx);
     },
   );
 
