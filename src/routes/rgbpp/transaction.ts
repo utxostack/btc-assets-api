@@ -1,19 +1,16 @@
-import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
+import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Server } from 'http';
+import z from 'zod';
 
-const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
-  fastify,
-  _,
-  done,
-) => {
+const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
     '/ckb-tx',
     {
       schema: {
-        body: Type.Object({
-          txid: Type.String(),
-          ckbTx: Type.Object({}),
+        body: z.object({
+          txid: z.string(),
+          ckbTx: z.object({}),
         }),
       },
     },
@@ -28,8 +25,8 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, Type
     '/:txid',
     {
       schema: {
-        params: Type.Object({
-          txid: Type.String(),
+        params: z.object({
+          txid: z.string(),
         }),
       },
     },
