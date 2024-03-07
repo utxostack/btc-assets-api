@@ -6,7 +6,7 @@ import transactionRoutes from './transaction';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 
 const rgbppRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
-  fastify.decorate('transactionQueue', container.resolve<TransactionQueue>('transactionQueue'));
+  fastify.decorate('transactionManager', container.resolve<TransactionQueue>('transactionManager'));
   fastify.register(transactionRoutes, { prefix: '/transaction' });
   done();
 };

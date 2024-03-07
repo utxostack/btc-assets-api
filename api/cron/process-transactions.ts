@@ -1,18 +1,20 @@
 import pino from 'pino';
 import container from '../../src/container';
-import TransactionQueue from '../../src/services/transaction-queue';
+import TransactionManager from '../../src/services/transaction';
 
 const VERCEL_MAX_DURATION = 60 * 1000;
 
 export default async () => {
   const logger = container.resolve<pino.BaseLogger>('logger');
-  const transactionQueue = container.resolve<TransactionQueue>('transactionQueue');
+  const transactionManager: TransactionManager = container.resolve('transactionManager');
   await Promise.race([
-    transactionQueue.startProcess((job) => {
-      logger.info(`Job completed: ${job.id}`);
+    transactionManager.startProcess({
+      onCompleted: (job) => {
+        logger.info(`Job completed: ${job.id}`);
+      },
     }),
     new Promise((resolve) => setTimeout(resolve, VERCEL_MAX_DURATION)),
   ]);
-  await transactionQueue.pauseProcess();
-  await transactionQueue.close();
+  await transactionManager.pauseProcess();
+  await transactionManager.dispose();
 };

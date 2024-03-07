@@ -4,7 +4,8 @@ import pino from 'pino';
 import Bitcoind from './services/bitcoind';
 import ElectrsAPI from './services/electrs';
 import { env } from './env';
-import TransactionQueue from './services/transaction-queue';
+import TransactionManager from './services/transaction';
+import Paymaster from './services/paymaster';
 
 export interface Cradle {
   env: typeof env;
@@ -12,7 +13,8 @@ export interface Cradle {
   redis: Redis;
   bitcoind: Bitcoind;
   electrs: ElectrsAPI;
-  transactionQueue: TransactionQueue;
+  paymaster: Paymaster;
+  transactionManager: TransactionManager;
 }
 
 const container = createContainer<Cradle>({
@@ -30,7 +32,8 @@ container.register({
   ),
   bitcoind: asClass(Bitcoind, { lifetime: Lifetime.SINGLETON }),
   electrs: asClass(ElectrsAPI, { lifetime: Lifetime.SINGLETON }),
-  transactionQueue: asClass(TransactionQueue, { lifetime: Lifetime.SINGLETON }),
+  paymaster: asClass(Paymaster, { lifetime: Lifetime.SINGLETON }),
+  transactionManager: asClass(TransactionManager, { lifetime: Lifetime.SINGLETON }),
 });
 
 export default container;

@@ -1,26 +1,26 @@
+import { Cell } from '@ckb-lumos/lumos';
 import { Cradle } from '../container';
 import { Queue, Worker } from 'bullmq';
 
-interface Cell {}
-
 interface IPaymaster {
-  enqueueCell(cell: Cell): Promise<void>;
+  enqueueUnspentCell(cell: Cell): Promise<void>;
   verifyTransaction(txid: string): Promise<boolean>;
 }
 
+const PAYMASTER_CELL_QUEUE_NAME = 'rgbpp-ckb-paymaster-cell-queue';
+
 class CellQueue {
-  private queueName = 'paymaster-cell-queue';
   private queue: Queue<Cell>;
   private worker: Worker<Cell>;
 
   constructor({ redis }: Cradle) {
     const opts = { connection: redis };
-    this.queue = new Queue(this.queueName, opts);
-    this.worker = new Worker(this.queueName, undefined, opts);
+    this.queue = new Queue(PAYMASTER_CELL_QUEUE_NAME, opts);
+    this.worker = new Worker(PAYMASTER_CELL_QUEUE_NAME, undefined, opts);
   }
 
   async add(cell: Cell) {
-    await this.queue.add(this.queueName, cell);
+    await this.queue.add(PAYMASTER_CELL_QUEUE_NAME, cell);
   }
 
   async getNext(token: string) {
@@ -36,7 +36,7 @@ export default class Paymaster implements IPaymaster {
     this.cellQueue = new CellQueue(cradle);
   }
 
-  async enqueueCell(cell: Cell) {
+  async enqueueUnspentCell(cell: Cell) {
     await this.cellQueue.add(cell);
   }
 

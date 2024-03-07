@@ -16,7 +16,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     },
     async (request, reply) => {
       const { txid, ckbTx } = request.body;
-      const job = await fastify.transactionQueue.add(txid, ckbTx);
+      const job = await fastify.transactionManager.enqueueTransaction({ txid, transaction: ckbTx });
       reply.send({ job });
     },
   );
@@ -32,7 +32,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     },
     async (request, reply) => {
       const { txid } = request.params;
-      const job = await fastify.transactionQueue.getJob(txid);
+      const job = await fastify.transactionManager.getTransactionRequest(txid);
       // TODO: get ckb tx hash from job return value, and query ckb node for tx status
       reply.send({ job });
     },
