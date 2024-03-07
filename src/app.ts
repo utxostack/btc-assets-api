@@ -15,7 +15,7 @@ import { env } from './env';
 import container from './container';
 import { asValue } from 'awilix';
 import options from './options';
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import cors from './plugins/cors';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
@@ -55,7 +55,9 @@ async function routes(fastify: FastifyInstance) {
 }
 
 export function buildFastify() {
-  const app = fastify(options).withTypeProvider<TypeBoxTypeProvider>();
+  const app = fastify(options).withTypeProvider<ZodTypeProvider>();
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
   app.register(routes);
   return app;
 }
