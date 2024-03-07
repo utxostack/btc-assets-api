@@ -1,20 +1,17 @@
-import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import { Block } from './types';
 import { CUSTOM_HEADERS } from '../../constants';
+import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import z from 'zod';
 
-const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
-  fastify,
-  _,
-  done,
-) => {
+const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.get(
     '/:hash',
     {
       schema: {
-        params: Type.Object({
-          hash: Type.String(),
+        params: z.object({
+          hash: z.string(),
         }),
         response: {
           200: Block,
@@ -33,12 +30,12 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     '/:hash/header',
     {
       schema: {
-        params: Type.Object({
-          hash: Type.String(),
+        params: z.object({
+          hash: z.string(),
         }),
         response: {
-          200: Type.Object({
-            header: Type.String(),
+          200: z.object({
+            header: z.string(),
           }),
         },
       },
@@ -57,12 +54,12 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTy
     '/height/:height',
     {
       schema: {
-        params: Type.Object({
-          height: Type.Number(),
+        params: z.object({
+          height: z.number(),
         }),
         response: {
-          200: Type.Object({
-            hash: Type.String(),
+          200: z.object({
+            hash: z.string(),
           }),
         },
       },

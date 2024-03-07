@@ -1,24 +1,21 @@
-import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import { Transaction } from './types';
 import { CUSTOM_HEADERS } from '../../constants';
+import z from 'zod';
+import { ZodTypeProvider } from 'fastify-type-provider-zod';
 
-const transactionRoutes: FastifyPluginCallback<
-  Record<never, never>,
-  Server,
-  TypeBoxTypeProvider
-> = (fastify, _, done) => {
+const transactionRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
     '',
     {
       schema: {
-        body: Type.Object({
-          txHex: Type.String(),
+        body: z.object({
+          txHex: z.string(),
         }),
         response: {
-          200: Type.Object({
-            txid: Type.String(),
+          200: z.object({
+            txid: z.string(),
           }),
         },
       },
@@ -36,8 +33,8 @@ const transactionRoutes: FastifyPluginCallback<
     '/:txid',
     {
       schema: {
-        params: Type.Object({
-          txid: Type.String(),
+        params: z.object({
+          txid: z.string(),
         }),
         response: {
           200: Transaction,

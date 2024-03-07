@@ -1,4 +1,3 @@
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import ElectrsAPI from '../../services/electrs';
@@ -8,12 +7,9 @@ import blockRoutes from './block';
 import transactionRoutes from './transaction';
 import addressRoutes from './address';
 import container from '../../container';
+import { ZodTypeProvider } from 'fastify-type-provider-zod';
 
-const bitcoinRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
-  fastify,
-  _,
-  done,
-) => {
+const bitcoinRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.decorate('electrs', container.resolve<ElectrsAPI>('electrs'));
   fastify.decorate('bitcoind', container.resolve<Bitcoind>('bitcoind'));
 
