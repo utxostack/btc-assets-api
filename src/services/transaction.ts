@@ -1,13 +1,13 @@
-import { Cell } from '@ckb-lumos/lumos';
 import { Cradle } from '../container';
 import { DelayedError, Job, Queue, Worker } from 'bullmq';
 import { AxiosError } from 'axios';
+import { InputCell, OutputCell } from '../routes/rgbpp/types';
 
 interface ITransactionRequest {
   txid: string;
   transaction: {
-    inputs: Cell[];
-    outputs: Cell[];
+    inputs: InputCell[];
+    outputs: OutputCell[];
   };
 }
 
@@ -41,9 +41,6 @@ export default class TransactionManager implements ITransactionManager {
       connection: cradle.redis,
       autorun: false,
       concurrency: 10,
-      // TODO: for development only
-      removeOnComplete: { count: 0 },
-      removeOnFail: { count: 0 },
     });
   }
 
@@ -68,6 +65,8 @@ export default class TransactionManager implements ITransactionManager {
       // TODO: add paymaster cell into inputs if necessary
       // TODO: sign CKB transaction and broadcast
       // TODO: wait for CKB transaction to be confirmed
+
+      return '0x96090236087edd4b0acc847ec62e2e2e88788d48affb97aab0d1e27453776d5b';
     } catch (err) {
       if (err instanceof AxiosError) {
         // delay job if transaction not broadcasted yet
