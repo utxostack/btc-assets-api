@@ -1,7 +1,7 @@
 import { AwilixContainer, Cradle } from '../../container';
 import Bitcoind from '../../services/bitcoind';
 import ElectrsAPI from '../../services/electrs';
-import TransactionManager from '../../services/transaction-manager';
+import TransactionManager from '../../services/transaction';
 import Paymaster from '../../services/paymaster';
 import { RPC } from '@ckb-lumos/lumos';
 
