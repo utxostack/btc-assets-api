@@ -2,6 +2,7 @@ import fp from 'fastify-plugin';
 import swagger from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
 import { jsonSchemaTransform } from 'fastify-type-provider-zod';
+import { env } from '../env';
 
 export const DOCS_ROUTE_PREFIX = '/docs';
 
@@ -24,6 +25,19 @@ export default fp(async (fastify) => {
       },
     },
     transform: jsonSchemaTransform,
+    transformObject: ({ swaggerObject }) => {
+      if (env.NODE_ENV === 'production') {
+        const { paths = {} } = swaggerObject;
+        const newPaths = Object.entries(paths).reduce((acc, [path, methods]) => {
+          if (path.startsWith('/token')) {
+            return acc;
+          }
+          return { ...acc, [path]: methods };
+        }, {});
+        swaggerObject.paths = newPaths;
+      }
+      return swaggerObject;
+    },
   });
   fastify.register(swaggerUI, {
     routePrefix: DOCS_ROUTE_PREFIX,
