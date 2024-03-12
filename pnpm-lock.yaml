@@ -65,6 +65,9 @@ dependencies:
   pino:
     specifier: ^8.19.0
     version: 8.19.0
+  std-env:
+    specifier: ^3.7.0
+    version: 3.7.0
   zod:
     specifier: ^3.22.4
     version: 3.22.4
@@ -4557,7 +4560,6 @@ packages:
 
   /std-env@3.7.0:
     resolution: {integrity: sha512-JPbdCEQLj1w5GilpiHAx3qJvFndqybBysA3qUOnznweH4QbNYUsW/ea8QzSrnh0vNsezMMw5bcVool8lM0gwzg==}
-    dev: true
 
   /steed@1.1.3:
     resolution: {integrity: sha512-EUkci0FAUiE4IvGTSKcDJIQ/eRUP2JJb56+fvZ4sdnguLTqIdKjSxUe138poW8mkvKWXW2sFPrgTsxqoISnmoA==}
