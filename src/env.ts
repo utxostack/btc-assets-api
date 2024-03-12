@@ -35,9 +35,15 @@ const envSchema = z.object({
    * It is used to query the Bitcoin blockchain (balance, transactions, etc).
    */
   BITCOIN_ELECTRS_API_URL: z.string(),
-
+  /**
+   * The URL of the CKB JSON-RPC server and indexer.
+   */
   CKB_RPC_URL: z.string(),
   CKB_INDEXER_URL: z.string(),
+  /**
+   * Paymaster private key, used to sign the transaction with paymaster cell.
+   */
+  PAYMASTER_PRIVATE_KEY: z.string(),
 });
 
 export type Env = z.infer<typeof envSchema>;
