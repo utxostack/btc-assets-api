@@ -58,7 +58,7 @@ export default class TransactionManager implements ITransactionManager {
    * Get commitment from Bitcoin transactions
    * depended on @rgbpp-sdk/btc opReturnScriptPubKeyToData method
    */
-  private async getCommitmentFromBitcoin(tx: Transaction): Promise<Buffer> {
+  private async getCommitmentFromBtcTx(tx: Transaction): Promise<Buffer> {
     const opReturn = tx.vout.find((vout) => vout.scriptpubkey_type === 'op_return');
     if (!opReturn) {
       throw new Error('No OP_RETURN output found');
@@ -78,7 +78,7 @@ export default class TransactionManager implements ITransactionManager {
     const btcTx = await this.cradle.electrs.getTransaction(txid);
 
     const { commitment, ckbRawTx } = ckbVirtualResult;
-    const btcTxCommitment = await this.getCommitmentFromBitcoin(btcTx);
+    const btcTxCommitment = await this.getCommitmentFromBtcTx(btcTx);
     if (commitment !== btcTxCommitment.toString('hex')) {
       return false;
     }
@@ -114,12 +114,13 @@ export default class TransactionManager implements ITransactionManager {
         throw new Error('Transaction not verified');
       }
 
-      console.log('Processing job', job.id);
       // TODO: generate RGB_lock witness
       // TODO: add paymaster cell into inputs if necessary
       // TODO: sign CKB transaction and broadcast
       // TODO: wait for CKB transaction to be confirmed
 
+      // FIXME: return a fake tx hash, job.returnvalue repensents the ckb tx hash
+      // so we can use btc txid to get ckb tx hash, then query ckb tx with it
       return '0x96090236087edd4b0acc847ec62e2e2e88788d48affb97aab0d1e27453776d5b';
     } catch (err) {
       if (err instanceof AxiosError) {
