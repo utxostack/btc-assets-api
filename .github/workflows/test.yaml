@@ -36,4 +36,6 @@ jobs:
           BITCOIN_JSON_RPC_USERNAME: ${{ secrets.BITCOIN_JSON_RPC_USERNAME }}
           BITCOIN_JSON_RPC_PASSWORD: ${{ secrets.BITCOIN_JSON_RPC_PASSWORD }}
           BITCOIN_ELECTRS_API_URL: ${{ secrets.BITCOIN_ELECTRS_API_URL }}
+          CKB_RPC_URL: ${{ secrets.CKB_RPC_URL }}
+          CKB_INDEXER_URL: ${{ secrets.CKB_INDEXER_URL }}
         run: pnpm test
