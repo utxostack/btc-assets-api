@@ -1,14 +1,17 @@
 import { Cradle } from '../container';
 import { DelayedError, Job, Queue, Worker } from 'bullmq';
 import { AxiosError } from 'axios';
-import { InputCell, OutputCell } from '../routes/rgbpp/types';
+import { CKBVirtualResult } from '../routes/rgbpp/types';
+import { Transaction } from '../routes/bitcoin/types';
+import { opReturnScriptPubKeyToData } from '@rgbpp-sdk/btc';
+// FIXME: import calculateCommitment from @rgbpp-sdk/ckb
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+import { calculateCommitment } from '@rgbpp-sdk/ckb';
 
 interface ITransactionRequest {
   txid: string;
-  transaction: {
-    inputs: InputCell[];
-    outputs: OutputCell[];
-  };
+  ckbVirtualResult: CKBVirtualResult;
 }
 
 interface IProcessCallbacks {
@@ -18,7 +21,6 @@ interface IProcessCallbacks {
 
 interface ITransactionManager {
   enqueueTransaction(request: ITransactionRequest): Promise<void>;
-  verifyTransactionRequest(request: ITransactionRequest): Promise<boolean>;
   getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined>;
   startProcess(callbacks?: IProcessCallbacks): Promise<void>;
   pauseProcess(): Promise<void>;
@@ -27,6 +29,14 @@ interface ITransactionManager {
 
 const TRANSACTION_QUEUE_NAME = 'rgbpp-ckb-transaction-queue';
 
+/**
+ * TransactionManager
+ * responsible for processing RGB++ CKB transactions, including:
+ * - verifying transaction requests, including checking the commitment
+ * - enqueueing transaction requests to the queue
+ * - processing transaction when it's confirmed on L1(Bitcoin)
+ * - sending CKB transaction to the network and waiting for confirmation
+ */
 export default class TransactionManager implements ITransactionManager {
   private cradle: Cradle;
   private queue: Queue<ITransactionRequest>;
@@ -44,20 +54,64 @@ export default class TransactionManager implements ITransactionManager {
     });
   }
 
-  private async process(job: Job<ITransactionRequest>, token?: string) {
-    const { txid } = job.data;
-    try {
-      const btcTx = await this.cradle.electrs.getTransaction(txid);
-      // TODO: verify transaction and commitment
+  /**
+   * Get commitment from Bitcoin transactions
+   * depended on @rgbpp-sdk/btc opReturnScriptPubKeyToData method
+   */
+  private async getCommitmentFromBitcoin(tx: Transaction): Promise<Buffer> {
+    const opReturn = tx.vout.find((vout) => vout.scriptpubkey_type === 'op_return');
+    if (!opReturn) {
+      throw new Error('No OP_RETURN output found');
+    }
+    const buffer = Buffer.from(opReturn.scriptpubkey, 'hex');
+    return opReturnScriptPubKeyToData(buffer);
+  }
 
-      const btcInfo = await this.cradle.bitcoind.getBlockchainInfo();
-      const blockHeight = btcTx.status.block_height ?? btcInfo.blocks;
-      // TODO: use different confirmation threshold for L1 and L2 transactions
-      const isConfirmed = btcInfo.blocks - blockHeight >= 1;
-      if (!isConfirmed) {
-        // delay job if transaction not confirmed yet
-        await this.moveJobToDelayed(job, token);
-        return;
+  /**
+   * Verify transaction request
+   * - check if the commitment matches the Bitcoin transaction
+   * - check if the CKB Virtual Transaction is valid
+   * - check if the Bitcoin transaction is confirmed
+   */
+  public async verifyTransaction(request: ITransactionRequest): Promise<boolean> {
+    const { txid, ckbVirtualResult } = request;
+    const btcTx = await this.cradle.electrs.getTransaction(txid);
+
+    const { commitment, ckbRawTx } = ckbVirtualResult;
+    const btcTxCommitment = await this.getCommitmentFromBitcoin(btcTx);
+    if (commitment !== btcTxCommitment.toString('hex')) {
+      return false;
+    }
+    if (commitment !== calculateCommitment(ckbRawTx)) {
+      return false;
+    }
+
+    const btcInfo = await this.cradle.bitcoind.getBlockchainInfo();
+    const blockHeight = btcTx.status.block_height ?? btcInfo.blocks;
+    // TODO: use different confirmation threshold for L1 and L2 transactions
+    const isConfirmed = btcInfo.blocks - blockHeight >= 1;
+    if (!isConfirmed) {
+      throw new DelayedError();
+    }
+    return true;
+  }
+
+  /**
+   * Move job to delayed Queue
+   */
+  private async moveJobToDelayed(job: Job<ITransactionRequest>, token?: string) {
+    this.cradle.logger.info(`[TransactionManager] Moving job ${job.id} to delayed queue`);
+    // FIXME: choose a better delay time
+    await job.moveToDelayed(Date.now() + 1000 * 60, token);
+    // https://docs.bullmq.io/patterns/process-step-jobs#delaying
+    throw new DelayedError();
+  }
+
+  public async process(job: Job<ITransactionRequest>, token?: string) {
+    try {
+      const isVerified = await this.verifyTransaction(job.data);
+      if (!isVerified) {
+        throw new Error('Transaction not verified');
       }
 
       console.log('Processing job', job.id);
@@ -75,25 +129,17 @@ export default class TransactionManager implements ITransactionManager {
           return;
         }
       }
+      // delay job if transaction not confirmed yet
+      if (err instanceof DelayedError) {
+        await this.moveJobToDelayed(job, token);
+        return;
+      }
       throw err;
     }
   }
 
-  private async moveJobToDelayed(job: Job<ITransactionRequest>, token?: string) {
-    this.cradle.logger.info(`[TransactionManager] Moving job ${job.id} to delayed queue`);
-    // FIXME: choose a better delay time
-    await job.moveToDelayed(Date.now() + 1000 * 60, token);
-    // https://docs.bullmq.io/patterns/process-step-jobs#delaying
-    throw new DelayedError();
-  }
-
   public async enqueueTransaction(request: ITransactionRequest): Promise<void> {
     await this.queue.add(request.txid, request, { jobId: request.txid, delay: 2000 });
-  }
-
-  public async verifyTransactionRequest(request: ITransactionRequest): Promise<boolean> {
-    console.log('Verifying transaction request', request);
-    return true;
   }
 
   public async getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined> {

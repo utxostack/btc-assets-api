@@ -1,6 +1,6 @@
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
-import { Balance, BalanceType, Transaction, UTXO, UTXOType } from './types';
+import { Balance, Balance, Transaction, UTXO, UTXO } from './types';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import z from 'zod';
@@ -36,7 +36,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { min_satoshi } = request.query;
       const utxos = await fastify.electrs.getUtxoByAddress(address);
       return utxos.reduce(
-        (acc: BalanceType, utxo: UTXOType) => {
+        (acc: Balance, utxo: UTXO) => {
           if (utxo.status.confirmed) {
             if (min_satoshi && utxo.value < min_satoshi) {
               acc.dust_satoshi += utxo.value;
