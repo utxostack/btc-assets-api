@@ -1,4 +1,4 @@
-import { ChainInfoType } from '../routes/bitcoin/types';
+import { ChainInfo } from '../routes/bitcoin/types';
 import axios, { AxiosInstance } from 'axios';
 import * as Sentry from '@sentry/node';
 import { addLoggerInterceptor } from '../utils/interceptors';
@@ -57,7 +57,7 @@ export default class Bitcoind {
 
   // https://developer.bitcoin.org/reference/rpc/getblockchaininfo.html
   public async getBlockchainInfo() {
-    return this.callMethod<ChainInfoType>('getblockchaininfo', []);
+    return this.callMethod<ChainInfo>('getblockchaininfo', []);
   }
 
   // https://developer.bitcoin.org/reference/rpc/sendrawtransaction.html

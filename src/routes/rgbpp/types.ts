@@ -36,6 +36,16 @@ export const OutputCell = z.object({
 });
 export type OutputCell = z.infer<typeof OutputCell>;
 
+export const CKBRawTransaction = z.object({
+  version: z.string(),
+  cellDeps: z.array(CellDep),
+  headerDeps: z.array(z.string()),
+  inputs: z.array(InputCell),
+  outputs: z.array(OutputCell),
+  outputsData: z.array(z.string()),
+});
+export type CKBRawTransaction = z.infer<typeof CKBRawTransaction>;
+
 export const CKBTransaction = z.object({
   cellDeps: z.array(CellDep),
   inputs: z.array(InputCell),
@@ -47,3 +57,11 @@ export const CKBTransaction = z.object({
   witnesses: z.array(z.string()),
 });
 export type CKBTransaction = z.infer<typeof CKBTransaction>;
+
+export const CKBVirtualResult = z.object({
+  ckbRawTx: CKBRawTransaction,
+  commitment: z.string(),
+  needPaymasterCell: z.boolean(),
+  sumInputsCapacity: z.bigint(),
+});
+export type CKBVirtualResult = z.infer<typeof CKBVirtualResult>;

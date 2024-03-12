@@ -2,7 +2,7 @@ import { FastifyPluginCallback } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Server } from 'http';
 import z from 'zod';
-import { CKBTransaction, InputCell, OutputCell } from './types';
+import { CKBTransaction, CKBVirtualResult } from './types';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
@@ -11,16 +11,13 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
       schema: {
         body: z.object({
           txid: z.string(),
-          ckbTx: z.object({
-            inputs: z.array(InputCell),
-            outputs: z.array(OutputCell),
-          }),
+          ckbVirtualResult: CKBVirtualResult,
         }),
       },
     },
     async (request, reply) => {
-      const { txid, ckbTx: transaction } = request.body;
-      const job = await fastify.transactionManager.enqueueTransaction({ txid, transaction });
+      const { txid, ckbVirtualResult } = request.body;
+      const job = await fastify.transactionManager.enqueueTransaction({ txid, ckbVirtualResult });
       reply.send({ job });
     },
   );

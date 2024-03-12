@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { BlockType, TransactionType, UTXOType } from '../routes/bitcoin/types';
+import { Block, Transaction, UTXO } from '../routes/bitcoin/types';
 import * as Sentry from '@sentry/node';
 import { Cradle } from '../container';
 import { addLoggerInterceptor } from '../utils/interceptors';
@@ -43,25 +43,25 @@ export default class ElectrsAPI {
 
   // https://github.com/blockstream/esplora/blob/master/API.md#get-addressaddressutxo
   public async getUtxoByAddress(address: string) {
-    const response = await this.get<UTXOType[]>(`/address/${address}/utxo`);
+    const response = await this.get<UTXO[]>(`/address/${address}/utxo`);
     return response.data;
   }
 
   // https://github.com/blockstream/esplora/blob/master/API.md#get-addressaddresstxs
   public async getTransactionsByAddress(address: string) {
-    const response = await this.get<TransactionType[]>(`/address/${address}/txs`);
+    const response = await this.get<Transaction[]>(`/address/${address}/txs`);
     return response.data;
   }
 
   // https://github.com/blockstream/esplora/blob/master/API.md#get-txtxid
   public async getTransaction(txid: string) {
-    const response = await this.get<TransactionType>(`/tx/${txid}`);
+    const response = await this.get<Transaction>(`/tx/${txid}`);
     return response.data;
   }
 
   // https://github.com/blockstream/esplora/blob/master/API.md#get-blockhash
   public async getBlockByHash(hash: string) {
-    const response = await this.get<BlockType>(`/block/${hash}`);
+    const response = await this.get<Block>(`/block/${hash}`);
     return response.data;
   }
 
