@@ -82,4 +82,49 @@ describe('Paymaster', () => {
     expect(paymaster.refillCellQueue).toHaveBeenCalled();
     expect(paymaster['worker'].getNextJob).not.toHaveBeenCalled();
   });
+
+  test('refillCellQueue: should add cells to the queue successfully', async () => {
+    const mockCells: Cell[] = [
+      {
+        cellOutput: {
+          capacity: '0xa',
+          lock: paymaster['lockScript'],
+        },
+        data: '0x',
+      },
+      {
+        cellOutput: {
+          capacity: '0xa',
+          lock: paymaster['lockScript'],
+        },
+        data: '0x',
+      },
+    ];
+    const mockCollector = {
+      collect: async function* () {
+        yield* mockCells;
+      },
+    };
+    vi.spyOn(paymaster['cradle'].ckbIndexer, 'collector').mockReturnValue(mockCollector);
+    vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(9);
+    vi.spyOn(paymaster['queue'], 'add');
+
+    const filled = await paymaster.refillCellQueue();
+    expect(filled).toBe(1);
+    expect(paymaster['queue'].add).toHaveBeenCalledTimes(1);
+  });
+
+  test('refillCellQueue: should return 0 when no cells are found to add', async () => {
+    const mockCollector = {
+      collect: async function* () {
+        // No cells yielded
+      },
+    };
+    vi.spyOn(paymaster['cradle'].ckbIndexer, 'collector').mockReturnValue(mockCollector);
+    vi.spyOn(paymaster['queue'], 'add');
+
+    const filled = await paymaster.refillCellQueue();
+    expect(filled).toBe(0);
+    expect(paymaster['queue'].add).not.toHaveBeenCalled();
+  });
 });
