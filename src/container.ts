@@ -1,4 +1,4 @@
-import { createContainer, InjectionMode, asValue, asClass, Lifetime, asFunction } from 'awilix';
+import { createContainer, InjectionMode, asValue, asClass, asFunction } from 'awilix';
 import { Redis } from 'ioredis';
 import pino from 'pino';
 import Bitcoind from './services/bitcoind';
@@ -6,16 +6,19 @@ import ElectrsAPI from './services/electrs';
 import { env } from './env';
 import TransactionManager from './services/transaction';
 import Paymaster from './services/paymaster';
-import { RPC as CkbRPC } from '@ckb-lumos/lumos';
+import { RPC as CkbRPC, Indexer as CkbIndexer } from '@ckb-lumos/lumos';
+import Unlocker from './services/unlocker';
 
 export interface Cradle {
   env: typeof env;
   logger: pino.BaseLogger;
   redis: Redis;
   ckbRpc: CkbRPC;
+  ckbIndexer: CkbIndexer;
   bitcoind: Bitcoind;
   electrs: ElectrsAPI;
   paymaster: Paymaster;
+  unlocker: Unlocker;
   transactionManager: TransactionManager;
 }
 
@@ -33,10 +36,11 @@ container.register({
     }),
   ),
   ckbRpc: asFunction(() => new CkbRPC(env.CKB_RPC_URL)).singleton(),
-  bitcoind: asClass(Bitcoind, { lifetime: Lifetime.SINGLETON }),
-  electrs: asClass(ElectrsAPI, { lifetime: Lifetime.SINGLETON }),
-  paymaster: asClass(Paymaster, { lifetime: Lifetime.SINGLETON }),
-  transactionManager: asClass(TransactionManager, { lifetime: Lifetime.SINGLETON }),
+  ckbIndexer: asFunction(() => new CkbIndexer(env.CKB_INDEXER_URL)).singleton(),
+  bitcoind: asClass(Bitcoind).singleton(),
+  electrs: asClass(ElectrsAPI).singleton(),
+  paymaster: asClass(Paymaster).singleton(),
+  transactionManager: asClass(TransactionManager).singleton(),
 });
 
 export default container;
