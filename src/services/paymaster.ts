@@ -16,6 +16,10 @@ interface IPaymaster {
 
 export const PAYMASTER_CELL_QUEUE_NAME = 'rgbpp-ckb-paymaster-cell-queue';
 
+/**
+ * Paymaster
+ * responsible for managing the paymaster cells and signing the CKB transactions.
+ */
 export default class Paymaster implements IPaymaster {
   private cradle: Cradle;
   private queue: Queue<Cell>;
@@ -57,6 +61,10 @@ export default class Paymaster implements IPaymaster {
     return lockScript;
   }
 
+  /**
+   * Get the next paymaster cell job from the queue
+   * will refill the queue if the count is less than the threshold
+   */
   public async getNextCellJob(token: string) {
     // avoid the refilling to be triggered multiple times
     if (!this.refilling) {
@@ -76,8 +84,12 @@ export default class Paymaster implements IPaymaster {
     return job;
   }
 
+  /**
+   * Refill the paymaster cell queue
+   * get cells from the indexer and add them to the queue
+   * make sure the queue has enough cells to use for the next transactions
+   */
   public async refillCellQueue() {
-    this.cradle.logger.info('[Paymaster] Refilling paymaster cell queue...');
     const queueSize = await this.queue.getWaitingCount();
     const capacity = this.cellCapacity.toString(16);
     const collector = this.cradle.ckbIndexer.collector({
@@ -88,24 +100,29 @@ export default class Paymaster implements IPaymaster {
 
     let filled = 0;
     for await (const cell of cells) {
-      await this.queue.add(PAYMASTER_CELL_QUEUE_NAME, cell);
+      const outPoint = cell.outPoint!;
+      await this.queue.add(PAYMASTER_CELL_QUEUE_NAME, cell, {
+        // use the outPoint as the jobId to avoid duplicate cells
+        jobId: `${outPoint.txHash}:${outPoint.index}`,
+      });
+      // count the filled cells, it maybe less than the cells we added
+      // because we may have duplicate cells, but it's work fine
       filled += 1;
       if (queueSize + filled >= this.presetCount) {
         break;
       }
     }
-    this.cradle.logger.info(`[Paymaster] Refilled ${filled} paymaster cells`);
     return filled;
   }
 
+  /**
+   * Append the paymaster cell to the CKB transaction and sign the transactions
+   */
   public async appendCellAndSignTx(ckbVirtualResult: CKBVirtualResult) {
     const { ckbRawTx, sumInputsCapacity } = ckbVirtualResult;
     const token = randomUUID();
+    // FIXME: getNextCellJob maybe suspended if the queue is empty
     const cellJob = await this.getNextCellJob(token);
-    if (!cellJob) {
-      // FIXME: throw a custom error and capture error to sentry
-      throw new Error('Paymaster cell not found');
-    }
     const paymasterCell = cellJob.data;
     const signedTx = await appendPaymasterCellAndSignCkbTx(
       this.privateKey,
