@@ -91,9 +91,6 @@ dependencies:
     version: 3.22.4
 
 devDependencies:
-  '@types/ioredis-mock':
-    specifier: ^8.2.5
-    version: 8.2.5
   '@types/lodash':
     specifier: ^4.17.0
     version: 4.17.0
@@ -121,9 +118,6 @@ devDependencies:
   eslint:
     specifier: ^8.56.0
     version: 8.56.0
-  ioredis-mock:
-    specifier: ^8.9.0
-    version: 8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.3.2)
   lint-staged:
     specifier: ^15.2.2
     version: 15.2.2
@@ -361,7 +355,7 @@ packages:
   /@bitcoinerlab/secp256k1@1.1.1:
     resolution: {integrity: sha512-uhjW51WfVLpnHN7+G0saDcM/k9IqcyTbZ+bDgLF3AX8V/a3KXSE9vn7UPBrcdU72tp0J4YPR7BHp2m7MLAZ/1Q==}
     dependencies:
-      '@noble/hashes': 1.3.3
+      '@noble/hashes': 1.4.0
       '@noble/secp256k1': 1.7.1
     dev: false
 
@@ -969,12 +963,9 @@ packages:
     resolution: {integrity: sha512-6EwiSjwWYP7pTckG6I5eyFANjPhmPjUX9JRLUSfNPC7FX7zK9gyZAfUEaECL6ALTpGX5AjnBq3C9XmVWPitNpw==}
     dev: true
 
-  /@ioredis/as-callback@3.0.0:
-    resolution: {integrity: sha512-Kqv1rZ3WbgOrS+hgzJ5xG5WQuhvzzSTRYvNeyPMLOAM78MHSnuKI20JeJGbpuAt//LCuP0vsexZcorqW7kWhJg==}
-    dev: true
-
   /@ioredis/commands@1.2.0:
     resolution: {integrity: sha512-Sx1pU8EM64o2BrqNpEO1CNLtKQwyhuXuqyfH7oGKCk+1a33d2r5saW8zNwm3j6BTExtjrv2BxTgzzkMwts6vGg==}
+    dev: false
 
   /@isaacs/cliui@8.0.2:
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -1108,43 +1099,43 @@ packages:
     dev: false
     optional: true
 
-  /@nervosnetwork/ckb-sdk-core@0.109.0:
-    resolution: {integrity: sha512-c0pMKrZxVG0zRaPOMY+sV7CubW+Fr1YGEj/c3iEZadlXQPeeZ7wdhblG/F4oEtGebRv2lO+F8gTL9FwQlHAXRw==}
+  /@nervosnetwork/ckb-sdk-core@0.109.1:
+    resolution: {integrity: sha512-YU3yJZvz69WU6Bw//vRxzxLGcIj74CwGffdp6GYZbQpZwFaACT6FCojvOMjHIyJ8Rw32r114LhMKHvyBwagWjw==}
     dependencies:
-      '@nervosnetwork/ckb-sdk-rpc': 0.109.0
-      '@nervosnetwork/ckb-sdk-utils': 0.109.0
-      '@nervosnetwork/ckb-types': 0.109.0
+      '@nervosnetwork/ckb-sdk-rpc': 0.109.1
+      '@nervosnetwork/ckb-sdk-utils': 0.109.1
+      '@nervosnetwork/ckb-types': 0.109.1
       tslib: 2.3.1
     transitivePeerDependencies:
       - debug
     dev: false
 
-  /@nervosnetwork/ckb-sdk-rpc@0.109.0:
-    resolution: {integrity: sha512-qkb2TBMb/gqECNqzVlrx9p6V4TdyYcGlN4sOgjVrrDQw7wVcezZFMjj6usNZZLxzbyEmjksTxbAucUnbftumxA==}
+  /@nervosnetwork/ckb-sdk-rpc@0.109.1:
+    resolution: {integrity: sha512-RoUhXmaOm1g7ga1G3guNTzSDit79k7nqj3rYbk2jSlULRo34g9L06juU24hmwwuFZfiCaARI9mgACu0ScW9itw==}
     dependencies:
-      '@nervosnetwork/ckb-sdk-utils': 0.109.0
-      axios: 0.21.4
+      '@nervosnetwork/ckb-sdk-utils': 0.109.1
+      axios: 1.6.7
       tslib: 2.3.1
     transitivePeerDependencies:
       - debug
     dev: false
 
-  /@nervosnetwork/ckb-sdk-utils@0.109.0:
-    resolution: {integrity: sha512-/lqq9qU2COhQZx6chfTzASbB+v9dFxX5WfdKpvMNvRT6tOHRGTVRgjBBS++GXLKpmn1934EJOlYOc6Peeo7g6g==}
+  /@nervosnetwork/ckb-sdk-utils@0.109.1:
+    resolution: {integrity: sha512-KK8w+JZGPt/Gq/Y0b87AuQp8mGR46fBSkqnjwASdBAi2rts9tJ6srEaZ3FVVa9LtjTlThQ120hex+mcyastrkQ==}
     dependencies:
-      '@nervosnetwork/ckb-types': 0.109.0
+      '@nervosnetwork/ckb-types': 0.109.1
       bech32: 2.0.0
       elliptic: 6.5.4
       jsbi: 3.1.3
       tslib: 2.3.1
     dev: false
 
-  /@nervosnetwork/ckb-types@0.109.0:
-    resolution: {integrity: sha512-ZB3zpotHP8KDTex9Jxv7vi3sxVEqWijQjDmNA9laIEk01aoKVMyBZ09ByKuU46/88qgjmDsu3Ob7HqGaoFVtKQ==}
+  /@nervosnetwork/ckb-types@0.109.1:
+    resolution: {integrity: sha512-mD5mOCGa1JertKZekHSUVYwFPW27VJ0/MdwblWvEEK7pNIU6az+dLiIxgvl4TxR+j+7/GqmXNH1U59CM92y/wg==}
     dev: false
 
-  /@noble/hashes@1.3.3:
-    resolution: {integrity: sha512-V7/fPHgl+jsVPXqqeOzT8egNj2iBIVt+ECeMMG8TdcnTikP3oaBtUVqpT/gYCR68aEBJSF+XbYUxStjbFMqIIA==}
+  /@noble/hashes@1.4.0:
+    resolution: {integrity: sha512-V1JJ1WTRUqHHrOSh597hURcMqVKVGL/ea3kv0gSnEdsEZ0/+VyPghM1lMNGc00z7CIQorSvbKpuJkxvuHbvdbg==}
     engines: {node: '>= 16'}
     dev: false
 
@@ -1196,9 +1187,9 @@ packages:
     dependencies:
       '@ckb-lumos/base': 0.21.1
       '@ckb-lumos/codec': 0.0.0-canary-3f37c5b-20240228111419
-      '@nervosnetwork/ckb-sdk-core': 0.109.0
-      '@nervosnetwork/ckb-sdk-utils': 0.109.0
-      '@nervosnetwork/ckb-types': 0.109.0
+      '@nervosnetwork/ckb-sdk-core': 0.109.1
+      '@nervosnetwork/ckb-sdk-utils': 0.109.1
+      '@nervosnetwork/ckb-types': 0.109.1
       axios: 1.6.7
       bignumber.js: 9.1.2
       camelcase-keys: 7.0.2
@@ -1319,8 +1310,8 @@ packages:
     dev: true
     optional: true
 
-  /@scure/base@1.1.5:
-    resolution: {integrity: sha512-Brj9FiG2W1MRQSTB212YVPRrcbjkv48FoZi/u4l/zds/ieRrqsh7aUf6CLwkAq61oKXr/ZlTzlY66gLIj3TFTQ==}
+  /@scure/base@1.1.6:
+    resolution: {integrity: sha512-ok9AWwhcgYuGG3Zfhyqg+zwl+Wn5uE+dwC0NV/2qQkx4dABbb/bx96vWu8NSj+BNjjSjno+JRYRjle1jV08k3g==}
     dev: false
 
   /@sentry-internal/tracing@7.102.1:
@@ -1420,15 +1411,6 @@ packages:
 
   /@types/estree@1.0.5:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
-    dev: true
-
-  /@types/ioredis-mock@8.2.5:
-    resolution: {integrity: sha512-cZyuwC9LGtg7s5G9/w6rpy3IOZ6F/hFR0pQlWYZESMo1xQUYbDpa6haqB4grTePjsGzcB/YLBFCjqRunK5wieg==}
-    dependencies:
-      '@types/node': 20.11.17
-      ioredis: 5.3.2
-    transitivePeerDependencies:
-      - supports-color
     dev: true
 
   /@types/json-schema@7.0.15:
@@ -2084,14 +2066,6 @@ packages:
       fast-glob: 3.3.2
     dev: false
 
-  /axios@0.21.4:
-    resolution: {integrity: sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==}
-    dependencies:
-      follow-redirects: 1.15.5
-    transitivePeerDependencies:
-      - debug
-    dev: false
-
   /axios@1.6.7:
     resolution: {integrity: sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==}
     dependencies:
@@ -2150,8 +2124,8 @@ packages:
     resolution: {integrity: sha512-aOGy88DDlVUhspIXJN+dVEtclhIsfAUppD43V0j40cPTld3pv/0X/MlrZSZ6jowIaQQzFwP8M6rFU2z2mVYjDQ==}
     engines: {node: '>=6.0.0'}
     dependencies:
-      '@noble/hashes': 1.3.3
-      '@scure/base': 1.1.5
+      '@noble/hashes': 1.4.0
+      '@scure/base': 1.1.6
       typeforce: 1.18.0
       wif: 2.0.6
     dev: false
@@ -2160,7 +2134,7 @@ packages:
     resolution: {integrity: sha512-yuf6xs9QX/E8LWE2aMJPNd0IxGofwfuVOiYdNUESkc+2bHHVKjhJd8qewqapeoolh9fihzHGoDCB5Vkr57RZCQ==}
     engines: {node: '>=8.0.0'}
     dependencies:
-      '@noble/hashes': 1.3.3
+      '@noble/hashes': 1.4.0
       bech32: 2.0.0
       bip174: 2.1.1
       bs58check: 3.0.1
@@ -2250,7 +2224,7 @@ packages:
   /bs58check@3.0.1:
     resolution: {integrity: sha512-hjuuJvoWEybo7Hn/0xOrczQKKEKD63WguEjlhLExYs2wUBcebDC1jDNK17eEAD2lYfw82d5ASC1d7K3SWszjaQ==}
     dependencies:
-      '@noble/hashes': 1.3.3
+      '@noble/hashes': 1.4.0
       bs58: 5.0.0
     dev: false
 
@@ -2426,6 +2400,7 @@ packages:
   /cluster-key-slot@1.1.2:
     resolution: {integrity: sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==}
     engines: {node: '>=0.10.0'}
+    dev: false
 
   /code-block-writer@10.1.1:
     resolution: {integrity: sha512-67ueh2IRGst/51p0n6FvPrnRjAGHY5F8xdjkgrYE7DDzpJe6qA07RYQ9VcoUeo5ATOjSOiWpSL3SWBRRbempMw==}
@@ -2612,6 +2587,7 @@ packages:
   /denque@2.1.0:
     resolution: {integrity: sha512-HVQE3AAb/pxF8fQAoiqpvg9i3evqug3hoiwakOyZAwJm+6vZehbkYXZ0l4JxS+I3QxM97v5aaRNhj8v5oBhekw==}
     engines: {node: '>=0.10'}
+    dev: false
 
   /depd@1.1.2:
     resolution: {integrity: sha512-7emPTl6Dpo6JRXOXjLRxck+FlLRX5847cLKEn00PLAgc3g2hTZZgr+e4c2v6QpSmLeFP3n5yUo7ft6avBK/5jQ==}
@@ -3320,22 +3296,6 @@ packages:
       pend: 1.2.0
     dev: true
 
-  /fengari-interop@0.1.3(fengari@0.1.4):
-    resolution: {integrity: sha512-EtZ+oTu3kEwVJnoymFPBVLIbQcCoy9uWCVnMA6h3M/RqHkUBsLYp29+RRHf9rKr6GwjubWREU1O7RretFIXjHw==}
-    peerDependencies:
-      fengari: ^0.1.0
-    dependencies:
-      fengari: 0.1.4
-    dev: true
-
-  /fengari@0.1.4:
-    resolution: {integrity: sha512-6ujqUuiIYmcgkGz8MGAdERU57EIluGGPSUgGPTsco657EHa+srq0S3/YUl/r9kx1+D+d4rGfYObd+m8K22gB1g==}
-    dependencies:
-      readline-sync: 1.4.10
-      sprintf-js: 1.1.3
-      tmp: 0.0.33
-    dev: true
-
   /fflate@0.8.2:
     resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
     dev: true
@@ -3748,22 +3708,6 @@ packages:
       p-is-promise: 3.0.0
     dev: false
 
-  /ioredis-mock@8.9.0(@types/ioredis-mock@8.2.5)(ioredis@5.3.2):
-    resolution: {integrity: sha512-yIglcCkI1lvhwJVoMsR51fotZVsPsSk07ecTCgRTRlicG0Vq3lke6aAaHklyjmRNRsdYAgswqC2A0bPtQK4LSw==}
-    engines: {node: '>=12.22'}
-    peerDependencies:
-      '@types/ioredis-mock': ^8
-      ioredis: ^5
-    dependencies:
-      '@ioredis/as-callback': 3.0.0
-      '@ioredis/commands': 1.2.0
-      '@types/ioredis-mock': 8.2.5
-      fengari: 0.1.4
-      fengari-interop: 0.1.3(fengari@0.1.4)
-      ioredis: 5.3.2
-      semver: 7.6.0
-    dev: true
-
   /ioredis@5.3.2:
     resolution: {integrity: sha512-1DKMMzlIHM02eBBVOFQ1+AolGjs6+xEcM4PDL7NqOS6szq7H9jSaEkIUH6/a5Hl241LzW6JLSiAbNvTQjUupUA==}
     engines: {node: '>=12.22.0'}
@@ -3779,6 +3723,7 @@ packages:
       standard-as-callback: 2.1.0
     transitivePeerDependencies:
       - supports-color
+    dev: false
 
   /ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
@@ -4092,9 +4037,11 @@ packages:
 
   /lodash.defaults@4.2.0:
     resolution: {integrity: sha512-qjxPLHd3r5DnsdGacqOMU6pb/avJzdh9tFX2ymgoZE27BmjXrNy/y4LoaiTeAb+O3gL8AfpJGtqfX/ae2leYYQ==}
+    dev: false
 
   /lodash.isarguments@3.1.0:
     resolution: {integrity: sha512-chi4NHZlZqZD18a0imDHnZPrDeBbTtVN7GXMwuGdRH9qotxAjYs3aVLKc7zNOG9eddR5Ksd8rvFEBc9SsggPpg==}
+    dev: false
 
   /lodash.isequal@4.5.0:
     resolution: {integrity: sha512-pDo3lu8Jhfjqls6GkMgpahsF9kCyayhgykjyLMNFTKWrpVdAQtYyB4muAMWozBB4ig/dtWAmsMxLEI8wuz+DYQ==}
@@ -4584,11 +4531,6 @@ packages:
     engines: {node: '>= 6.0'}
     dev: true
 
-  /os-tmpdir@1.0.2:
-    resolution: {integrity: sha512-D2FR03Vir7FIu45XBY20mTb+/ZSWB00sjU9jdQXt83gDrI4Ztz5Fs7/yy74g2N5SVQY4xY1qDr4rNddwYRVX0g==}
-    engines: {node: '>=0.10.0'}
-    dev: true
-
   /p-finally@2.0.1:
     resolution: {integrity: sha512-vpm09aKwq6H9phqRQzecoDpD8TmVyGw70qmWlyq5onxY7tqyTTFVvxMykxQSQKILBSFlbXpypIw2T1Ml7+DDtw==}
     engines: {node: '>=8'}
@@ -4945,11 +4887,6 @@ packages:
       picomatch: 2.3.1
     dev: true
 
-  /readline-sync@1.4.10:
-    resolution: {integrity: sha512-gNva8/6UAe8QYepIQH/jQ2qn91Qj0B9sYjMBBs3QOB8F2CXcKgLxQaJRP76sWVRQt+QU+8fAkCbCvjjMFu7Ycw==}
-    engines: {node: '>= 0.8.0'}
-    dev: true
-
   /real-require@0.2.0:
     resolution: {integrity: sha512-57frrGM/OCTLqLOAh0mhVA9VBMHd+9U7Zb2THMGdBUoZVOtGbJzjxsYGDJ3A9AYYCP4hn6y1TVbaOfzWtm5GFg==}
     engines: {node: '>= 12.13.0'}
@@ -4958,12 +4895,14 @@ packages:
   /redis-errors@1.2.0:
     resolution: {integrity: sha512-1qny3OExCf0UvUV/5wpYKf2YwPcOqXzkwKKSmKHiE6ZMQs5heeE/c8eXK+PNllPvmjgAbfnsbpkGZWy8cBpn9w==}
     engines: {node: '>=4'}
+    dev: false
 
   /redis-parser@3.0.0:
     resolution: {integrity: sha512-DJnGAeenTdpMEH6uAJRK/uiyEIH9WVsUmoLwzudwGJUwZPp80PDBWPHXSAGNPwNvIXAbe7MSUB1zQFugFml66A==}
     engines: {node: '>=4'}
     dependencies:
       redis-errors: 1.2.0
+    dev: false
 
   /redis-server@1.2.2:
     resolution: {integrity: sha512-pOaSIeSMVFkEFIuaMtpQ3TOr3uI4sUmEHm4ofGks5vTPRseHUszxyIlC70IFjUR9qSeH8o/ARZEM8dqcJmgGJw==}
@@ -5212,16 +5151,13 @@ packages:
     resolution: {integrity: sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==}
     engines: {node: '>= 10.x'}
 
-  /sprintf-js@1.1.3:
-    resolution: {integrity: sha512-Oo+0REFV59/rz3gfJNKQiBlwfHaSESl1pcGyABQsnnIfWOFt6JNj5gCog2U6MLZ//IGYD+nA8nI+mTShREReaA==}
-    dev: true
-
   /stackback@0.0.2:
     resolution: {integrity: sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==}
     dev: true
 
   /standard-as-callback@2.1.0:
     resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
+    dev: false
 
   /stat-mode@0.3.0:
     resolution: {integrity: sha512-QjMLR0A3WwFY2aZdV0okfFEJB5TRjkggXZjxP3A1RsWsNHNu3YPv8btmtc6iCFZ0Rul3FE93OYogvhOUClU+ng==}
@@ -5432,13 +5368,6 @@ packages:
   /tinyspy@2.2.1:
     resolution: {integrity: sha512-KYad6Vy5VDWV4GH3fjpseMQ/XU2BhIYP7Vzd0LG44qRWm/Yt2WCOTicFdvmgo6gWaqooMQCawTtILVQJupKu7A==}
     engines: {node: '>=14.0.0'}
-    dev: true
-
-  /tmp@0.0.33:
-    resolution: {integrity: sha512-jRCJlojKnZ3addtTOjdIqoRuPEKBvNXcGYqzO6zWZX8KfKEpnGY5jfggJQ3EjKuu8D4bJRr0y+cYJFmYbImXGw==}
-    engines: {node: '>=0.6.0'}
-    dependencies:
-      os-tmpdir: 1.0.2
     dev: true
 
   /to-fast-properties@2.0.0:
