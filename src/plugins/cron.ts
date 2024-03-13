@@ -13,7 +13,7 @@ export default fp(async (fastify) => {
       });
     });
     fastify.addHook('onClose', async () => {
-      transactionManager.dispose();
+      transactionManager.closeProcess();
     });
   } catch (err) {
     fastify.log.error(err);

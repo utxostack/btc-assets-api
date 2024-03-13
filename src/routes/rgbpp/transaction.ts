@@ -2,7 +2,7 @@ import { FastifyPluginCallback } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Server } from 'http';
 import z from 'zod';
-import { CKBTransaction, CKBVirtualResult } from './types';
+import { CKBVirtualResult } from './types';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
@@ -32,7 +32,6 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         response: {
           200: z.object({
             hash: z.string(),
-            transaction: CKBTransaction,
             status: z.string(),
           }),
         },
@@ -46,11 +45,8 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         return;
       }
       const hash = job.returnvalue;
-      const tx = await fastify.ckbRPC.getTransaction(hash);
-      console.log(tx);
-      const { transaction } = tx;
       const status = await job.getState();
-      return { hash, status, transaction };
+      return { hash, status };
     },
   );
 

@@ -24,7 +24,7 @@ interface ITransactionManager {
   getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined>;
   startProcess(callbacks?: IProcessCallbacks): Promise<void>;
   pauseProcess(): Promise<void>;
-  dispose(): Promise<void>;
+  closeProcess(): Promise<void>;
 }
 
 const TRANSACTION_QUEUE_NAME = 'rgbpp-ckb-transaction-queue';
@@ -162,7 +162,7 @@ export default class TransactionManager implements ITransactionManager {
     await this.worker.pause();
   }
 
-  public async dispose(): Promise<void> {
+  public async closeProcess(): Promise<void> {
     await this.worker.close();
     await this.queue.close();
   }

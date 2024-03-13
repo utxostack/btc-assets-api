@@ -16,5 +16,5 @@ export default async () => {
     new Promise((resolve) => setTimeout(resolve, VERCEL_MAX_DURATION)),
   ]);
   await transactionManager.pauseProcess();
-  await transactionManager.dispose();
+  await transactionManager.closeProcess();
 };
