@@ -44,8 +44,9 @@ const envSchema = z.object({
    * Paymaster private key, used to sign the transaction with paymaster cell.
    */
   PAYMASTER_PRIVATE_KEY: z.string(),
-  PAYMASTER_CELL_CAPACITY: z.number().default(220),
-  PAYMASTER_CELL_PRESET_COUNT: z.number().default(500),
+  PAYMASTER_CELL_CAPACITY: z.coerce.number().default(220),
+  PAYMASTER_CELL_PRESET_COUNT: z.coerce.number().default(500),
+  PAYMASTER_CELL_REFILL_THRESHOLD: z.coerce.number().default(0.3),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -9,13 +9,12 @@ import { randomUUID } from 'crypto';
 import { hd, config } from '@ckb-lumos/lumos';
 
 interface IPaymaster {
-  enqueueCell(cell: Cell): Promise<void>;
-  getNextCellJob(token: string): Promise<Job<Cell>>;
+  getNextCellJob(token: string): Promise<Job<Cell> | null>;
   refillCellQueue(): Promise<number>;
   appendCellAndSignTx(ckbVirtualResult: CKBVirtualResult): Promise<string>;
 }
 
-const PAYMASTER_CELL_QUEUE_NAME = 'rgbpp-ckb-paymaster-cell-queue';
+export const PAYMASTER_CELL_QUEUE_NAME = 'rgbpp-ckb-paymaster-cell-queue';
 
 export default class Paymaster implements IPaymaster {
   private cradle: Cradle;
@@ -24,6 +23,7 @@ export default class Paymaster implements IPaymaster {
 
   private cellCapacity: number;
   private presetCount: number;
+  private refillThreshold: number;
   private refilling = false;
 
   constructor(cradle: Cradle) {
@@ -37,6 +37,7 @@ export default class Paymaster implements IPaymaster {
     });
     this.cellCapacity = this.cradle.env.PAYMASTER_CELL_CAPACITY;
     this.presetCount = this.cradle.env.PAYMASTER_CELL_PRESET_COUNT;
+    this.refillThreshold = this.cradle.env.PAYMASTER_CELL_REFILL_THRESHOLD;
   }
 
   private get privateKey() {
@@ -56,17 +57,15 @@ export default class Paymaster implements IPaymaster {
     return lockScript;
   }
 
-  public async enqueueCell(cell: Cell) {
-    await this.queue.add(PAYMASTER_CELL_QUEUE_NAME, cell);
-  }
-
   public async getNextCellJob(token: string) {
+    // avoid the refilling to be triggered multiple times
     if (!this.refilling) {
-      const count = await this.queue.count();
-      if (count < this.presetCount * 0.3) {
+      const count = await this.queue.getWaitingCount();
+      // refill if it's less than REFILL_THRESHOLD of the preset count
+      if (count < this.presetCount * this.refillThreshold) {
         this.refilling = true;
         const filled = await this.refillCellQueue();
-        if (filled === 0) {
+        if (filled + count < this.presetCount) {
           // TODO: throw a custom error and capture error to sentry
           // maybe we need to sent a notification email to the admin
         }
@@ -79,17 +78,17 @@ export default class Paymaster implements IPaymaster {
 
   public async refillCellQueue() {
     this.cradle.logger.info('[Paymaster] Refilling paymaster cell queue...');
+    const queueSize = await this.queue.getWaitingCount();
     const capacity = this.cellCapacity.toString(16);
     const collector = this.cradle.ckbIndexer.collector({
       lock: this.lockScript,
       outputCapacityRange: [capacity, capacity],
     });
     const cells = collector.collect();
-    const queueSize = await this.queue.count();
 
     let filled = 0;
     for await (const cell of cells) {
-      await this.enqueueCell(cell);
+      await this.queue.add(PAYMASTER_CELL_QUEUE_NAME, cell);
       filled += 1;
       if (queueSize + filled >= this.presetCount) {
         break;
