@@ -107,21 +107,35 @@ export default class TransactionManager implements ITransactionManager {
     throw new DelayedError();
   }
 
+  private waitForTranscationConfirmed(txHash: string) {
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve) => {
+      const transaction = await this.cradle.ckbRpc.getTransaction(txHash);
+      const { status } = transaction.txStatus;
+      if (status === 'committed') {
+        resolve(txHash);
+      } else {
+        setTimeout(() => {
+          resolve(this.waitForTranscationConfirmed(txHash));
+        }, 1000);
+      }
+    });
+  }
+
   public async process(job: Job<ITransactionRequest>, token?: string) {
+    // TODO: add job stages and error handling
     try {
       const isVerified = await this.verifyTransaction(job.data);
       if (!isVerified) {
         throw new Error('Transaction not verified');
       }
-
+      const { ckbVirtualResult } = job.data;
       // TODO: generate RGB_lock witness
-      // TODO: add paymaster cell into inputs if necessary
-      // TODO: sign CKB transaction and broadcast
-      // TODO: wait for CKB transaction to be confirmed
 
-      // FIXME: return a fake tx hash, job.returnvalue repensents the ckb tx hash
-      // so we can use btc txid to get ckb tx hash, then query ckb tx with it
-      return '0x96090236087edd4b0acc847ec62e2e2e88788d48affb97aab0d1e27453776d5b';
+      const signedTx = await this.cradle.paymaster.appendCellAndSignTx(ckbVirtualResult);
+      const txHash = await this.cradle.ckbRpc.sendTransaction(signedTx, 'passthrough');
+      await this.waitForTranscationConfirmed(txHash);
+      return txHash;
     } catch (err) {
       if (err instanceof AxiosError) {
         // delay job if transaction not broadcasted yet

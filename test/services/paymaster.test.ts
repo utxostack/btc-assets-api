@@ -90,12 +90,20 @@ describe('Paymaster', () => {
           capacity: '0xa',
           lock: paymaster['lockScript'],
         },
+        outPoint: {
+          txHash: '0x123',
+          index: '0x0',
+        },
         data: '0x',
       },
       {
         cellOutput: {
           capacity: '0xa',
           lock: paymaster['lockScript'],
+        },
+        outPoint: {
+          txHash: '0x456',
+          index: '0x0',
         },
         data: '0x',
       },
