@@ -7,7 +7,7 @@ import { opReturnScriptPubKeyToData } from '@rgbpp-sdk/btc';
 // FIXME: import calculateCommitment from @rgbpp-sdk/ckb
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
-import { calculateCommitment } from '@rgbpp-sdk/ckb';
+import { calculateCommitment, appendCkbTxWitnesses } from '@rgbpp-sdk/ckb';
 
 interface ITransactionRequest {
   txid: string;
@@ -27,14 +27,16 @@ interface ITransactionManager {
   closeProcess(): Promise<void>;
 }
 
-const TRANSACTION_QUEUE_NAME = 'rgbpp-ckb-transaction-queue';
+export const TRANSACTION_QUEUE_NAME = 'rgbpp-ckb-transaction-queue';
 
 /**
  * TransactionManager
  * responsible for processing RGB++ CKB transactions, including:
- * - verifying transaction requests, including checking the commitment
  * - enqueueing transaction requests to the queue
+ * - verifying transaction requests, including checking the commitment
  * - processing transaction when it's confirmed on L1(Bitcoin)
+ * - generate RGB_lock witness into the CKB transaction
+ * - add paymaster cell and sign the CKB transaction if needed
  * - sending CKB transaction to the network and waiting for confirmation
  */
 export default class TransactionManager implements ITransactionManager {
@@ -130,22 +132,26 @@ export default class TransactionManager implements ITransactionManager {
         throw new Error('Transaction not verified');
       }
       const { ckbVirtualResult } = job.data;
-      // TODO: generate RGB_lock witness
+      let rawTx = await appendCkbTxWitnesses(ckbVirtualResult);
 
-      const signedTx = await this.cradle.paymaster.appendCellAndSignTx(ckbVirtualResult);
-      const txHash = await this.cradle.ckbRpc.sendTransaction(signedTx, 'passthrough');
-      await this.waitForTranscationConfirmed(txHash);
-      return txHash;
-    } catch (err) {
-      if (err instanceof AxiosError) {
-        // delay job if transaction not broadcasted yet
-        if (err.response?.status === 404) {
-          await this.moveJobToDelayed(job, token);
-          return;
-        }
+      // append paymaster cell and sign the transaction if needed
+      if (ckbVirtualResult.needPaymasterCell) {
+        const signedTx = await this.cradle.paymaster.appendCellAndSignTx({
+          ...ckbVirtualResult,
+          ckbRawTx: rawTx,
+        });
+        rawTx = signedTx;
       }
-      // delay job if transaction not confirmed yet
-      if (err instanceof DelayedError) {
+
+      const txHash = await this.cradle.ckbRpc.sendTransaction(rawTx, 'passthrough');
+      job.returnvalue = txHash;
+
+      await this.waitForTranscationConfirmed(txHash);
+    } catch (err) {
+      // move the job to delayed queue if the transaction data not found or not confirmed
+      const transactionDataNotFound = err instanceof AxiosError && err.response?.status === 404;
+      const transactionNotConfirmed = err instanceof DelayedError;
+      if (transactionDataNotFound || transactionNotConfirmed) {
         await this.moveJobToDelayed(job, token);
         return;
       }
