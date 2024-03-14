@@ -47,6 +47,7 @@ const envSchema = z.object({
   PAYMASTER_CELL_CAPACITY: z.coerce.number().default(220),
   PAYMASTER_CELL_PRESET_COUNT: z.coerce.number().default(500),
   PAYMASTER_CELL_REFILL_THRESHOLD: z.coerce.number().default(0.3),
+  UNLOCKER_CELL_BATCH_SIZE: z.coerce.number().default(100),
 });
 
 export type Env = z.infer<typeof envSchema>;

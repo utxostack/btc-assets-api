@@ -5,7 +5,7 @@ export const CellDep = z.object({
     txHash: z.string(),
     index: z.string(),
   }),
-  depType: z.string(),
+  depType: z.enum(['depGroup', 'code']),
 });
 export type CellDep = z.infer<typeof CellDep>;
 
@@ -29,7 +29,7 @@ export const OutputCell = z.object({
     .object({
       codeHash: z.string(),
       args: z.string(),
-      hashType: z.string(),
+      hashType: z.enum(['type', 'data', 'data1', 'data2']),
     })
     .or(z.null())
     .optional(),
