@@ -48,7 +48,6 @@ const transactionRoutes: FastifyPluginCallback<Record<never, never>, Server, Zod
     async (request, reply) => {
       const { txid } = request.params;
       const transaction = await fastify.electrs.getTransaction(txid);
-      console.log(transaction);
       if (transaction.status.confirmed) {
         reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
       }

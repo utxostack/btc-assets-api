@@ -29,6 +29,7 @@ export default class Unlocker implements IUnlocker {
     const collect = this.collector.collect();
     const cells: Cell[] = [];
     for await (const cell of collect) {
+      // TODO: check cell lock args and skip if btc tx not confirmed 6 blocks yet
       cells.push(cell);
       if (cells.length >= this.cradle.env.UNLOCKER_CELL_BATCH_SIZE) {
         break;
