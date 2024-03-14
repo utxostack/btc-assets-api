@@ -3,13 +3,14 @@ import { afterEach, beforeEach, vi } from 'vitest';
 // @ts-expect-error
 import RedisServer from 'redis-server';
 
-const MOCK_SERVER_PORT = 6379;
+const MOCK_SERVER_PORT = 6666;
 let server: RedisServer;
 
+vi.stubEnv('REDIS_URL', `redis://localhost:${MOCK_SERVER_PORT}`);
+
 beforeEach(async () => {
-  server = new RedisServer();
-  await server.open({ port: MOCK_SERVER_PORT });
-  vi.stubEnv('REDIS_URL', `redis://localhost:${MOCK_SERVER_PORT}`);
+  server = new RedisServer(MOCK_SERVER_PORT);
+  await server.open();
 });
 
 afterEach(async () => {

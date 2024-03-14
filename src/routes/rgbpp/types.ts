@@ -62,6 +62,6 @@ export const CKBVirtualResult = z.object({
   ckbRawTx: CKBRawTransaction,
   commitment: z.string(),
   needPaymasterCell: z.boolean(),
-  sumInputsCapacity: z.bigint(),
+  sumInputsCapacity: z.coerce.number(),
 });
 export type CKBVirtualResult = z.infer<typeof CKBVirtualResult>;

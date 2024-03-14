@@ -36,11 +36,11 @@ dependencies:
     specifier: ^3.0.0
     version: 3.0.0
   '@rgbpp-sdk/btc':
-    specifier: 0.0.0-snap-20240310025258
-    version: 0.0.0-snap-20240310025258
+    specifier: 0.0.0-snap-20240314081840
+    version: 0.0.0-snap-20240314081840
   '@rgbpp-sdk/ckb':
-    specifier: 0.0.0-snap-20240310025258
-    version: 0.0.0-snap-20240310025258
+    specifier: 0.0.0-snap-20240314081840
+    version: 0.0.0-snap-20240314081840
   '@sentry/node':
     specifier: ^7.102.1
     version: 7.102.1
@@ -376,15 +376,15 @@ packages:
       lodash.isequal: 4.5.0
     dev: false
 
-  /@ckb-lumos/bi@0.0.0-canary-3f37c5b-20240228111419:
-    resolution: {integrity: sha512-pcPOzhPIfgHoDWwCiBgedJcDqAAQ5qQMChYtRdv7AtxgGRK1aWGa6dvVp1WONtC76LM/l6Jjd5zcF+TlgU2n1w==}
+  /@ckb-lumos/bi@0.21.1:
+    resolution: {integrity: sha512-6q8uesvu3DAM7GReei9H5seino4tnakTeg8uXtZBPDC6rboMohLCPQvEwhl1iHmsybXvBYVQt4Te1BPPZtuaRw==}
     engines: {node: '>=12.0.0'}
     dependencies:
       jsbi: 4.3.0
     dev: false
 
-  /@ckb-lumos/bi@0.21.1:
-    resolution: {integrity: sha512-6q8uesvu3DAM7GReei9H5seino4tnakTeg8uXtZBPDC6rboMohLCPQvEwhl1iHmsybXvBYVQt4Te1BPPZtuaRw==}
+  /@ckb-lumos/bi@0.22.0-next.5:
+    resolution: {integrity: sha512-hfh9PQDLJeZedlJ6qBVxx2MR9ndU0XyIl53vh1I+S4SGmvl/z2PGEY06vN34nkjmZ/1c87/KW+sL2Cpii0IxGg==}
     engines: {node: '>=12.0.0'}
     dependencies:
       jsbi: 4.3.0
@@ -405,18 +405,18 @@ packages:
       - encoding
     dev: false
 
-  /@ckb-lumos/codec@0.0.0-canary-3f37c5b-20240228111419:
-    resolution: {integrity: sha512-SaaQUGPvZuxHTwpsrlNFBqxmNQ+6XZx6qxOF5ZePuhhDEUPHtUcxhX6t+kPhtQLLVFe/M8AznkzsOAw3IDUQvQ==}
-    engines: {node: '>=12.0.0'}
-    dependencies:
-      '@ckb-lumos/bi': 0.0.0-canary-3f37c5b-20240228111419
-    dev: false
-
   /@ckb-lumos/codec@0.21.1:
     resolution: {integrity: sha512-z6IUUxVZrx663iC7VM9CmaQZL8jsdM3ybgz0UCS24JgBXTNec+Uz0/Zrl7yeH6fBpVls44C2wObcHKigKaNVAA==}
     engines: {node: '>=12.0.0'}
     dependencies:
       '@ckb-lumos/bi': 0.21.1
+    dev: false
+
+  /@ckb-lumos/codec@0.22.0-next.5:
+    resolution: {integrity: sha512-AVvREoEc0zSbGSdFZOph1WL9QtUKUjQ2PABpApROMTqDCryG9/FpBrInjm2y50USZlwcEE3+ocEqFqJjfuTXKQ==}
+    engines: {node: '>=12.0.0'}
+    dependencies:
+      '@ckb-lumos/bi': 0.22.0-next.5
     dev: false
 
   /@ckb-lumos/common-scripts@0.21.1:
@@ -1175,8 +1175,8 @@ packages:
     resolution: {integrity: sha512-2LuNTFBIO0m7kKIQvvPHN6UE63VjpmL9rnEEaOOaiSPbZK+zUOYIzBAWcED+3XYzhYsd/0mD57VdxAEqqV52CQ==}
     dev: true
 
-  /@rgbpp-sdk/btc@0.0.0-snap-20240310025258:
-    resolution: {integrity: sha512-+ZSsbcPvn8SIhRZDf8ZUXQoXZYy7hKALz+4pYo+ON9hJLJ5qEZUdxm0ujZRvNbzapfNl2Z7gNvZPHAPwlAlreQ==}
+  /@rgbpp-sdk/btc@0.0.0-snap-20240314081840:
+    resolution: {integrity: sha512-Biz+0CmN8+qqtA4Dpv4MbINx50/x8s4k9dS5Uw1Ywuamme1pIAeS/GYcGMa95nz84syzHoGWp4hzrwiwCeJ2xA==}
     dependencies:
       '@bitcoinerlab/secp256k1': 1.1.1
       bip32: 4.0.0
@@ -1185,11 +1185,11 @@ packages:
       lodash: 4.17.21
     dev: false
 
-  /@rgbpp-sdk/ckb@0.0.0-snap-20240310025258:
-    resolution: {integrity: sha512-tf7Z2c0k5c18P5eLzo5H5KsYi9KuYx/0EaxXyJmFwo2cfB5LyoltO/m8e29SXb0i8bQPPn7k5C4MfHCirjAsbQ==}
+  /@rgbpp-sdk/ckb@0.0.0-snap-20240314081840:
+    resolution: {integrity: sha512-114sSEHHKlSNB9bljk43zRXw13XdPn1KibYmCP+ZSRBrWjyYnLtkG+9MKL2cXXL5zcuEUK8xyAVxPQi32D7v/A==}
     dependencies:
       '@ckb-lumos/base': 0.21.1
-      '@ckb-lumos/codec': 0.0.0-canary-3f37c5b-20240228111419
+      '@ckb-lumos/codec': 0.22.0-next.5
       '@nervosnetwork/ckb-sdk-core': 0.109.1
       '@nervosnetwork/ckb-sdk-utils': 0.109.1
       '@nervosnetwork/ckb-types': 0.109.1

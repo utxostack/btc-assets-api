@@ -3,7 +3,7 @@ import Bitcoind from '../../services/bitcoind';
 import ElectrsAPI from '../../services/electrs';
 import TransactionManager from '../../services/transaction';
 import Paymaster from '../../services/paymaster';
-import { RPC } from '@ckb-lumos/lumos';
+import { Indexer, RPC } from '@ckb-lumos/lumos';
 
 declare module 'fastify' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -11,6 +11,7 @@ declare module 'fastify' {
     extends FastifyJwtNamespace<{ namespace: 'security' }> {
     container: AwilixContainer<Cradle>;
     ckbRPC: RPC;
+    ckbIndexer: Indexer;
     electrs: ElectrsAPI;
     bitcoind: Bitcoind;
     paymaster: Paymaster;

@@ -9,12 +9,12 @@ import { opReturnScriptPubKeyToData } from '@rgbpp-sdk/btc';
 // @ts-expect-error
 import { calculateCommitment, appendCkbTxWitnesses } from '@rgbpp-sdk/ckb';
 
-interface ITransactionRequest {
+export interface ITransactionRequest {
   txid: string;
   ckbVirtualResult: CKBVirtualResult;
 }
 
-interface IProcessCallbacks {
+export interface IProcessCallbacks {
   onCompleted?: (job: Job<ITransactionRequest>) => void;
   onFailed?: (job: Job<ITransactionRequest> | undefined, err: Error) => void;
 }
@@ -160,7 +160,10 @@ export default class TransactionManager implements ITransactionManager {
   }
 
   public async enqueueTransaction(request: ITransactionRequest): Promise<void> {
-    await this.queue.add(request.txid, request, { jobId: request.txid, delay: 2000 });
+    await this.queue.add(request.txid, request, {
+      jobId: request.txid,
+      delay: this.cradle.env.TRANSACTION_QUEUE_JOB_DELAY,
+    });
   }
 
   public async getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined> {
