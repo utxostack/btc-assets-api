@@ -4,10 +4,8 @@ import { AxiosError } from 'axios';
 import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
 import { Transaction } from '../routes/bitcoin/types';
 import { opReturnScriptPubKeyToData } from '@rgbpp-sdk/btc';
-// FIXME: import calculateCommitment from @rgbpp-sdk/ckb
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-import { calculateCommitment, appendCkbTxWitnesses, sendCkbTx, Collector } from '@rgbpp-sdk/ckb';
+import { appendCkbTxWitnesses, sendCkbTx, Collector } from '@rgbpp-sdk/ckb';
+import { calculateCommitment } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 
 export interface ITransactionRequest {
   txid: string;
