@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/node';
 import { addLoggerInterceptor } from '../utils/interceptors';
 import { Cradle } from '../container';
 import { NetworkType } from '../constants';
+import { randomUUID } from 'node:crypto';
 
 export default class Bitcoind {
   private request: AxiosInstance;
@@ -28,9 +29,10 @@ export default class Bitcoind {
 
   private async callMethod<T>(method: string, params: unknown): Promise<T> {
     return Sentry.startSpan({ op: this.constructor.name, name: method }, async () => {
+      const id = randomUUID();
       const response = await this.request.post('', {
         jsonrpc: '1.0',
-        id: Date.now(),
+        id,
         method,
         params,
       });

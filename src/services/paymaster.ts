@@ -1,17 +1,16 @@
 import { Cell } from '@ckb-lumos/lumos';
 import { Cradle } from '../container';
 import { Job, Queue, Worker } from 'bullmq';
-import { CKBVirtualResult } from '../routes/rgbpp/types';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-import { appendPaymasterCellAndSignCkbTx } from '@rgbpp-sdk/ckb';
+import { AppendPaymasterCellAndSignTxParams, IndexerCell, appendPaymasterCellAndSignCkbTx } from '@rgbpp-sdk/ckb';
 import { randomUUID } from 'crypto';
 import { hd, config } from '@ckb-lumos/lumos';
 
 interface IPaymaster {
   getNextCellJob(token: string): Promise<Job<Cell> | null>;
   refillCellQueue(): Promise<number>;
-  appendCellAndSignTx(ckbVirtualResult: CKBVirtualResult): Promise<string>;
+  appendCellAndSignTx(
+    params: Pick<AppendPaymasterCellAndSignTxParams, 'ckbRawTx' | 'sumInputsCapacity'>,
+  ): ReturnType<typeof appendPaymasterCellAndSignCkbTx>;
 }
 
 export const PAYMASTER_CELL_QUEUE_NAME = 'rgbpp-ckb-paymaster-cell-queue';
@@ -118,19 +117,19 @@ export default class Paymaster implements IPaymaster {
   /**
    * Append the paymaster cell to the CKB transaction and sign the transactions
    */
-  public async appendCellAndSignTx(ckbVirtualResult: CKBVirtualResult) {
-    const { ckbRawTx, sumInputsCapacity } = ckbVirtualResult;
+  public async appendCellAndSignTx(params: Pick<AppendPaymasterCellAndSignTxParams, 'ckbRawTx' | 'sumInputsCapacity'>) {
+    const { ckbRawTx, sumInputsCapacity } = params;
     const token = randomUUID();
     // FIXME: getNextCellJob maybe suspended if the queue is empty
     const cellJob = await this.getNextCellJob(token);
-    const paymasterCell = cellJob.data;
-    const signedTx = await appendPaymasterCellAndSignCkbTx(
-      this.privateKey,
+    const paymasterCell = cellJob.data as unknown as IndexerCell;
+    const signedTx = await appendPaymasterCellAndSignCkbTx({
       ckbRawTx,
       sumInputsCapacity,
       paymasterCell,
-      this.cradle.env.NETWORK === 'mainnet',
-    );
+      secp256k1PrivateKey: this.privateKey,
+      isMainnet: this.cradle.env.NETWORK === 'mainnet',
+    });
     return signedTx;
   }
 }

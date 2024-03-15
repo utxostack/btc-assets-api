@@ -1,7 +1,6 @@
 import { Cradle } from '../container';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-import { getRgbppLockScript, buildBtcTimeCellsSpentTx } from '@rgbpp-sdk/ckb';
+import { buildBtcTimeCellsSpentTx, Collector, IndexerCell, sendCkbTx } from '@rgbpp-sdk/ckb';
+import { genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import { Cell, CellCollector } from '@ckb-lumos/lumos';
 
 interface IUnlocker {}
@@ -22,7 +21,7 @@ export default class Unlocker implements IUnlocker {
   }
 
   private get lockScript() {
-    return getRgbppLockScript(this.isMainnet);
+    return genRgbppLockScript('0x', this.isMainnet);
   }
 
   private async getNextBatchLockCell() {
@@ -44,11 +43,17 @@ export default class Unlocker implements IUnlocker {
       return;
     }
 
-    const tx = buildBtcTimeCellsSpentTx({
-      btcTimeCells: cells,
+    const signedTx = await buildBtcTimeCellsSpentTx({
+      btcTimeCells: cells as unknown as IndexerCell[],
       isMainnet: this.isMainnet,
     });
-    const txHash = this.cradle.ckbRpc.sendTransaction(tx, 'passthrough');
+    const txHash = await sendCkbTx({
+      collector: new Collector({
+        ckbNodeUrl: this.cradle.env.CKB_RPC_URL,
+        ckbIndexerUrl: this.cradle.env.CKB_INDEXER_URL,
+      }),
+      signedTx,
+    });
     return txHash;
   }
 }

@@ -1,10 +1,12 @@
 import z from 'zod';
 
 export const CellDep = z.object({
-  outPoint: z.object({
-    txHash: z.string(),
-    index: z.string(),
-  }),
+  outPoint: z
+    .object({
+      txHash: z.string(),
+      index: z.string(),
+    })
+    .or(z.null()),
   depType: z.enum(['depGroup', 'code']),
 });
 export type CellDep = z.infer<typeof CellDep>;
@@ -23,7 +25,7 @@ export const OutputCell = z.object({
   lock: z.object({
     codeHash: z.string(),
     args: z.string(),
-    hashType: z.string(),
+    hashType: z.enum(['type', 'data', 'data1', 'data2']),
   }),
   type: z
     .object({
@@ -43,6 +45,7 @@ export const CKBRawTransaction = z.object({
   inputs: z.array(InputCell),
   outputs: z.array(OutputCell),
   outputsData: z.array(z.string()),
+  witnesses: z.array(z.string()).default([]),
 });
 export type CKBRawTransaction = z.infer<typeof CKBRawTransaction>;
 
@@ -62,6 +65,6 @@ export const CKBVirtualResult = z.object({
   ckbRawTx: CKBRawTransaction,
   commitment: z.string(),
   needPaymasterCell: z.boolean(),
-  sumInputsCapacity: z.coerce.number(),
+  sumInputsCapacity: z.string(),
 });
 export type CKBVirtualResult = z.infer<typeof CKBVirtualResult>;

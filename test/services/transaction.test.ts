@@ -17,7 +17,7 @@ describe('transactionManager', () => {
       ckbVirtualResult: {
         ckbRawTx: {} as CKBVirtualResult['ckbRawTx'],
         commitment: 'aa21a9ed91052802a631b93b000202fc252171e0ff0558a0ee5c7a37d89f95afc7306cb7',
-        sumInputsCapacity: 1000,
+        sumInputsCapacity: '1000',
         needPaymasterCell: false,
       },
     };
@@ -31,7 +31,7 @@ describe('transactionManager', () => {
       ckbVirtualResult: {
         ckbRawTx: {} as CKBVirtualResult['ckbRawTx'],
         commitment: '0x123',
-        sumInputsCapacity: 1000,
+        sumInputsCapacity: '1000',
         needPaymasterCell: false,
       },
     };
