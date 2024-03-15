@@ -30,11 +30,11 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
   );
 
   fastify.get(
-    '/:txid',
+    '/:btc_txid',
     {
       schema: {
         params: z.object({
-          txid: z.string(),
+          btc_txid: z.string(),
         }),
         response: {
           200: z.object({
@@ -45,8 +45,8 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
       },
     },
     async (request, reply) => {
-      const { txid } = request.params;
-      const job = await fastify.transactionManager.getTransactionRequest(txid);
+      const { btc_txid } = request.params;
+      const job = await fastify.transactionManager.getTransactionRequest(btc_txid);
       if (!job) {
         reply.status(404);
         return;

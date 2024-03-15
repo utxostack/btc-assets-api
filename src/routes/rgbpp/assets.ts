@@ -8,11 +8,11 @@ import { Cell } from './types';
 
 const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.get(
-    '/:txid/:vout',
+    '/:btc_txid/:vout',
     {
       schema: {
         params: z.object({
-          txid: z.string(),
+          btc_txid: z.string(),
           vout: z.coerce.number(),
         }),
         response: {
@@ -21,8 +21,8 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
       },
     },
     async (request) => {
-      const { txid, vout } = request.params;
-      const args = append0x(`${u32ToLe(vout)}${txid}`);
+      const { btc_txid, vout } = request.params;
+      const args = append0x(`${u32ToLe(vout)}${btc_txid}`);
       const lockScript = genRgbppLockScript(args, process.env.NETWORK === 'mainnet');
 
       const collector = fastify.ckbIndexer.collector({

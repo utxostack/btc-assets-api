@@ -23,7 +23,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     {
       schema: {
         params: z.object({
-          address: z.string(),
+          btc_address: z.string(),
         }),
         querystring: z.object({
           type_script: Script.or(z.string()).optional(),
@@ -34,9 +34,9 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       },
     },
     async (request) => {
-      const { address } = request.params;
+      const { btc_address } = request.params;
       const { type_script } = request.query;
-      const utxos = await fastify.electrs.getUtxoByAddress(address);
+      const utxos = await fastify.electrs.getUtxoByAddress(btc_address);
       const cells = await Promise.all(
         utxos.map(async (utxo) => {
           const { txid, vout } = utxo;
