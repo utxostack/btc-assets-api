@@ -11,6 +11,15 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -38,4 +47,7 @@ jobs:
           BITCOIN_ELECTRS_API_URL: ${{ secrets.BITCOIN_ELECTRS_API_URL }}
           CKB_RPC_URL: ${{ secrets.CKB_RPC_URL }}
           CKB_INDEXER_URL: ${{ secrets.CKB_INDEXER_URL }}
+          PAYMASTER_PRIVATE_KEY: ${{ secrets.PAYMASTER_PRIVATE_KEY }}
+          REDIS_URL: redis://redis:6379
+          CI_REDIS_URL: redis://redis:6379
         run: pnpm test

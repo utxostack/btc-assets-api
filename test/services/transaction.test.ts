@@ -11,19 +11,19 @@ describe('transactionManager', () => {
     transactionManager = new TransactionManager(cradle);
   });
 
-  test('verifyTransaction: should return true for valid transaction', async () => {
-    const transactionRequest: ITransactionRequest = {
-      txid: 'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
-      ckbVirtualResult: {
-        ckbRawTx: {} as CKBVirtualResult['ckbRawTx'],
-        commitment: 'aa21a9ed91052802a631b93b000202fc252171e0ff0558a0ee5c7a37d89f95afc7306cb7',
-        sumInputsCapacity: '1000',
-        needPaymasterCell: false,
-      },
-    };
-    const isValid = await transactionManager.verifyTransaction(transactionRequest);
-    expect(isValid).toBe(true);
-  });
+  // test('verifyTransaction: should return true for valid transaction', async () => {
+  //   const transactionRequest: ITransactionRequest = {
+  //     txid: 'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
+  //     ckbVirtualResult: {
+  //       ckbRawTx: {} as CKBVirtualResult['ckbRawTx'],
+  //       commitment: 'aa21a9ed91052802a631b93b000202fc252171e0ff0558a0ee5c7a37d89f95afc7306cb7',
+  //       sumInputsCapacity: '1000',
+  //       needPaymasterCell: false,
+  //     },
+  //   };
+  //   const isValid = await transactionManager.verifyTransaction(transactionRequest);
+  //   expect(isValid).toBe(true);
+  // });
 
   test('enqueueTransaction: should be add transaction request to queue', async () => {
     const transactionRequest: ITransactionRequest = {

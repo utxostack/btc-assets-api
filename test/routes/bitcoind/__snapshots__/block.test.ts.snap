@@ -1,5 +1,35 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`/bitcoin/v1/block > Get block by hash 1`] = `
+{
+  "bits": 422051352,
+  "difficulty": 107392535.89663602,
+  "height": 2579636,
+  "id": "0000000000000005ae0b929ee3afbf2956aaa0059f9d7608dc396cf5f8f4dda6",
+  "mediantime": 1709002141,
+  "merkle_root": "5b4c5be9e900d3702d78fe91fb3395d74f158107671734aaf86b071d11ad2c65",
+  "nonce": 1330201347,
+  "previousblockhash": "00000000385247e00cbbd81c48a9358d65d6aa56dee36e0c39b6794f5962af00",
+  "size": 624046,
+  "timestamp": 1709006957,
+  "tx_count": 1206,
+  "version": 538968064,
+  "weight": 1050313,
+}
+`;
+
+exports[`/bitcoin/v1/block > Get block hash by height 1`] = `
+{
+  "hash": "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943",
+}
+`;
+
+exports[`/bitcoin/v1/block > Get block header by hash 1`] = `
+{
+  "header": "0000202000af62594f79b6390c6ee3de56aad6658d35a9481cd8bb0ce047523800000000652cad111d076bf8aa3417670781154fd79533fb91fe782d70d300e9e95b4c5b6d60dd6518fe27190343494f",
+}
+`;
+
 exports[`Get block by hash 1`] = `
 {
   "bits": 422051352,
