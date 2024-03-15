@@ -2,32 +2,31 @@ import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
-import z from 'zod';
-import { Cell } from './types';
+import { Cell, Script } from './types';
 import { append0x, u32ToLe } from '../../utils/hex';
 import { genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
+import z from 'zod';
+import { TypeScript } from './utils';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.addHook('preHandler', async (request) => {
-    const { address } = request.params as { address: string };
-    const valid = validateBitcoinAddress(address);
+    const { btc_address } = request.params as { btc_address: string };
+    const valid = validateBitcoinAddress(btc_address);
     if (!valid) {
       throw fastify.httpErrors.badRequest('Invalid bitcoin address');
     }
   });
 
   fastify.get(
-    '/:address/assets',
+    '/:btc_address/assets',
     {
       schema: {
         params: z.object({
           address: z.string(),
         }),
         querystring: z.object({
-          type: z.object({
-            codeHash: z.string(),
-            args: z.string(),
-          }),
+          type_script: Script.or(z.string()).optional(),
         }),
         response: {
           200: z.array(Cell),
@@ -36,30 +35,28 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     },
     async (request) => {
       const { address } = request.params;
-      const { type } = request.query;
+      const { type_script } = request.query;
       const utxos = await fastify.electrs.getUtxoByAddress(address);
       const cells = await Promise.all(
         utxos.map(async (utxo) => {
           const { txid, vout } = utxo;
           const args = append0x(`${u32ToLe(vout)}${txid}`);
-          const lockScript = genRgbppLockScript(args, process.env.NETWORK === 'mainnet');
 
-          const collector = fastify.ckbIndexer.collector({
-            lock: lockScript,
-            ...(type
-              ? {
-                  type: {
-                    codeHash: type.codeHash,
-                    hashType: 'type',
-                    args: type.args,
-                  },
-                }
-              : {}),
-          });
+          const query: CKBIndexerQueryOptions = {
+            lock: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
+          };
 
-          const collect = collector.collect();
+          if (type_script) {
+            if (typeof type_script === 'string') {
+              query.type = TypeScript.unpack(type_script) as Script;
+            } else {
+              query.type = type_script;
+            }
+          }
+
+          const collector = fastify.ckbIndexer.collector(query).collect();
           const cells: Cell[] = [];
-          for await (const cell of collect) {
+          for await (const cell of collector) {
             cells.push(cell);
           }
           return cells;

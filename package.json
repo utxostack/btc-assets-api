@@ -23,6 +23,8 @@
     ]
   },
   "dependencies": {
+    "@ckb-lumos/ckb-indexer": "^0.21.1",
+    "@ckb-lumos/codec": "^0.21.1",
     "@ckb-lumos/lumos": "^0.21.1",
     "@fastify/compress": "^7.0.0",
     "@fastify/cors": "^9.0.1",
