@@ -1,13 +1,13 @@
 import { Cradle } from '../container';
 import { DelayedError, Job, Queue, Worker } from 'bullmq';
 import { AxiosError } from 'axios';
-import { CKBVirtualResult } from '../routes/rgbpp/types';
+import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
 import { Transaction } from '../routes/bitcoin/types';
 import { opReturnScriptPubKeyToData } from '@rgbpp-sdk/btc';
 // FIXME: import calculateCommitment from @rgbpp-sdk/ckb
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
-import { calculateCommitment, appendCkbTxWitnesses } from '@rgbpp-sdk/ckb';
+import { calculateCommitment, appendCkbTxWitnesses, sendCkbTx, Collector } from '@rgbpp-sdk/ckb';
 
 export interface ITransactionRequest {
   txid: string;
@@ -132,18 +132,24 @@ export default class TransactionManager implements ITransactionManager {
         throw new Error('Transaction not verified');
       }
       const { ckbVirtualResult } = job.data;
-      let rawTx = await appendCkbTxWitnesses(ckbVirtualResult);
+      let signedTx = appendCkbTxWitnesses(ckbVirtualResult)!;
 
       // append paymaster cell and sign the transaction if needed
       if (ckbVirtualResult.needPaymasterCell) {
-        const signedTx = await this.cradle.paymaster.appendCellAndSignTx({
+        const tx = await this.cradle.paymaster.appendCellAndSignTx({
           ...ckbVirtualResult,
-          ckbRawTx: rawTx,
+          ckbRawTx: signedTx!,
         });
-        rawTx = signedTx;
+        signedTx = tx as CKBRawTransaction;
       }
 
-      const txHash = await this.cradle.ckbRpc.sendTransaction(rawTx, 'passthrough');
+      const txHash = await sendCkbTx({
+        collector: new Collector({
+          ckbNodeUrl: this.cradle.env.CKB_RPC_URL,
+          ckbIndexerUrl: this.cradle.env.CKB_INDEXER_URL,
+        }),
+        signedTx,
+      });
       job.returnvalue = txHash;
 
       await this.waitForTranscationConfirmed(txHash);
