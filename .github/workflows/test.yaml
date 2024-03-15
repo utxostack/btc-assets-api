@@ -19,6 +19,8 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          - 6379:6379
 
     steps:
       - name: Checkout Code
@@ -48,6 +50,6 @@ jobs:
           CKB_RPC_URL: ${{ secrets.CKB_RPC_URL }}
           CKB_INDEXER_URL: ${{ secrets.CKB_INDEXER_URL }}
           PAYMASTER_PRIVATE_KEY: ${{ secrets.PAYMASTER_PRIVATE_KEY }}
-          REDIS_URL: redis://redis:6379
-          CI_REDIS_URL: redis://redis:6379
+          REDIS_URL: redis://localhost:6379
+          CI_REDIS_URL: redis://localhost:6379
         run: pnpm test
