@@ -24,6 +24,10 @@ test('`/docs/json` - 200', async () => {
     '/bitcoin/v1/address/{address}/balance',
     '/bitcoin/v1/address/{address}/unspent',
     '/bitcoin/v1/address/{address}/txs',
+    '/rgbpp/v1/transaction/ckb-tx',
+    '/rgbpp/v1/transaction/{txid}',
+    '/rgbpp/v1/assets/{txid}/{vout}',
+    '/rgbpp/v1/address/{address}/assets',
   ]);
 
   await fastify.close();
