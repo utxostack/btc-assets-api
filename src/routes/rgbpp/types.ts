@@ -38,6 +38,22 @@ export const OutputCell = z.object({
 });
 export type OutputCell = z.infer<typeof OutputCell>;
 
+export const Cell = z.object({
+  cellOutput: OutputCell,
+  data: z.string(),
+  outPoint: z
+    .object({
+      txHash: z.string(),
+      index: z.string(),
+    })
+    .or(z.null())
+    .optional(),
+  blockHash: z.string().optional(),
+  blockNumber: z.string().optional(),
+  txIndex: z.string().optional(),
+});
+export type Cell = z.infer<typeof Cell>;
+
 export const CKBRawTransaction = z.object({
   version: z.string(),
   cellDeps: z.array(CellDep),

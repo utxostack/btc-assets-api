@@ -4,7 +4,7 @@ import { Server } from 'http';
 import z from 'zod';
 import { genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import { append0x, u32ToLe } from '../../utils/hex';
-import { OutputCell } from './types';
+import { Cell } from './types';
 
 const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.get(
@@ -16,7 +16,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
           vout: z.coerce.number(),
         }),
         response: {
-          200: z.array(OutputCell),
+          200: z.array(Cell),
         },
       },
     },
@@ -30,9 +30,9 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
       });
 
       const collect = collector.collect();
-      const cells: OutputCell[] = [];
+      const cells: Cell[] = [];
       for await (const cell of collect) {
-        cells.push(cell as unknown as OutputCell);
+        cells.push(cell);
       }
       return cells;
     },

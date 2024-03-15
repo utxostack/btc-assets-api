@@ -3,7 +3,7 @@ import { Server } from 'http';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import z from 'zod';
-import { OutputCell } from './types';
+import { Cell } from './types';
 import { append0x, u32ToLe } from '../../utils/hex';
 import { genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 
@@ -24,7 +24,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           address: z.string(),
         }),
         response: {
-          200: z.array(OutputCell),
+          200: z.array(Cell),
         },
       },
     },
@@ -40,9 +40,9 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             lock: lockScript,
           });
           const collect = collector.collect();
-          const cells: OutputCell[] = [];
+          const cells: Cell[] = [];
           for await (const cell of collect) {
-            cells.push(cell as unknown as OutputCell);
+            cells.push(cell);
           }
           return cells;
         }),
