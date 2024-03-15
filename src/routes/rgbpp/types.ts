@@ -1,5 +1,12 @@
 import z from 'zod';
 
+export const Script = z.object({
+  codeHash: z.string(),
+  args: z.string(),
+  hashType: z.enum(['type', 'data', 'data1', 'data2']),
+});
+export type Script = z.infer<typeof Script>;
+
 export const CellDep = z.object({
   outPoint: z
     .object({
@@ -22,19 +29,8 @@ export type InputCell = z.infer<typeof InputCell>;
 
 export const OutputCell = z.object({
   capacity: z.string(),
-  lock: z.object({
-    codeHash: z.string(),
-    args: z.string(),
-    hashType: z.enum(['type', 'data', 'data1', 'data2']),
-  }),
-  type: z
-    .object({
-      codeHash: z.string(),
-      args: z.string(),
-      hashType: z.enum(['type', 'data', 'data1', 'data2']),
-    })
-    .or(z.null())
-    .optional(),
+  lock: Script,
+  type: Script.or(z.null()).optional(),
 });
 export type OutputCell = z.infer<typeof OutputCell>;
 
