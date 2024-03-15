@@ -23,6 +23,12 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         params: z.object({
           address: z.string(),
         }),
+        querystring: z.object({
+          type: z.object({
+            codeHash: z.string(),
+            args: z.string(),
+          }),
+        }),
         response: {
           200: z.array(Cell),
         },
@@ -30,15 +36,27 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     },
     async (request) => {
       const { address } = request.params;
+      const { type } = request.query;
       const utxos = await fastify.electrs.getUtxoByAddress(address);
       const cells = await Promise.all(
         utxos.map(async (utxo) => {
           const { txid, vout } = utxo;
           const args = append0x(`${u32ToLe(vout)}${txid}`);
           const lockScript = genRgbppLockScript(args, process.env.NETWORK === 'mainnet');
+
           const collector = fastify.ckbIndexer.collector({
             lock: lockScript,
+            ...(type
+              ? {
+                  type: {
+                    codeHash: type.codeHash,
+                    hashType: 'type',
+                    args: type.args,
+                  },
+                }
+              : {}),
           });
+
           const collect = collector.collect();
           const cells: Cell[] = [];
           for await (const cell of collect) {
