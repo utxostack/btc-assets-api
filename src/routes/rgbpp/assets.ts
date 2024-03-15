@@ -6,6 +6,7 @@ import z from 'zod';
 // @ts-expect-error
 import { getRgbppLockScript } from '@rgbpp-sdk/ckb';
 import { append0x, u32ToLe } from '../../utils/hex';
+import { OutputCell } from './types';
 
 const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.get(
@@ -16,9 +17,12 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
           txid: z.string(),
           vout: z.coerce.number(),
         }),
+        response: {
+          200: z.array(OutputCell),
+        },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { txid, vout } = request.params;
       const lockScript = getRgbppLockScript(process.env.NETWORK === 'mainnet');
       const args = append0x(`${u32ToLe(vout)}${txid}`);
@@ -31,12 +35,11 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
       });
 
       const collect = collector.collect();
-      const cell = await collect[Symbol.asyncIterator]().next();
-      if (cell.done) {
-        reply.status(404);
-        return { message: 'Cell not found' };
+      const cells: OutputCell[] = [];
+      for await (const cell of collect) {
+        cells.push(cell as unknown as OutputCell);
       }
-      return cell;
+      return cells;
     },
   );
 

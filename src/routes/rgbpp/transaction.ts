@@ -3,6 +3,7 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Server } from 'http';
 import z from 'zod';
 import { CKBVirtualResult } from './types';
+import { Job } from 'bullmq';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
@@ -13,12 +14,18 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
           txid: z.string(),
           ckbVirtualResult: CKBVirtualResult,
         }),
+        response: {
+          200: z.object({
+            state: z.string(),
+          }),
+        },
       },
     },
     async (request, reply) => {
       const { txid, ckbVirtualResult } = request.body;
-      const job = await fastify.transactionManager.enqueueTransaction({ txid, ckbVirtualResult });
-      reply.send({ job });
+      const job: Job = await fastify.transactionManager.enqueueTransaction({ txid, ckbVirtualResult });
+      const state = await job.getState();
+      reply.send({ state });
     },
   );
 
@@ -32,7 +39,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         response: {
           200: z.object({
             hash: z.string(),
-            status: z.string(),
+            state: z.string(),
           }),
         },
       },
@@ -45,8 +52,8 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         return;
       }
       const hash = job.returnvalue;
-      const status = await job.getState();
-      return { hash, status };
+      const state = await job.getState();
+      return { hash, state };
     },
   );
 

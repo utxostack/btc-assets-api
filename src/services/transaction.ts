@@ -20,7 +20,7 @@ export interface IProcessCallbacks {
 }
 
 interface ITransactionManager {
-  enqueueTransaction(request: ITransactionRequest): Promise<void>;
+  enqueueTransaction(request: ITransactionRequest): Promise<Job<ITransactionRequest>>;
   getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined>;
   startProcess(callbacks?: IProcessCallbacks): Promise<void>;
   pauseProcess(): Promise<void>;
@@ -165,11 +165,12 @@ export default class TransactionManager implements ITransactionManager {
     }
   }
 
-  public async enqueueTransaction(request: ITransactionRequest): Promise<void> {
-    await this.queue.add(request.txid, request, {
+  public async enqueueTransaction(request: ITransactionRequest): Promise<Job<ITransactionRequest>> {
+    const job = await this.queue.add(request.txid, request, {
       jobId: request.txid,
       delay: this.cradle.env.TRANSACTION_QUEUE_JOB_DELAY,
     });
+    return job;
   }
 
   public async getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined> {
