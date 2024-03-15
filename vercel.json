@@ -5,6 +5,10 @@
       "destination": "/api/cron/process-transactions.ts"
     },
     {
+      "source": "/api/cron/unlock-cells",
+      "destination": "/api/cron/unlock-cells.ts"
+    },
+    {
       "source": "/(.*)",
       "destination": "/api/serverless.ts"
     }
@@ -16,7 +20,7 @@
     }
   ],
   "functions": {
-    "api/cron/process-transactions.ts": {
+    "api/cron/*.ts": {
       "maxDuration": 61
     }
   }
