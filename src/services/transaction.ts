@@ -85,12 +85,7 @@ export default class TransactionManager implements ITransactionManager {
     if (commitment !== calculateCommitment(ckbRawTx)) {
       return false;
     }
-
-    const btcInfo = await this.cradle.bitcoind.getBlockchainInfo();
-    const blockHeight = btcTx.status.block_height ?? btcInfo.blocks;
-    // TODO: use different confirmation threshold for L1 and L2 transactions
-    const isConfirmed = btcInfo.blocks - blockHeight >= 1;
-    if (!isConfirmed) {
+    if (!btcTx.status.confirmed) {
       throw new DelayedError();
     }
     return true;
