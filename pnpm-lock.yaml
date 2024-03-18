@@ -42,11 +42,11 @@ dependencies:
     specifier: ^3.0.0
     version: 3.0.0
   '@rgbpp-sdk/btc':
-    specifier: 0.0.0-snap-20240314081840
-    version: 0.0.0-snap-20240314081840
+    specifier: 0.0.0-snap-20240318031112
+    version: 0.0.0-snap-20240318031112
   '@rgbpp-sdk/ckb':
-    specifier: 0.0.0-snap-20240314081840
-    version: 0.0.0-snap-20240314081840
+    specifier: 0.0.0-snap-20240318031112
+    version: 0.0.0-snap-20240318031112
   '@sentry/node':
     specifier: ^7.102.1
     version: 7.102.1
@@ -1178,8 +1178,8 @@ packages:
     resolution: {integrity: sha512-2LuNTFBIO0m7kKIQvvPHN6UE63VjpmL9rnEEaOOaiSPbZK+zUOYIzBAWcED+3XYzhYsd/0mD57VdxAEqqV52CQ==}
     dev: true
 
-  /@rgbpp-sdk/btc@0.0.0-snap-20240314081840:
-    resolution: {integrity: sha512-Biz+0CmN8+qqtA4Dpv4MbINx50/x8s4k9dS5Uw1Ywuamme1pIAeS/GYcGMa95nz84syzHoGWp4hzrwiwCeJ2xA==}
+  /@rgbpp-sdk/btc@0.0.0-snap-20240318031112:
+    resolution: {integrity: sha512-h2NnZSH1vWOufNVgGwSMGz/hx9glvSXett4583BbD6sPgnB1uXy7KiduouldpAV2cu4wYkn+jg8Q2OVpeJDufw==}
     dependencies:
       '@bitcoinerlab/secp256k1': 1.1.1
       bip32: 4.0.0
@@ -1188,8 +1188,8 @@ packages:
       lodash: 4.17.21
     dev: false
 
-  /@rgbpp-sdk/ckb@0.0.0-snap-20240314081840:
-    resolution: {integrity: sha512-114sSEHHKlSNB9bljk43zRXw13XdPn1KibYmCP+ZSRBrWjyYnLtkG+9MKL2cXXL5zcuEUK8xyAVxPQi32D7v/A==}
+  /@rgbpp-sdk/ckb@0.0.0-snap-20240318031112:
+    resolution: {integrity: sha512-LQ4jY1as40c9Bii3uG76RqKUDRQ176/9eSQ/yZcGVmllF87dbTbKfuGx6XGe5fLOQdBWA9fRSV5m5THmA2NxqA==}
     dependencies:
       '@ckb-lumos/base': 0.21.1
       '@ckb-lumos/codec': 0.22.0-next.5
