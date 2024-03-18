@@ -3,6 +3,12 @@ import TransactionManager, { ITransactionRequest } from '../../src/services/tran
 import container from '../../src/container';
 import { CKBVirtualResult, InputCell, OutputCell } from '../../src/routes/rgbpp/types';
 import { Transaction } from '../../src/routes/bitcoin/types';
+import { calculateCommitment } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+
+const commitment = calculateCommitment({
+  inputs: [] as InputCell[],
+  outputs: [] as OutputCell[],
+} as CKBVirtualResult['ckbRawTx']);
 
 describe('transactionManager', () => {
   let transactionManager: TransactionManager;
@@ -13,7 +19,6 @@ describe('transactionManager', () => {
   });
 
   test('verifyTransaction: should return true for valid transaction', async () => {
-    const commitment = 'ed7e717b2ffea6dd89960b05f3a4756077bdbcd9d3db2b7f06100e823aed9b31';
     vi.spyOn(
       transactionManager as unknown as {
         getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;
@@ -46,7 +51,7 @@ describe('transactionManager', () => {
       txid: 'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
       ckbVirtualResult: {
         ckbRawTx: { inputs: [] as InputCell[], outputs: [] as OutputCell[] } as CKBVirtualResult['ckbRawTx'],
-        commitment: 'ed7e717b2ffea6dd89960b05f3a4756077bdbcd9d3db2b7f06100e823aed9b31',
+        commitment,
         sumInputsCapacity: '1000',
         needPaymasterCell: false,
       },
@@ -56,7 +61,7 @@ describe('transactionManager', () => {
   });
 
   test('verifyTransaction: should return false for mismatch ckb tx', async () => {
-    const commitment = 'ed7e717b2ffea6dd89960b05f3a4756077bdbcd9d3db2b7f06100e823aed9b32';
+    const commitment = 'mismatchcommitment';
     vi.spyOn(
       transactionManager as unknown as {
         getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;
@@ -68,7 +73,7 @@ describe('transactionManager', () => {
       txid: 'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
       ckbVirtualResult: {
         ckbRawTx: { inputs: [] as InputCell[], outputs: [] as OutputCell[] } as CKBVirtualResult['ckbRawTx'],
-        commitment: 'ed7e717b2ffea6dd89960b05f3a4756077bdbcd9d3db2b7f06100e823aed9b32',
+        commitment,
         sumInputsCapacity: '1000',
         needPaymasterCell: false,
       },
@@ -78,7 +83,6 @@ describe('transactionManager', () => {
   });
 
   test('verifyTransaction: should throw DelayedError for unconfirmed transaction', async () => {
-    const commitment = 'ed7e717b2ffea6dd89960b05f3a4756077bdbcd9d3db2b7f06100e823aed9b31';
     vi.spyOn(
       transactionManager as unknown as {
         getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;
