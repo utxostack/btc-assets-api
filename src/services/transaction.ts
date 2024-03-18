@@ -6,6 +6,7 @@ import { Transaction } from '../routes/bitcoin/types';
 import { opReturnScriptPubKeyToData } from '@rgbpp-sdk/btc';
 import { appendCkbTxWitnesses, sendCkbTx, Collector } from '@rgbpp-sdk/ckb';
 import { calculateCommitment } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+import * as Sentry from '@sentry/node';
 
 export interface ITransactionRequest {
   txid: string;
@@ -26,6 +27,23 @@ interface ITransactionManager {
 }
 
 export const TRANSACTION_QUEUE_NAME = 'rgbpp-ckb-transaction-queue';
+
+class InvalidTransactionError extends Error {
+  public data: ITransactionRequest;
+
+  constructor(data: ITransactionRequest) {
+    super('Invalid transaction');
+    this.name = 'InvalidTransactionError';
+    this.data = data;
+  }
+}
+
+class OpReturnNotFoundError extends Error {
+  constructor(txid: string) {
+    super(`OP_RETURN output not found: ${txid}`);
+    this.name = 'OpReturnNotFoundError';
+  }
+}
 
 /**
  * TransactionManager
@@ -61,7 +79,7 @@ export default class TransactionManager implements ITransactionManager {
   private async getCommitmentFromBtcTx(tx: Transaction): Promise<Buffer> {
     const opReturn = tx.vout.find((vout) => vout.scriptpubkey_type === 'op_return');
     if (!opReturn) {
-      throw new Error('No OP_RETURN output found');
+      throw new OpReturnNotFoundError(tx.txid);
     }
     const buffer = Buffer.from(opReturn.scriptpubkey, 'hex');
     return opReturnScriptPubKeyToData(buffer);
@@ -118,11 +136,10 @@ export default class TransactionManager implements ITransactionManager {
   }
 
   public async process(job: Job<ITransactionRequest>, token?: string) {
-    // TODO: add job stages and error handling
     try {
       const isVerified = await this.verifyTransaction(job.data);
       if (!isVerified) {
-        throw new Error('Transaction not verified');
+        throw new InvalidTransactionError(job.data);
       }
       const { ckbVirtualResult } = job.data;
       let signedTx = appendCkbTxWitnesses(ckbVirtualResult)!;
@@ -154,6 +171,11 @@ export default class TransactionManager implements ITransactionManager {
         await this.moveJobToDelayed(job, token);
         return;
       }
+      if (err instanceof InvalidTransactionError) {
+        // capture invalid transaction request to Sentry
+        Sentry.setContext('transaction', err.data);
+      }
+      Sentry.captureException(err);
       throw err;
     }
   }
