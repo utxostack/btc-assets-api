@@ -55,7 +55,7 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     {
       schema: {
         params: z.object({
-          height: z.number(),
+          height: z.coerce.number(),
         }),
         response: {
           200: z.object({
