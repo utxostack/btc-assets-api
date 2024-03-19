@@ -11,7 +11,7 @@ import swagger from './plugins/swagger';
 import jwt from './plugins/jwt';
 import cache from './plugins/cache';
 import rateLimit from './plugins/rate-limit';
-import { env } from './env';
+import { env, getSafeEnvs } from './env';
 import container from './container';
 import { asValue } from 'awilix';
 import options from './options';
@@ -30,7 +30,7 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
 const isTokenRoutesEnable = env.NODE_ENV === 'production' ? env.ADMIN_USERNAME && env.ADMIN_PASSWORD : true;
 
 async function routes(fastify: FastifyInstance) {
-  fastify.log.info(`Process env: ${JSON.stringify(env, null, 2)}`);
+  fastify.log.info(`Process env: ${JSON.stringify(getSafeEnvs(), null, 2)}`);
 
   container.register({ logger: asValue(fastify.log) });
   fastify.decorate('container', container);

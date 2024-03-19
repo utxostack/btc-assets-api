@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import z from 'zod';
 import process from 'node:process';
+import omit from 'lodash-es/omit';
 
 const envSchema = z.object({
   NODE_ENV: z.string().default('development'),
@@ -36,3 +37,5 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 export const env = envSchema.parse(process.env);
+
+export const getSafeEnvs = () => omit(env, ['ADMIN_PASSWORD', 'JWT_SECRET', 'BITCOIN_JSON_RPC_PASSWORD']);

@@ -41,6 +41,7 @@
     "fastify-plugin": "^4.5.1",
     "fastify-type-provider-zod": "^1.1.9",
     "ioredis": "^5.3.2",
+    "lodash-es": "^4.17.21",
     "multicoin-address-validator": "^0.5.16",
     "pino": "^8.19.0",
     "std-env": "^3.7.0",
@@ -48,6 +49,7 @@
   },
   "devDependencies": {
     "@types/ioredis-mock": "^8.2.5",
+    "@types/lodash-es": "^4.17.12",
     "@types/multicoin-address-validator": "^0.5.2",
     "@types/node": "^20.11.17",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
