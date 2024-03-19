@@ -30,7 +30,7 @@ export default fp(async (fastify) => {
       return;
     }
 
-    fastify.register(import('@fastify/redis'), { client: redis });
+    await fastify.register(import('@fastify/redis'), { client: redis });
 
     fastify.addHook('onRequest', (request, reply, done) => {
       if (request.url.startsWith(DOCS_ROUTE_PREFIX)) {

@@ -58,7 +58,7 @@ const Output = z.object({
 const Input = z.object({
   txid: z.string(),
   vout: z.number(),
-  prevout: Output,
+  prevout: Output.or(z.null()),
   scriptsig: z.string(),
   scriptsig_asm: z.string(),
   witness: z.array(z.string()).optional(),

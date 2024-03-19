@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+    ports:
+      - '3000:3000'
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=
+      - ADMIN_USERNAME=
+      - ADMIN_PASSWORD=
+      - BITCOIN_JSON_RPC_URL=
+      - BITCOIN_JSON_RPC_USERNAME=
+      - BITCOIN_JSON_RPC_PASSWORD=
+      - BITCOIN_ELECTRS_API_URL=
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:latest
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./data:/root/redis
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
