@@ -12,7 +12,7 @@ test('`/token/generate` - 400', async () => {
   const data = response.json();
 
   expect(response.statusCode).toBe(400);
-  expect(data.message).toBe('body must be object');
+  expect(data.message).toMatchSnapshot();
 
   await fastify.close();
 });

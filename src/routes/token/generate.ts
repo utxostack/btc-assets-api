@@ -1,24 +1,21 @@
-import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
+import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Server } from 'http';
+import z from 'zod';
 
-const generateRoute: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (
-  fastify,
-  _,
-  done,
-) => {
+const generateRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
     '/generate',
     {
       schema: {
-        body: Type.Object({
-          app: Type.String(),
-          domain: Type.String(),
+        body: z.object({
+          app: z.string(),
+          domain: z.string(),
         }),
         response: {
-          200: Type.Object({
-            token: Type.String(),
-          })
+          200: z.object({
+            token: z.string(),
+          }),
         },
       },
     },

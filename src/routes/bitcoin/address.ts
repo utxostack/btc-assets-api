@@ -1,10 +1,11 @@
-import { Type, TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import { Balance, BalanceType, Transaction, UTXO, UTXOType } from './types';
 import validateBitcoinAddress from '../../utils/validators';
+import { ZodTypeProvider } from 'fastify-type-provider-zod';
+import z from 'zod';
 
-const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBoxTypeProvider> = (fastify, _, done) => {
+const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.addHook('preHandler', async (request) => {
     const { address } = request.params as { address: string };
     const valid = validateBitcoinAddress(address);
@@ -17,11 +18,11 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBox
     '/:address/balance',
     {
       schema: {
-        params: Type.Object({
-          address: Type.String(),
+        params: z.object({
+          address: z.string(),
         }),
-        querystring: Type.Object({
-          min_satoshi: Type.Optional(Type.Number()),
+        querystring: z.object({
+          min_satoshi: z.coerce.number().optional(),
         }),
         response: {
           200: Balance,
@@ -60,14 +61,14 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBox
     '/:address/unspent',
     {
       schema: {
-        params: Type.Object({
-          address: Type.String(),
+        params: z.object({
+          address: z.string(),
         }),
-        querystring: Type.Object({
-          min_satoshi: Type.Optional(Type.Number()),
+        querystring: z.object({
+          min_satoshi: z.coerce.number().optional(),
         }),
         response: {
-          200: Type.Array(UTXO),
+          200: z.array(UTXO),
         },
       },
     },
@@ -86,11 +87,11 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, TypeBox
     '/:address/txs',
     {
       schema: {
-        params: Type.Object({
-          address: Type.String(),
+        params: z.object({
+          address: z.string(),
         }),
         response: {
-          200: Type.Array(Transaction),
+          200: z.array(Transaction),
         },
       },
     },

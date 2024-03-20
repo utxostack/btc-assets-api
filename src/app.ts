@@ -11,11 +11,11 @@ import swagger from './plugins/swagger';
 import jwt from './plugins/jwt';
 import cache from './plugins/cache';
 import rateLimit from './plugins/rate-limit';
-import { env } from './env';
+import { env, getSafeEnvs } from './env';
 import container from './container';
 import { asValue } from 'awilix';
 import options from './options';
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import cors from './plugins/cors';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
@@ -27,7 +27,11 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   });
 }
 
+const isTokenRoutesEnable = env.NODE_ENV === 'production' ? env.ADMIN_USERNAME && env.ADMIN_PASSWORD : true;
+
 async function routes(fastify: FastifyInstance) {
+  fastify.log.info(`Process env: ${JSON.stringify(getSafeEnvs(), null, 2)}`);
+
   container.register({ logger: asValue(fastify.log) });
   fastify.decorate('container', container);
 
@@ -39,7 +43,9 @@ async function routes(fastify: FastifyInstance) {
   fastify.register(cache);
   fastify.register(rateLimit);
 
-  fastify.register(tokenRoutes, { prefix: '/token' });
+  if (isTokenRoutesEnable) {
+    fastify.register(tokenRoutes, { prefix: '/token' });
+  }
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
 
   fastify.setErrorHandler((error, _, reply) => {
@@ -55,7 +61,9 @@ async function routes(fastify: FastifyInstance) {
 }
 
 export function buildFastify() {
-  const app = fastify(options).withTypeProvider<TypeBoxTypeProvider>();
+  const app = fastify(options).withTypeProvider<ZodTypeProvider>();
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
   app.register(routes);
   return app;
 }
