@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import z from 'zod';
 import process from 'node:process';
-import omit from 'lodash-es/omit';
+import { omit } from 'lodash';
 
 const envSchema = z.object({
   NODE_ENV: z.string().default('development'),
