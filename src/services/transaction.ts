@@ -2,11 +2,11 @@ import { Cradle } from '../container';
 import { DelayedError, Job, Queue, Worker } from 'bullmq';
 import { AxiosError } from 'axios';
 import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
-import { Transaction } from '../routes/bitcoin/types';
 import { opReturnScriptPubKeyToData } from '@rgbpp-sdk/btc';
-import { appendCkbTxWitnesses, sendCkbTx, Collector } from '@rgbpp-sdk/ckb';
+import { appendCkbTxWitnesses, SPVService, sendCkbTx, Collector } from '@rgbpp-sdk/ckb';
 import { calculateCommitment } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import * as Sentry from '@sentry/node';
+import { Transaction } from '../routes/bitcoin/types';
 
 export interface ITransactionRequest {
   txid: string;
@@ -59,6 +59,7 @@ export default class TransactionManager implements ITransactionManager {
   private cradle: Cradle;
   private queue: Queue<ITransactionRequest>;
   private worker: Worker<ITransactionRequest>;
+  private spvService: SPVService;
 
   constructor(cradle: Cradle) {
     this.cradle = cradle;
@@ -70,6 +71,7 @@ export default class TransactionManager implements ITransactionManager {
       autorun: false,
       concurrency: 10,
     });
+    this.spvService = new SPVService(cradle.env.TRANSACTION_SPV_SERVICE_URL);
   }
 
   /**
@@ -116,8 +118,8 @@ export default class TransactionManager implements ITransactionManager {
    */
   private async moveJobToDelayed(job: Job<ITransactionRequest>, token?: string) {
     this.cradle.logger.info(`[TransactionManager] Moving job ${job.id} to delayed queue`);
-    // FIXME: choose a better delay time
-    await job.moveToDelayed(Date.now() + 1000 * 60, token);
+    const timestamp = Date.now() + this.cradle.env.TRANSACTION_QUEUE_JOB_DELAY;
+    await job.moveToDelayed(timestamp, token);
     // https://docs.bullmq.io/patterns/process-step-jobs#delaying
     throw new DelayedError();
   }
@@ -143,8 +145,15 @@ export default class TransactionManager implements ITransactionManager {
       if (!isVerified) {
         throw new InvalidTransactionError(job.data);
       }
-      const { ckbVirtualResult } = job.data;
-      let signedTx = appendCkbTxWitnesses(ckbVirtualResult)!;
+      const { ckbVirtualResult, txid } = job.data;
+      const { hex, blockindex } = await this.cradle.bitcoind.getTransaction(txid);
+      let signedTx = await appendCkbTxWitnesses({
+        ...ckbVirtualResult,
+        spvService: this.spvService,
+        btcTxId: txid,
+        btcTxBytes: hex,
+        btcTxIndexInBlock: blockindex!,
+      })!;
 
       // append paymaster cell and sign the transaction if needed
       if (ckbVirtualResult.needPaymasterCell) {
