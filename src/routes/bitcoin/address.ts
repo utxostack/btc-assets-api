@@ -18,11 +18,13 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     '/:address/balance',
     {
       schema: {
+        description: 'Get the balance of a bitcoin address',
+        tags: ['Bitcoin'],
         params: z.object({
-          address: z.string(),
+          address: z.string().describe('The Bitcoin address'),
         }),
         querystring: z.object({
-          min_satoshi: z.coerce.number().optional(),
+          min_satoshi: z.coerce.number().optional().describe('The minimum value of the UTXO in satoshi'),
         }),
         response: {
           200: Balance,
@@ -61,11 +63,13 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     '/:address/unspent',
     {
       schema: {
+        tags: ['Bitcoin'],
+        description: 'Get the unspent transaction outputs (UTXOs) of a bitcoin address',
         params: z.object({
-          address: z.string(),
+          address: z.string().describe('The Bitcoin address'),
         }),
         querystring: z.object({
-          min_satoshi: z.coerce.number().optional(),
+          min_satoshi: z.coerce.number().optional().describe('The minimum value of the UTXO in satoshi'),
         }),
         response: {
           200: z.array(UTXO),
@@ -87,8 +91,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     '/:address/txs',
     {
       schema: {
+        description: 'Get the transactions of a bitcoin address',
+        tags: ['Bitcoin'],
         params: z.object({
-          address: z.string(),
+          address: z.string().describe('The Bitcoin address'),
         }),
         response: {
           200: z.array(Transaction),

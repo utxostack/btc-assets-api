@@ -9,6 +9,8 @@ const envSchema = z.object({
   ADDRESS: z.string().optional(),
   NETWORK: z.string().default('testnet'),
 
+  DOMAIN: z.string().optional(),
+
   SENTRY_DSN_URL: z.string().optional(),
   REDIS_URL: z.string().optional(),
   RATE_LIMIT_PER_MINUTE: z.number().default(100),

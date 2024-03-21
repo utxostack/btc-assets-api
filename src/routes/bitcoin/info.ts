@@ -8,6 +8,8 @@ const infoRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProv
     '/info',
     {
       schema: {
+        description: 'Get information about the Bitcoin blockchain',
+        tags: ['Bitcoin'],
         response: {
           200: ChainInfo,
         },

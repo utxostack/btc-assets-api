@@ -10,8 +10,10 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     '/:hash',
     {
       schema: {
+        description: 'Get a block by its hash',
+        tags: ['Bitcoin'],
         params: z.object({
-          hash: z.string(),
+          hash: z.string().describe('The Bitcoin block hash'),
         }),
         response: {
           200: Block,
@@ -30,8 +32,10 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     '/:hash/header',
     {
       schema: {
+        description: 'Get a block header by its hash',
+        tags: ['Bitcoin'],
         params: z.object({
-          hash: z.string(),
+          hash: z.string().describe('The Bitcoin block hash'),
         }),
         response: {
           200: z.object({
@@ -54,8 +58,10 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     '/height/:height',
     {
       schema: {
+        description: 'Get a block by its height',
+        tags: ['Bitcoin'],
         params: z.object({
-          height: z.coerce.number(),
+          height: z.coerce.number().describe('The Bitcoin block height'),
         }),
         response: {
           200: z.object({

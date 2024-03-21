@@ -21,6 +21,7 @@ export default fp(async (fastify) => {
           type: 'apiKey',
           name: 'Authorization',
           in: 'header',
+          description: 'JWT token for authentication. Example: Bearer <token>',
         },
       },
     },
