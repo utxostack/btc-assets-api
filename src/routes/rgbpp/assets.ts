@@ -11,6 +11,8 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     '/:btc_txid/:vout',
     {
       schema: {
+        description: 'Get RGB++ assets by btc txid and vout',
+        tags: ['RGB++'],
         params: z.object({
           btc_txid: z.string(),
           vout: z.coerce.number(),

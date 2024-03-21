@@ -22,6 +22,8 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     '/:btc_address/assets',
     {
       schema: {
+        description: 'Get RGB++ assets by btc address',
+        tags: ['RGB++'],
         params: z.object({
           btc_address: z.string(),
         }),

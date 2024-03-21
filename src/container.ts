@@ -41,6 +41,7 @@ container.register({
   electrs: asClass(ElectrsAPI).singleton(),
   paymaster: asClass(Paymaster).singleton(),
   transactionManager: asClass(TransactionManager).singleton(),
+  unlocker: asClass(Unlocker).singleton(),
 });
 
 export default container;

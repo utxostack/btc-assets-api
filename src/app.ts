@@ -34,9 +34,6 @@ const isTokenRoutesEnable = env.NODE_ENV === 'production' ? env.ADMIN_USERNAME &
 async function routes(fastify: FastifyInstance) {
   fastify.log.info(`Process env: ${JSON.stringify(getSafeEnvs(), null, 2)}`);
 
-  container.register({ logger: asValue(fastify.log) });
-  fastify.decorate('container', container);
-
   await fastify.register(cors);
   fastify.register(sensible);
   fastify.register(compress);
