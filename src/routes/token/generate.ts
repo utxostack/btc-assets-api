@@ -15,7 +15,7 @@ const generateRoute: FastifyPluginCallback<Record<never, never>, Server, ZodType
           app: z.string().default('my-app').describe('The app name of the requester'),
           domain: z
             .string()
-            .default(env.DOMAIN ?? 'localhost')
+            .default(env.DOMAIN ?? process.env.VERCEL_BRANCH_URL ?? 'localhost')
             .describe(
               'The domain name of the requester, for CORS (needs to be consistent when calling origin request header)',
             ),
