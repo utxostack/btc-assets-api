@@ -44,6 +44,8 @@ export default fp(async (fastify) => {
     routePrefix: DOCS_ROUTE_PREFIX,
     uiConfig: {
       defaultModelRendering: 'model',
+      defaultModelExpandDepth: 4,
+      defaultModelsExpandDepth: 4,
     },
   });
 });
