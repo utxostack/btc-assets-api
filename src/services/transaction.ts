@@ -99,11 +99,9 @@ export default class TransactionManager implements ITransactionManager {
 
     const { commitment, ckbRawTx } = ckbVirtualResult;
     const btcTxCommitment = await this.getCommitmentFromBtcTx(btcTx);
-    console.log('commitment', commitment, btcTxCommitment.toString('hex'));
     if (commitment !== btcTxCommitment.toString('hex')) {
       return false;
     }
-    console.log('commitment2', commitment, calculateCommitment(ckbRawTx));
     if (commitment !== calculateCommitment(ckbRawTx)) {
       return false;
     }
