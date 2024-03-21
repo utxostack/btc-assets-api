@@ -10,8 +10,10 @@ const transactionRoutes: FastifyPluginCallback<Record<never, never>, Server, Zod
     '',
     {
       schema: {
+        description: 'Send a raw transaction to the Bitcoin network',
+        tags: ['Bitcoin'],
         body: z.object({
-          txHex: z.string(),
+          txHex: z.string().describe('The raw transaction hex'),
         }),
         response: {
           200: z.object({
@@ -33,8 +35,10 @@ const transactionRoutes: FastifyPluginCallback<Record<never, never>, Server, Zod
     '/:txid',
     {
       schema: {
+        description: 'Get a transaction by its txid',
+        tags: ['Bitcoin'],
         params: z.object({
-          txid: z.string(),
+          txid: z.string().describe('The Bitcoin transaction id'),
         }),
         response: {
           200: Transaction,

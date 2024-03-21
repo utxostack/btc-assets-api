@@ -21,6 +21,7 @@ export default fp(async (fastify) => {
           type: 'apiKey',
           name: 'Authorization',
           in: 'header',
+          description: 'JWT token for authentication. Example: Bearer <token>',
         },
       },
     },
@@ -41,5 +42,8 @@ export default fp(async (fastify) => {
   });
   fastify.register(swaggerUI, {
     routePrefix: DOCS_ROUTE_PREFIX,
+    uiConfig: {
+      defaultModelRendering: 'model',
+    },
   });
 });

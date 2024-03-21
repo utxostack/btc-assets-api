@@ -27,3 +27,5 @@ dist
 yarn.lock
 .vercel
 coverage
+data
+redis.conf
