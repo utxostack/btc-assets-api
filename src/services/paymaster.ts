@@ -120,7 +120,7 @@ export default class Paymaster implements IPaymaster {
   public async appendCellAndSignTx(params: Pick<AppendPaymasterCellAndSignTxParams, 'ckbRawTx' | 'sumInputsCapacity'>) {
     const { ckbRawTx, sumInputsCapacity } = params;
     const token = randomUUID();
-    // FIXME: getNextCellJob maybe suspended if the queue is empty
+    // XXX: getNextCellJob maybe suspended if the queue is empty
     const cellJob = await this.getNextCellJob(token);
     const paymasterCell = cellJob.data as unknown as IndexerCell;
     const signedTx = await appendPaymasterCellAndSignCkbTx({

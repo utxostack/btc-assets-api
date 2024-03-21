@@ -106,7 +106,7 @@ export default class Bitcoind {
     return this.callMethod<string>('sendrawtransaction', [txHex]);
   }
 
-  /// https://developer.bitcoin.org/reference/rpc/gettransaction.html
+  // https://developer.bitcoin.org/reference/rpc/gettransaction.html
   public async getTransaction(txid: string) {
     return this.callMethod<Transaction>('gettransaction', [txid]);
   }

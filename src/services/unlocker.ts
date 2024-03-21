@@ -13,6 +13,10 @@ import { CellCollector } from '@ckb-lumos/lumos';
 
 interface IUnlocker {}
 
+/**
+ * BTC Time lock cell unlocker
+ * responsible for unlocking the BTC time lock cells and sending the CKB transactions.
+ */
 export default class Unlocker implements IUnlocker {
   private cradle: Cradle;
   private collector: CellCollector;
@@ -34,15 +38,18 @@ export default class Unlocker implements IUnlocker {
     return genRgbppLockScript('0x', this.isMainnet);
   }
 
+  /**
+   * Get next batch of BTC time lock cells
+   */
   private async getNextBatchLockCell() {
     const collect = this.collector.collect();
     const cells: IndexerCell[] = [];
 
     const { blocks } = await this.cradle.bitcoind.getBlockchainInfo();
     for await (const cell of collect) {
-      // check cell lock args (after, txid) and skip if btc tx not confirmed $after blocks yet
       const { after, btcTxid } = BTCTimeLock.unpack(cell.cellOutput.lock.args);
       const { blockheight } = await this.cradle.bitcoind.getTransaction(btcTxid);
+      // skip if btc tx not confirmed $after blocks yet
       if (!blockheight || blocks - blockheight < after) {
         continue;
       }
@@ -60,6 +67,9 @@ export default class Unlocker implements IUnlocker {
     return cells;
   }
 
+  /**
+   * Unlock the BTC time lock cells and send the CKB transaction
+   */
   public async unlockCells() {
     const cells = await this.getNextBatchLockCell();
     if (cells.length === 0) {
@@ -69,6 +79,7 @@ export default class Unlocker implements IUnlocker {
     const btcTimeCellPairs = await Promise.all(
       cells.map(async (cell) => {
         const { btcTxid } = BTCTimeLock.unpack(cell.output.lock.args);
+        // get the btc tx index in the block to used for the spv proof
         const { blockindex } = await this.cradle.bitcoind.getTransaction(btcTxid);
         return {
           btcTimeCell: cell,
