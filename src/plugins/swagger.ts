@@ -42,5 +42,8 @@ export default fp(async (fastify) => {
   });
   fastify.register(swaggerUI, {
     routePrefix: DOCS_ROUTE_PREFIX,
+    uiConfig: {
+      defaultModelRendering: 'model',
+    },
   });
 });
