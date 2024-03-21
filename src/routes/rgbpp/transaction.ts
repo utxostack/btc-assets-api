@@ -10,13 +10,15 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     '/ckb-tx',
     {
       schema: {
+        description: 'Submit a RGB++ CKB transaction',
+        tags: ['RGB++'],
         body: z.object({
           txid: z.string(),
           ckbVirtualResult: CKBVirtualResult,
         }),
         response: {
           200: z.object({
-            state: z.string(),
+            state: z.string().describe('The state of the transaction, waiting by default'),
           }),
         },
       },
@@ -33,13 +35,23 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     '/:btc_txid',
     {
       schema: {
+        description: `
+          Get RGB++ CKB transaction by btc txid
+
+          * completed: The CKB transaction has been sent and confirmed.
+          * failed: Something went wrong during the process, and it has failed.
+          * delayed: The transaction has not been confirmed yet and is waiting for confirmation.
+          * active: The transaction is currently being processed.
+          * waiting: The transaction is pending and is waiting to be processed.
+        `,
+        tags: ['RGB++'],
         params: z.object({
           btc_txid: z.string(),
         }),
         response: {
           200: z.object({
-            ckbTxHash: z.string(),
-            state: z.string(),
+            ckbTxHash: z.string().describe('The CKB transaction hash'),
+            state: z.string().describe('The state of the transaction'),
           }),
         },
       },
