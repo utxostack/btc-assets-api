@@ -1,3 +1,8 @@
+export enum NetworkType {
+  mainnet = 'prod',
+  testnet = 'testnet',
+}
+
 export const CUSTOM_HEADERS = {
   ApiCache: 'x-api-cache',
   ResponseCacheable: 'x-response-cacheable',

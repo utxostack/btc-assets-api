@@ -17,6 +17,7 @@ import { asValue } from 'awilix';
 import options from './options';
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import cors from './plugins/cors';
+import { NetworkType } from './constants';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   Sentry.init({
@@ -42,6 +43,11 @@ async function routes(fastify: FastifyInstance) {
   fastify.register(jwt);
   fastify.register(cache);
   fastify.register(rateLimit);
+
+  // Check if the Electrs API and Bitcoin JSON-RPC server are running on the correct network
+  const env = container.resolve('env');
+  await container.resolve('bitcoind').checkNetwork(env.NETWORK as NetworkType);
+  await container.resolve('electrs').checkNetwork(env.NETWORK as NetworkType);
 
   if (isTokenRoutesEnable) {
     fastify.register(tokenRoutes, { prefix: '/token' });
