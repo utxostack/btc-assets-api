@@ -1,9 +1,17 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import container from '../../src/container';
-import { describe, test, beforeEach, vi, expect, afterEach } from 'vitest';
+import { describe, test, beforeEach, afterEach, vi, expect } from 'vitest';
 import Unlocker from '../../src/services/unlocker';
 import { Cell } from '@ckb-lumos/lumos';
-import { BTCTimeLock, genBtcTimeLockScript } from '@rgbpp-sdk/ckb';
+import { BTCTimeLock, genBtcTimeLockScript, buildBtcTimeCellsSpentTx } from '@rgbpp-sdk/ckb';
+
+vi.mock('@rgbpp-sdk/ckb', async (importOriginal) => {
+  const original = await importOriginal();
+  return {
+    ...(original as object),
+    buildBtcTimeCellsSpentTx: vi.fn(),
+  };
+});
 
 describe('Unlocker', () => {
   let unlocker: Unlocker;
@@ -15,7 +23,7 @@ describe('Unlocker', () => {
   });
 
   afterEach(() => {
-    vi.unstubAllEnvs();
+    vi.clearAllMocks();
   });
 
   function mockBtcTimeLockCell() {
@@ -90,5 +98,16 @@ describe('Unlocker', () => {
 
     const cells = await unlocker.getNextBatchLockCell();
     expect(cells).toHaveLength(1);
+  });
+
+  test('unlockCells: should do nothing when no cells to unlock', async () => {
+    vi.spyOn(unlocker, 'getNextBatchLockCell').mockResolvedValue([]);
+    await unlocker.unlockCells();
+    expect(buildBtcTimeCellsSpentTx).not.toHaveBeenCalled();
+  });
+
+  // FIXME: Invalid BTC time lock args
+  test('unlockCells: should unlock cells and send ckb tx', async () => {
+    await expect(unlocker.unlockCells()).rejects.toMatchSnapshot();
   });
 });
