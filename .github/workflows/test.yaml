@@ -50,6 +50,7 @@ jobs:
           CKB_RPC_URL: ${{ secrets.CKB_RPC_URL }}
           CKB_INDEXER_URL: ${{ secrets.CKB_INDEXER_URL }}
           PAYMASTER_PRIVATE_KEY: ${{ secrets.PAYMASTER_PRIVATE_KEY }}
+          TRANSACTION_SPV_SERVICE_URL: ${{ secrets.TRANSACTION_SPV_SERVICE_URL }}
           REDIS_URL: redis://localhost:6379
           CI_REDIS_URL: redis://localhost:6379
         run: pnpm test
