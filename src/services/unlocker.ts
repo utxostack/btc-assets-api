@@ -41,7 +41,7 @@ export default class Unlocker implements IUnlocker {
   /**
    * Get next batch of BTC time lock cells
    */
-  private async getNextBatchLockCell() {
+  public async getNextBatchLockCell() {
     const collect = this.collector.collect();
     const cells: IndexerCell[] = [];
 
