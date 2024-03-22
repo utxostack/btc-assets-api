@@ -35,6 +35,7 @@
     "@fastify/sensible": "^5.5.0",
     "@fastify/swagger": "^8.14.0",
     "@fastify/swagger-ui": "^3.0.0",
+    "@nervosnetwork/ckb-sdk-utils": "^0.109.1",
     "@rgbpp-sdk/btc": "0.0.0-snap-20240321073744",
     "@rgbpp-sdk/ckb": "0.0.0-snap-20240321073744",
     "@sentry/node": "^7.102.1",

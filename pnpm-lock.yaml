@@ -41,6 +41,9 @@ dependencies:
   '@fastify/swagger-ui':
     specifier: ^3.0.0
     version: 3.0.0
+  '@nervosnetwork/ckb-sdk-utils':
+    specifier: ^0.109.1
+    version: 0.109.1
   '@rgbpp-sdk/btc':
     specifier: 0.0.0-snap-20240321073744
     version: 0.0.0-snap-20240321073744
