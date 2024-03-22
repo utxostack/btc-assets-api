@@ -7,7 +7,7 @@ const envSchema = z.object({
   NODE_ENV: z.string().default('development'),
   PORT: z.string().optional(),
   ADDRESS: z.string().optional(),
-  NETWORK: z.string().default('testnet'),
+  NETWORK: z.enum(['mainnet', 'testnet']).default('testnet'),
 
   DOMAIN: z.string().optional(),
 

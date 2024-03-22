@@ -1,13 +1,9 @@
 import * as AddressValidator from 'multicoin-address-validator';
 import { env } from '../env';
-
-enum ValidatorNetworkType {
-  mainnet = 'prod',
-  testnet = 'testnet',
-}
+import { NetworkType } from '../constants';
 
 const networkType =
-  env.NETWORK === 'mainnet' ? ValidatorNetworkType.mainnet : ValidatorNetworkType.testnet;
+  env.NETWORK === 'mainnet' ? NetworkType.mainnet : NetworkType.testnet;
 
 export default function validateBitcoinAddress(address: string): boolean {
   return AddressValidator.validate(address, 'BTC', networkType);

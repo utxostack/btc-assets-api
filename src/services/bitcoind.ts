@@ -3,6 +3,7 @@ import axios, { AxiosInstance } from 'axios';
 import * as Sentry from '@sentry/node';
 import { addLoggerInterceptor } from '../utils/interceptors';
 import { Cradle } from '../container';
+import { NetworkType } from '../constants';
 
 export default class Bitcoind {
   private request: AxiosInstance;
@@ -35,6 +36,23 @@ export default class Bitcoind {
       });
       return response.data.result;
     });
+  }
+
+  public async checkNetwork(network: NetworkType) {
+    const chainInfo = await this.getBlockchainInfo();
+    switch (network) {
+      case NetworkType.mainnet:
+        if (chainInfo.chain !== 'main') {
+          throw new Error('Bitcoin JSON-RPC is not running on mainnet');
+        }
+        break;
+      case NetworkType.testnet:
+        if (chainInfo.chain !== 'test') {
+          throw new Error('Bitcoin JSON-RPC is not running on testnet');
+        }
+        break;
+      default:
+    }
   }
 
   // https://developer.bitcoin.org/reference/rpc/getblockchaininfo.html

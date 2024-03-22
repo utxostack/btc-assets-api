@@ -3,6 +3,7 @@ import { BlockType, TransactionType, UTXOType } from '../routes/bitcoin/types';
 import * as Sentry from '@sentry/node';
 import { Cradle } from '../container';
 import { addLoggerInterceptor } from '../utils/interceptors';
+import { NetworkType } from '../constants';
 
 export default class ElectrsAPI {
   private request: AxiosInstance;
@@ -19,6 +20,25 @@ export default class ElectrsAPI {
       const response = await this.request.get(path);
       return response;
     });
+  }
+
+  public async checkNetwork(network: NetworkType) {
+    const hash = await this.getBlockByHeight(0);
+    switch (network) {
+      case NetworkType.mainnet:
+        // Bitcoin mainnet genesis block hash
+        if (hash !== '000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f') {
+          throw new Error('Electrs API is not running on mainnet');
+        }
+        break;
+      case NetworkType.testnet:
+        // Bitcoin testnet genesis block hash
+        if (hash !== '000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943') {
+          throw new Error('Electrs API is not running on testnet');
+        }
+        break;
+      default:
+    }
   }
 
   // https://github.com/blockstream/esplora/blob/master/API.md#get-addressaddressutxo
