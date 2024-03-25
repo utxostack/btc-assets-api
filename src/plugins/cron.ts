@@ -27,7 +27,7 @@ export default fp(async (fastify) => {
           cronTime: '*/10 * * * *',
           onTick: async () => {
             try {
-              await unlocker.unlockCells();
+              // await unlocker.unlockCells();
             } catch (err) {
               fastify.log.error(err);
               Sentry.captureException(err);
