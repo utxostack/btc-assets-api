@@ -300,9 +300,9 @@ export default class TransactionManager implements ITransactionManager {
 
       await this.waitForTranscationConfirmed(txHash);
       // mark the paymaster cell as spent to avoid double spending
-      if (ckbVirtualResult.needPaymasterCell) {
-        await this.cradle.paymaster.makePaymasterCellAsSpent(txid, signedTx!);
-      }
+      // if (ckbVirtualResult.needPaymasterCell) {
+      //   await this.cradle.paymaster.makePaymasterCellAsSpent(txid, signedTx!);
+      // }
       return txHash;
     } catch (err) {
       this.cradle.logger.debug(err);
