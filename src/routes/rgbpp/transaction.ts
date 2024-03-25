@@ -50,7 +50,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         }),
         response: {
           200: z.object({
-            ckbTxHash: z.string().describe('The CKB transaction hash'),
+            ckbTxHash: z.string().or(z.null()).describe('The CKB transaction hash'),
             state: z.string().describe('The state of the transaction'),
           }),
         },
@@ -63,6 +63,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         reply.status(404);
         return;
       }
+      console.log(job);
       const ckbTxHash = job.returnvalue;
       const state = await job.getState();
       return { ckbTxHash, state };

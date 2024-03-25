@@ -22,7 +22,7 @@ export const InputCell = z.object({
   previousOutput: z.object({
     txHash: z.string(),
     index: z.string(),
-  }),
+  }).or(z.null()),
   since: z.string(),
 });
 export type InputCell = z.infer<typeof InputCell>;

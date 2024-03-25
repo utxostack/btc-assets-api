@@ -47,6 +47,7 @@ export default class Unlocker implements IUnlocker {
 
     const { blocks } = await this.cradle.bitcoind.getBlockchainInfo();
     for await (const cell of collect) {
+      console.log(cell);
       const { after, btcTxid } = BTCTimeLock.unpack(cell.cellOutput.lock.args);
       const { blockheight } = await this.cradle.bitcoind.getTransaction(btcTxid);
       // skip if btc tx not confirmed $after blocks yet

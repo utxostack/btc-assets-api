@@ -2,11 +2,21 @@ import { Cradle } from '../container';
 import { DelayedError, Job, Queue, Worker } from 'bullmq';
 import { AxiosError } from 'axios';
 import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
-import { opReturnScriptPubKeyToData } from '@rgbpp-sdk/btc';
-import { appendCkbTxWitnesses, SPVService, sendCkbTx, Collector } from '@rgbpp-sdk/ckb';
-import { calculateCommitment } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+import { BTC_TX_ID_PLACEHOLDER, opReturnScriptPubKeyToData } from '@rgbpp-sdk/btc';
+import {
+  appendCkbTxWitnesses,
+  SPVService,
+  sendCkbTx,
+  Collector,
+  append0x,
+  RGBPPLock,
+  updateCkbTxWithRealBtcTxId,
+  SpvRpcError,
+} from '@rgbpp-sdk/ckb';
+import { buildRgbppLockArgs, calculateCommitment, genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import * as Sentry from '@sentry/node';
 import { Transaction } from '../routes/bitcoin/types';
+import { bytes } from '@ckb-lumos/codec';
 
 export interface ITransactionRequest {
   txid: string;
@@ -65,6 +75,14 @@ export default class TransactionManager implements ITransactionManager {
     this.cradle = cradle;
     this.queue = new Queue(TRANSACTION_QUEUE_NAME, {
       connection: cradle.redis,
+      // retry failed jobs with a delay of 60 seconds, up to 3 time
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'fixed',
+          delay: cradle.env.TRANSACTION_QUEUE_JOB_DELAY,
+        },
+      },
     });
     this.worker = new Worker(TRANSACTION_QUEUE_NAME, this.process.bind(this), {
       connection: cradle.redis,
@@ -72,6 +90,14 @@ export default class TransactionManager implements ITransactionManager {
       concurrency: 10,
     });
     this.spvService = new SPVService(cradle.env.TRANSACTION_SPV_SERVICE_URL);
+  }
+
+  private get isMainnet() {
+    return this.cradle.env.NETWORK === 'mainnet';
+  }
+
+  private get rgbppLockScript() {
+    return genRgbppLockScript('0x', this.isMainnet);
   }
 
   /**
@@ -88,6 +114,36 @@ export default class TransactionManager implements ITransactionManager {
   }
 
   /**
+   * Clear the btcTxId in the RGBPP lock script to avoid the mismatch between the CKB and BTC transactions
+   * to avoid the mismatch between the CKB and BTC transactions
+   */
+  private async clearBtcTxIdInRgbppLockScript(ckbRawTx: CKBRawTransaction, txid: string) {
+    const outputs = ckbRawTx.outputs.map((output) => {
+      const { lock } = output;
+      if (lock.codeHash !== this.rgbppLockScript.codeHash || lock.hashType !== this.rgbppLockScript.hashType) {
+        return output;
+      }
+      const unpack = RGBPPLock.unpack(lock.args);
+      // https://github.com/ckb-cell/rgbpp-sdk/tree/main/examples/rgbpp#what-you-must-know-about-btc-transaction-id
+      const btcTxid = bytes.hexify(bytes.bytify(unpack.btcTxid).reverse());
+      if (btcTxid !== append0x(txid)) {
+        return output;
+      }
+      return {
+        ...output,
+        lock: {
+          ...lock,
+          args: buildRgbppLockArgs(unpack.outIndex, BTC_TX_ID_PLACEHOLDER),
+        },
+      };
+    });
+    return {
+      ...ckbRawTx,
+      outputs,
+    };
+  }
+
+  /**
    * Verify transaction request
    * - check if the commitment matches the Bitcoin transaction
    * - check if the CKB Virtual Transaction is valid
@@ -96,23 +152,32 @@ export default class TransactionManager implements ITransactionManager {
   public async verifyTransaction(request: ITransactionRequest): Promise<boolean> {
     const { txid, ckbVirtualResult } = request;
     const btcTx = await this.cradle.electrs.getTransaction(txid);
-
     const { commitment, ckbRawTx } = ckbVirtualResult;
+
+    // make sure the commitment matches the Bitcoin transaction
     const btcTxCommitment = await this.getCommitmentFromBtcTx(btcTx);
     if (commitment !== btcTxCommitment.toString('hex')) {
+      this.cradle.logger.error(`[TransactionManager] Bitcoin Transaction Commitment Mismatch`);
       return false;
     }
-    if (commitment !== calculateCommitment(ckbRawTx)) {
+
+    // make sure the CKB Virtual Transaction is valid
+    const ckbRawTxWithoutBtcTxId = await this.clearBtcTxIdInRgbppLockScript(ckbRawTx, txid);
+    if (commitment !== calculateCommitment(ckbRawTxWithoutBtcTxId)) {
+      this.cradle.logger.error(`[TransactionManager] Invalid CKB Virtual Transaction`);
       return false;
     }
+
+    // make sure the Bitcoin transaction is confirmed
     if (!btcTx.status.confirmed) {
+      // https://docs.bullmq.io/patterns/process-step-jobs#delaying
       throw new DelayedError();
     }
     return true;
   }
 
   /**
-   * Move job to delayed Queue
+   * Move job to delayed
    */
   private async moveJobToDelayed(job: Job<ITransactionRequest>, token?: string) {
     this.cradle.logger.info(`[TransactionManager] Moving job ${job.id} to delayed queue`);
@@ -137,16 +202,36 @@ export default class TransactionManager implements ITransactionManager {
     });
   }
 
+  private getCkbRawTx(ckbVirtualResult: CKBVirtualResult, txid: string) {
+    let ckbRawTx = ckbVirtualResult.ckbRawTx;
+    const needUpdateCkbTx = ckbRawTx.outputs.some((output) => {
+      const { codeHash, hashType, args } = output.lock;
+      const { btcTxid } = RGBPPLock.unpack(args);
+      return (
+        codeHash === this.rgbppLockScript.codeHash &&
+        hashType === this.rgbppLockScript.hashType &&
+        btcTxid === BTC_TX_ID_PLACEHOLDER
+      );
+    });
+    if (needUpdateCkbTx) {
+      ckbRawTx = updateCkbTxWithRealBtcTxId({ ckbRawTx, btcTxId: txid, isMainnet: this.isMainnet });
+    }
+    return ckbRawTx;
+  }
+
   public async process(job: Job<ITransactionRequest>, token?: string) {
     try {
-      const isVerified = await this.verifyTransaction(job.data);
+      const { ckbVirtualResult, txid } = job.data;
+      const isVerified = await this.verifyTransaction({ ckbVirtualResult, txid });
       if (!isVerified) {
         throw new InvalidTransactionError(job.data);
       }
-      const { ckbVirtualResult, txid } = job.data;
+
+      const ckbRawTx = this.getCkbRawTx(ckbVirtualResult, txid);
       const { hex, blockindex } = await this.cradle.bitcoind.getTransaction(txid);
       let signedTx = await appendCkbTxWitnesses({
         ...ckbVirtualResult,
+        ckbRawTx,
         spvService: this.spvService,
         btcTxId: txid,
         btcTxBytes: hex,
@@ -173,10 +258,12 @@ export default class TransactionManager implements ITransactionManager {
 
       await this.waitForTranscationConfirmed(txHash);
     } catch (err) {
+      this.cradle.logger.error(err);
       // move the job to delayed queue if the transaction data not found or not confirmed
       const transactionDataNotFound = err instanceof AxiosError && err.response?.status === 404;
       const transactionNotConfirmed = err instanceof DelayedError;
-      if (transactionDataNotFound || transactionNotConfirmed) {
+      const spvProofNotFound = err instanceof SpvRpcError;
+      if (transactionDataNotFound || transactionNotConfirmed || spvProofNotFound) {
         await this.moveJobToDelayed(job, token);
         return;
       }
