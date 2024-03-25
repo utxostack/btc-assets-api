@@ -25,6 +25,7 @@ export interface ITransactionRequest {
 }
 
 export interface IProcessCallbacks {
+  onActive?: (job: Job<ITransactionRequest>) => void;
   onCompleted?: (job: Job<ITransactionRequest>) => void;
   onFailed?: (job: Job<ITransactionRequest> | undefined, err: Error) => void;
 }
@@ -353,6 +354,9 @@ export default class TransactionManager implements ITransactionManager {
    * - onFailed: the callback when the job is failed
    */
   public async startProcess(callbacks?: IProcessCallbacks): Promise<void> {
+    if (callbacks?.onActive) {
+      this.worker.on('active', callbacks?.onActive);
+    }
     if (callbacks?.onCompleted) {
       this.worker.on('completed', callbacks.onCompleted);
     }
