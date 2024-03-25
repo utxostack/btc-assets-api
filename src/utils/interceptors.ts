@@ -3,13 +3,13 @@ import pino from 'pino';
 
 export function addLoggerInterceptor(request: AxiosInstance, logger: pino.BaseLogger) {
   request.interceptors.request.use((config) => {
-    logger.info(`[${config.url}] ${JSON.stringify(config.data)}`);
+    logger.debug(`[${config.url}] ${JSON.stringify(config.data)}`);
     return config;
   });
 
   request.interceptors.response.use(
     (response) => {
-      logger.info(`[${response.config.url}] ${response.status} ${JSON.stringify(response.data)}`);
+      logger.debug(`[${response.config.url}] ${response.status} ${JSON.stringify(response.data)}`);
       return response;
     },
     (error) => {

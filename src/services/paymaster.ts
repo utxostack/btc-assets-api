@@ -2,18 +2,27 @@ import { Cell } from '@ckb-lumos/lumos';
 import { Cradle } from '../container';
 import { Job, Queue, Worker } from 'bullmq';
 import { AppendPaymasterCellAndSignTxParams, IndexerCell, appendPaymasterCellAndSignCkbTx } from '@rgbpp-sdk/ckb';
-import { randomUUID } from 'crypto';
-import { hd, config } from '@ckb-lumos/lumos';
+import { hd, config, BI } from '@ckb-lumos/lumos';
+import * as Sentry from '@sentry/node';
 
 interface IPaymaster {
   getNextCellJob(token: string): Promise<Job<Cell> | null>;
   refillCellQueue(): Promise<number>;
   appendCellAndSignTx(
+    txid: string,
     params: Pick<AppendPaymasterCellAndSignTxParams, 'ckbRawTx' | 'sumInputsCapacity'>,
   ): ReturnType<typeof appendPaymasterCellAndSignCkbTx>;
+  makePaymasterCellAsSpent(txid: string, signedTx: CKBComponents.RawTransaction): Promise<void>;
 }
 
 export const PAYMASTER_CELL_QUEUE_NAME = 'rgbpp-ckb-paymaster-cell-queue';
+
+class PaymasterCellNotEnoughError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PaymasterCellNotEnoughError';
+  }
+}
 
 /**
  * Paymaster
@@ -26,7 +35,9 @@ export default class Paymaster implements IPaymaster {
 
   private cellCapacity: number;
   private presetCount: number;
+  // the threshold to refill the queue, default is 0.3
   private refillThreshold: number;
+  // avoid the refilling to be triggered multiple times
   private refilling = false;
 
   constructor(cradle: Cradle) {
@@ -50,7 +61,7 @@ export default class Paymaster implements IPaymaster {
   private get lockScript() {
     const args = hd.key.privateKeyToBlake160(this.privateKey);
     const scripts =
-      this.cradle.env.NETWORK === 'mainnet' ? config.predefined.AGGRON4.SCRIPTS : config.predefined.LINA.SCRIPTS;
+      this.cradle.env.NETWORK === 'mainnet' ? config.predefined.LINA.SCRIPTS : config.predefined.AGGRON4.SCRIPTS;
     const template = scripts['SECP256K1_BLAKE160']!;
     const lockScript = {
       codeHash: template.CODE_HASH,
@@ -63,6 +74,7 @@ export default class Paymaster implements IPaymaster {
   /**
    * Get the next paymaster cell job from the queue
    * will refill the queue if the count is less than the threshold
+   * @param token - the token to get the next job, using btc txid by default
    */
   public async getNextCellJob(token: string) {
     // avoid the refilling to be triggered multiple times
@@ -73,8 +85,10 @@ export default class Paymaster implements IPaymaster {
         this.refilling = true;
         const filled = await this.refillCellQueue();
         if (filled + count < this.presetCount) {
-          // TODO: throw a custom error and capture error to sentry
-          // maybe we need to sent a notification email to the admin
+          // XXX: consider to send an alert email or other notifications
+          this.cradle.logger.warn('Filled paymaster cells less than the preset count');
+          const error = new PaymasterCellNotEnoughError('Filled paymaster cells less than the preset count');
+          Sentry.captureException(error);
         }
         this.refilling = false;
       }
@@ -90,16 +104,22 @@ export default class Paymaster implements IPaymaster {
    */
   public async refillCellQueue() {
     const queueSize = await this.queue.getWaitingCount();
-    const capacity = this.cellCapacity.toString(16);
     const collector = this.cradle.ckbIndexer.collector({
       lock: this.lockScript,
-      outputCapacityRange: [capacity, capacity],
+      outputCapacityRange: [BI.from(this.cellCapacity).toHexString(), BI.from(this.cellCapacity + 1).toHexString()],
     });
     const cells = collector.collect();
 
     let filled = 0;
+    if (queueSize >= this.presetCount) {
+      return filled;
+    }
+
     for await (const cell of cells) {
       const outPoint = cell.outPoint!;
+      this.cradle.logger.info(
+        `[Paymaster] Refill paymaster cell: ${outPoint.txHash}:${outPoint.index}, ${cell.cellOutput.capacity} CKB`,
+      );
       await this.queue.add(PAYMASTER_CELL_QUEUE_NAME, cell, {
         // use the outPoint as the jobId to avoid duplicate cells
         jobId: `${outPoint.txHash}:${outPoint.index}`,
@@ -116,13 +136,24 @@ export default class Paymaster implements IPaymaster {
 
   /**
    * Append the paymaster cell to the CKB transaction and sign the transactions
+   * @param token - the token to get the next job, using btc txid by default
+   * @param params - the ckb transaction parameters
    */
-  public async appendCellAndSignTx(params: Pick<AppendPaymasterCellAndSignTxParams, 'ckbRawTx' | 'sumInputsCapacity'>) {
+  public async appendCellAndSignTx(
+    token: string,
+    params: Pick<AppendPaymasterCellAndSignTxParams, 'ckbRawTx' | 'sumInputsCapacity'>,
+  ) {
     const { ckbRawTx, sumInputsCapacity } = params;
-    const token = randomUUID();
-    // XXX: getNextCellJob maybe suspended if the queue is empty
-    const cellJob = await this.getNextCellJob(token);
-    const paymasterCell = cellJob.data as unknown as IndexerCell;
+    const { data: cell } = await this.getNextCellJob(token);
+    const paymasterCell: IndexerCell = {
+      output: cell.cellOutput,
+      outPoint: cell.outPoint!,
+      outputData: cell.data,
+      blockNumber: cell.blockNumber!,
+      txIndex: cell.txIndex!,
+    };
+    this.cradle.logger.debug(`[Paymaster] Get paymaster cell: ${JSON.stringify(paymasterCell)}`);
+
     const signedTx = await appendPaymasterCellAndSignCkbTx({
       ckbRawTx,
       sumInputsCapacity,
@@ -131,5 +162,24 @@ export default class Paymaster implements IPaymaster {
       isMainnet: this.cradle.env.NETWORK === 'mainnet',
     });
     return signedTx;
+  }
+
+  /**
+   * Mark the paymaster cell as spent after the transaction is confirmed to avoid double spending
+   * @param token - the job token moved from the queue to the completed
+   * @param signedTx - the signed transaction to get the paymaster cell input to mark as spent
+   */
+  public async makePaymasterCellAsSpent(token: string, signedTx: CKBComponents.RawTransaction) {
+    for await (const input of signedTx.inputs) {
+      const outPoint = input.previousOutput;
+      if (!outPoint) {
+        continue;
+      }
+      const id = `${outPoint.txHash}:${outPoint.index}`;
+      const job = await this.queue.getJob(id);
+      if (job) {
+        await job.moveToCompleted(null, token);
+      }
+    }
   }
 }
