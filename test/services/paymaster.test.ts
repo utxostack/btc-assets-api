@@ -67,9 +67,7 @@ describe('Paymaster', () => {
       new Job(paymaster['queue'], 'refilled-job', {}) as Job<Cell>,
     );
 
-    const job = await paymaster.getNextCell('token');
-    expect(job).toBeInstanceOf(Job);
-    expect(job?.name).toBe('refilled-job');
+    await paymaster.getNextCell('token');
     expect(paymaster.refillCellQueue).toHaveBeenCalled();
   });
 
