@@ -47,11 +47,11 @@ export default class Unlocker implements IUnlocker {
 
     const { blocks } = await this.cradle.bitcoind.getBlockchainInfo();
     for await (const cell of collect) {
-      console.log(cell);
       const { after, btcTxid } = BTCTimeLock.unpack(cell.cellOutput.lock.args);
-      const { blockheight } = await this.cradle.bitcoind.getTransaction(btcTxid);
+      const btcTx = await this.cradle.electrs.getTransaction(btcTxid);
+      const blockHeight = btcTx.status.block_height;
       // skip if btc tx not confirmed $after blocks yet
-      if (!blockheight || blocks - blockheight < after) {
+      if (!blockHeight || blocks - blockHeight < after) {
         continue;
       }
       cells.push({
@@ -80,8 +80,10 @@ export default class Unlocker implements IUnlocker {
     const btcTimeCellPairs = await Promise.all(
       cells.map(async (cell) => {
         const { btcTxid } = BTCTimeLock.unpack(cell.output.lock.args);
+        const btcTx = await this.cradle.electrs.getTransaction(btcTxid);
         // get the btc tx index in the block to used for the spv proof
-        const { blockindex } = await this.cradle.bitcoind.getTransaction(btcTxid);
+        const txids = await  this.cradle.electrs.getBlockTxIdsByHash(btcTx.status.block_hash!);
+        const blockindex = txids.findIndex((txid) => txid === btcTxid);
         return {
           btcTimeCell: cell,
           btcTxIndexInBlock: blockindex,

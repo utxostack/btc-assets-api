@@ -35,7 +35,9 @@ describe('transactionManager', () => {
         needPaymasterCell: false,
       },
     };
-    const isValid = await transactionManager.verifyTransaction(transactionRequest);
+    // FIXME: mock electrs getTransaction
+    const btcTx = await cradle.electrs.getTransaction(transactionRequest.txid);
+    const isValid = await transactionManager.verifyTransaction(transactionRequest, btcTx);
     expect(isValid).toBe(true);
   });
 
@@ -56,7 +58,9 @@ describe('transactionManager', () => {
         needPaymasterCell: false,
       },
     };
-    const isValid = await transactionManager.verifyTransaction(transactionRequest);
+    // FIXME: mock electrs getTransaction
+    const btcTx = await cradle.electrs.getTransaction(transactionRequest.txid);
+    const isValid = await transactionManager.verifyTransaction(transactionRequest, btcTx);
     expect(isValid).toBe(false);
   });
 
@@ -78,7 +82,9 @@ describe('transactionManager', () => {
         needPaymasterCell: false,
       },
     };
-    const isValid = await transactionManager.verifyTransaction(transactionRequest);
+    // FIXME: mock electrs getTransaction
+    const btcTx = await cradle.electrs.getTransaction(transactionRequest.txid);
+    const isValid = await transactionManager.verifyTransaction(transactionRequest, btcTx);
     expect(isValid).toBe(false);
   });
 
@@ -103,7 +109,11 @@ describe('transactionManager', () => {
       },
     };
 
-    await expect(transactionManager.verifyTransaction(transactionRequest)).rejects.toThrowErrorMatchingSnapshot();
+    // FIXME: mock electrs getTransaction
+    const btcTx = await cradle.electrs.getTransaction(transactionRequest.txid);
+    await expect(
+      transactionManager.verifyTransaction(transactionRequest, btcTx),
+    ).rejects.toThrowErrorMatchingSnapshot();
   });
 
   test('enqueueTransaction: should be add transaction request to queue', async () => {

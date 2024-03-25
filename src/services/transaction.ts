@@ -91,7 +91,6 @@ export default class TransactionManager implements ITransactionManager {
       concurrency: 10,
     });
     this.spvService = new SPVService(cradle.env.TRANSACTION_SPV_SERVICE_URL);
-    this.queue.getJob('5fda611d2086c553544a123209f7b26f84226fe4466e8303a7dfe35682294799').then((job) => job?.retry());
   }
 
   private get isMainnet() {
