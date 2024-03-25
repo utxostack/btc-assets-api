@@ -14,8 +14,11 @@ const envToLogger = {
               ignore: 'pid,hostname',
             },
           },
+          level: 'debug',
         }
-      : true,
+      : {
+          level: 'debug',
+        },
   production: true,
 };
 
