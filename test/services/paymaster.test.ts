@@ -31,7 +31,7 @@ describe('Paymaster', () => {
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(2);
     vi.spyOn(paymaster, 'refillCellQueue');
 
-    await paymaster.getNextCellJob('token');
+    await paymaster.getNextCell('token');
     expect(paymaster.refillCellQueue).not.toHaveBeenCalled();
   });
 
@@ -42,7 +42,7 @@ describe('Paymaster', () => {
     );
     vi.spyOn(paymaster, 'refillCellQueue');
 
-    const job = await paymaster.getNextCellJob('token');
+    const job = await paymaster.getNextCell('token');
     expect(job).toBeInstanceOf(Job);
     expect(paymaster.refillCellQueue).not.toHaveBeenCalled();
     expect(paymaster['refilling']).toBeFalsy();
@@ -55,7 +55,7 @@ describe('Paymaster', () => {
       new Job(paymaster['queue'], 'test-job', {}) as Job<Cell>,
     );
 
-    const job = await paymaster.getNextCellJob('token');
+    const job = await paymaster.getNextCell('token');
     expect(job).toBeInstanceOf(Job);
     expect(paymaster.refillCellQueue).toHaveBeenCalled();
   });
@@ -67,7 +67,7 @@ describe('Paymaster', () => {
       new Job(paymaster['queue'], 'refilled-job', {}) as Job<Cell>,
     );
 
-    const job = await paymaster.getNextCellJob('token');
+    const job = await paymaster.getNextCell('token');
     expect(job).toBeInstanceOf(Job);
     expect(job?.name).toBe('refilled-job');
     expect(paymaster.refillCellQueue).toHaveBeenCalled();
@@ -78,7 +78,7 @@ describe('Paymaster', () => {
     vi.spyOn(paymaster, 'refillCellQueue').mockRejectedValue(new Error('Refill failed'));
     vi.spyOn(paymaster['worker'], 'getNextJob');
 
-    await expect(paymaster.getNextCellJob('token')).rejects.toThrow('Refill failed');
+    await expect(paymaster.getNextCell('token')).rejects.toThrow('Refill failed');
     expect(paymaster.refillCellQueue).toHaveBeenCalled();
     expect(paymaster['worker'].getNextJob).not.toHaveBeenCalled();
   });

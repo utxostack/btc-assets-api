@@ -1,12 +1,12 @@
 import { Cell } from '@ckb-lumos/lumos';
 import { Cradle } from '../container';
-import { Job, Queue, Worker } from 'bullmq';
+import { Queue, Worker } from 'bullmq';
 import { AppendPaymasterCellAndSignTxParams, IndexerCell, appendPaymasterCellAndSignCkbTx } from '@rgbpp-sdk/ckb';
 import { hd, config, BI } from '@ckb-lumos/lumos';
 import * as Sentry from '@sentry/node';
 
 interface IPaymaster {
-  getNextCellJob(token: string): Promise<Job<Cell> | null>;
+  getNextCell(token: string): Promise<IndexerCell | null>;
   refillCellQueue(): Promise<number>;
   appendCellAndSignTx(
     txid: string,
@@ -47,6 +47,7 @@ export default class Paymaster implements IPaymaster {
     });
     this.worker = new Worker(PAYMASTER_CELL_QUEUE_NAME, undefined, {
       connection: cradle.redis,
+      lockDuration: 60_000,
       removeOnComplete: { count: 0 },
     });
     this.cellCapacity = this.cradle.env.PAYMASTER_CELL_CAPACITY;
@@ -72,11 +73,11 @@ export default class Paymaster implements IPaymaster {
   }
 
   /**
-   * Get the next paymaster cell job from the queue
+   * Get the next paymaster cell from the queue
    * will refill the queue if the count is less than the threshold
    * @param token - the token to get the next job, using btc txid by default
    */
-  public async getNextCellJob(token: string) {
+  public async getNextCell(token: string) {
     // avoid the refilling to be triggered multiple times
     if (!this.refilling) {
       const count = await this.queue.getWaitingCount();
@@ -93,8 +94,31 @@ export default class Paymaster implements IPaymaster {
         this.refilling = false;
       }
     }
-    const job = await this.worker.getNextJob(token);
-    return job;
+
+    let cell: IndexerCell | null = null;
+    while (!cell) {
+      const job = await this.worker.getNextJob(token);
+      if (!job) {
+        break;
+      }
+
+      const data = job.data;
+      const liveCell = await this.cradle.ckbRpc.getLiveCell(data.outPoint!, false);
+      if (!liveCell || liveCell.status !== 'live') {
+        job.remove();
+        continue;
+      }
+
+      cell = {
+        output: data.cellOutput,
+        outPoint: data.outPoint!,
+        outputData: data.data,
+        blockNumber: data.blockNumber!,
+        txIndex: data.txIndex!,
+      };
+    }
+
+    return cell;
   }
 
   /**
@@ -144,14 +168,7 @@ export default class Paymaster implements IPaymaster {
     params: Pick<AppendPaymasterCellAndSignTxParams, 'ckbRawTx' | 'sumInputsCapacity'>,
   ) {
     const { ckbRawTx, sumInputsCapacity } = params;
-    const { data: cell } = await this.getNextCellJob(token);
-    const paymasterCell: IndexerCell = {
-      output: cell.cellOutput,
-      outPoint: cell.outPoint!,
-      outputData: cell.data,
-      blockNumber: cell.blockNumber!,
-      txIndex: cell.txIndex!,
-    };
+    const paymasterCell = await this.getNextCell(token);
     this.cradle.logger.debug(`[Paymaster] Get paymaster cell: ${JSON.stringify(paymasterCell)}`);
 
     const signedTx = await appendPaymasterCellAndSignCkbTx({
@@ -161,6 +178,7 @@ export default class Paymaster implements IPaymaster {
       secp256k1PrivateKey: this.privateKey,
       isMainnet: this.cradle.env.NETWORK === 'mainnet',
     });
+    this.cradle.logger.debug(`[Paymaster] Signed transaction: ${JSON.stringify(signedTx)}`);
     return signedTx;
   }
 
@@ -178,7 +196,7 @@ export default class Paymaster implements IPaymaster {
       const id = `${outPoint.txHash}:${outPoint.index}`;
       const job = await this.queue.getJob(id);
       if (job) {
-        await job.moveToCompleted(null, token);
+        await job.moveToCompleted(null, token, false);
       }
     }
   }
