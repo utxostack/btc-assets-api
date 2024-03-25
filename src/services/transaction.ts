@@ -91,7 +91,7 @@ export default class TransactionManager implements ITransactionManager {
       autorun: false,
       concurrency: 10,
     });
-    this.spvService = new SPVService(cradle.env.TRANSACTION_SPV_SERVICE_URL);
+    this.spvService = new SPVService(cradle.env.BITCOIN_SPV_SERVICE_URL);
     // FIXME: remove this line after testing
     this.queue.getJob('bbb51bf1ac43fcb033ae64a3aeb4c0fb4af9f743ecf9173ec55fb2f9f499a31f').then((job) => {
       job?.retry();

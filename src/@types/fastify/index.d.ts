@@ -3,6 +3,7 @@ import Bitcoind from '../../services/bitcoind';
 import ElectrsAPI from '../../services/electrs';
 import TransactionManager from '../../services/transaction';
 import Paymaster from '../../services/paymaster';
+import BitcoinSPV from '../../services/spv';
 import { Indexer, RPC } from '@ckb-lumos/lumos';
 
 declare module 'fastify' {
@@ -14,6 +15,7 @@ declare module 'fastify' {
     ckbIndexer: Indexer;
     electrs: ElectrsAPI;
     bitcoind: Bitcoind;
+    bitcoinSPV: BitcoinSPV;
     paymaster: Paymaster;
     transactionManager: TransactionManager;
   }

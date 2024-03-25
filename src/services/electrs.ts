@@ -18,6 +18,9 @@ export default class ElectrsAPI {
   private async get<T>(path: string): Promise<AxiosResponse<T>> {
     return Sentry.startSpan({ op: this.constructor.name, name: path }, async () => {
       const response = await this.request.get(path);
+      if (response.data.error) {
+        throw new Error(response.data.error.message);
+      }
       return response;
     });
   }

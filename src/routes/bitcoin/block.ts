@@ -29,6 +29,28 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
   );
 
   fastify.get(
+    '/:hash/txids',
+    {
+      schema: {
+        description: 'Get block transaction ids by its hash',
+        tags: ['Bitcoin'],
+        params: z.object({
+          hash: z.string().describe('The Bitcoin block hash'),
+        }),
+        response: {
+          200: z.array(z.string()),
+        },
+      },
+    },
+    async (request, reply) => {
+      const { hash } = request.params;
+      const txids = await fastify.electrs.getBlockTxIdsByHash(hash);
+      reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
+      return txids;
+    },
+  );
+
+  fastify.get(
     '/:hash/header',
     {
       schema: {

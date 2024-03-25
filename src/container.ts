@@ -8,6 +8,7 @@ import TransactionManager from './services/transaction';
 import Paymaster from './services/paymaster';
 import { RPC as CkbRPC, Indexer as CkbIndexer } from '@ckb-lumos/lumos';
 import Unlocker from './services/unlocker';
+import BitcoinSPV from './services/spv';
 
 export interface Cradle {
   env: typeof env;
@@ -17,6 +18,7 @@ export interface Cradle {
   ckbIndexer: CkbIndexer;
   bitcoind: Bitcoind;
   electrs: ElectrsAPI;
+  bitcoinSPV: BitcoinSPV;
   paymaster: Paymaster;
   unlocker: Unlocker;
   transactionManager: TransactionManager;
@@ -39,6 +41,7 @@ container.register({
   ckbIndexer: asFunction(() => new CkbIndexer(env.CKB_INDEXER_URL)).singleton(),
   bitcoind: asClass(Bitcoind).singleton(),
   electrs: asClass(ElectrsAPI).singleton(),
+  bitcoinSPV: asClass(BitcoinSPV).singleton(),
   paymaster: asClass(Paymaster).singleton(),
   transactionManager: asClass(TransactionManager).singleton(),
   unlocker: asClass(Unlocker).singleton(),
