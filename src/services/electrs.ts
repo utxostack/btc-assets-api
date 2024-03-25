@@ -59,6 +59,12 @@ export default class ElectrsAPI {
     return response.data;
   }
 
+  // https://github.com/Blockstream/esplora/blob/master/API.md#get-txtxidhex
+  public async getTransactionHex(txid: string) {
+    const response = await this.get<string>(`/tx/${txid}/hex`);
+    return response.data;
+  }
+
   // https://github.com/blockstream/esplora/blob/master/API.md#get-blockhash
   public async getBlockByHash(hash: string) {
     const response = await this.get<Block>(`/block/${hash}`);
@@ -74,6 +80,12 @@ export default class ElectrsAPI {
   // https://github.com/blockstream/esplora/blob/master/API.md#get-blockhashheader
   public async getBlockHeaderByHash(hash: string) {
     const response = await this.get<string>(`/block/${hash}/header`);
+    return response.data;
+  }
+
+  // https://github.com/Blockstream/esplora/blob/master/API.md#get-blockhashtxids
+  public async getBlockTxIdsByHash(hash: string) {
+    const response = await this.get<string[]>(`/block/${hash}/txids`);
     return response.data;
   }
 }
