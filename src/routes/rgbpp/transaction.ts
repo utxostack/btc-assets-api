@@ -63,7 +63,6 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         reply.status(404);
         return;
       }
-      console.log(job);
       const ckbTxHash = job.returnvalue;
       const state = await job.getState();
       return { ckbTxHash, state };
