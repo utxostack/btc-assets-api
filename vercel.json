@@ -1,14 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/cron/process-transactions",
-      "destination": "/api/cron/process-transactions.ts"
-    },
-    {
-      "source": "/api/cron/unlock-cells",
-      "destination": "/api/cron/unlock-cells.ts"
-    },
-    {
       "source": "/(.*)",
       "destination": "/api/serverless.ts"
     }
@@ -18,10 +10,5 @@
       "path": "/api/cron/process-transactions",
       "schedule": "* * * * *"
     }
-  ],
-  "functions": {
-    "api/cron/*.ts": {
-      "maxDuration": 61
-    }
-  }
+  ]
 }
