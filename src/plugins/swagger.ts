@@ -3,6 +3,7 @@ import swagger from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
 import { jsonSchemaTransform } from 'fastify-type-provider-zod';
 import { env } from '../env';
+import { SWAGGER_PROD_IGNORE_URLS } from '../constants';
 
 export const DOCS_ROUTE_PREFIX = '/docs';
 
@@ -30,7 +31,7 @@ export default fp(async (fastify) => {
       if (env.NODE_ENV === 'production') {
         const { paths = {} } = swaggerObject;
         const newPaths = Object.entries(paths).reduce((acc, [path, methods]) => {
-          if (path.startsWith('/token')) {
+          if (SWAGGER_PROD_IGNORE_URLS.some((ignorePath) => path.startsWith(ignorePath))) {
             return acc;
           }
           return { ...acc, [path]: methods };
