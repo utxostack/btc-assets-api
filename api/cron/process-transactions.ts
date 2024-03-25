@@ -10,6 +10,9 @@ export default async () => {
   const transactionManager: TransactionManager = container.resolve('transactionManager');
   await Promise.race([
     transactionManager.startProcess({
+      onActive: (job) => {
+        logger.info(`Job active: ${job.id}`);
+      },
       onCompleted: (job) => {
         logger.info(`Job completed: ${job.id}`);
       },
