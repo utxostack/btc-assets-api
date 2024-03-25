@@ -10,6 +10,7 @@ const rgbppRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
   fastify.decorate('transactionManager', container.resolve('transactionManager'));
   fastify.decorate('ckbRPC', container.resolve('ckbRpc'));
   fastify.decorate('ckbIndexer', container.resolve('ckbIndexer'));
+  fastify.decorate('electrs', container.resolve('electrs'));
 
   fastify.register(transactionRoutes, { prefix: '/transaction' });
   fastify.register(assetsRoute, { prefix: '/assets' });

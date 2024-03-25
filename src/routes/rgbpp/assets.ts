@@ -2,8 +2,7 @@ import { FastifyPluginCallback } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Server } from 'http';
 import z from 'zod';
-import { genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
-import { append0x, u32ToLe } from '../../utils/hex';
+import { buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import { Cell } from './types';
 
 const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
@@ -24,7 +23,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     },
     async (request) => {
       const { btc_txid, vout } = request.params;
-      const args = append0x(`${u32ToLe(vout)}${btc_txid}`);
+      const args = buildRgbppLockArgs(vout, btc_txid);
       const lockScript = genRgbppLockScript(args, process.env.NETWORK === 'mainnet');
 
       const collector = fastify.ckbIndexer.collector({
