@@ -171,6 +171,10 @@ export default class Paymaster implements IPaymaster {
     const paymasterCell = await this.getNextCell(token);
     this.cradle.logger.debug(`[Paymaster] Get paymaster cell: ${JSON.stringify(paymasterCell)}`);
 
+    if (!paymasterCell) {
+      throw new PaymasterCellNotEnoughError('No paymaster cell available');
+    }
+
     const signedTx = await appendPaymasterCellAndSignCkbTx({
       ckbRawTx,
       sumInputsCapacity,
