@@ -3,11 +3,10 @@ import { Server } from 'http';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Cell, Script } from './types';
-import { append0x, u32ToLe } from '../../utils/hex';
-import { genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+import { buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
-import z from 'zod';
 import { TypeScript } from './utils';
+import z from 'zod';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.addHook('preHandler', async (request) => {
@@ -39,10 +38,11 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { btc_address } = request.params;
       const { type_script } = request.query;
       const utxos = await fastify.electrs.getUtxoByAddress(btc_address);
+      console.log(utxos);
       const cells = await Promise.all(
         utxos.map(async (utxo) => {
           const { txid, vout } = utxo;
-          const args = append0x(`${u32ToLe(vout)}${txid}`);
+          const args = buildRgbppLockArgs(vout, txid);
 
           const query: CKBIndexerQueryOptions = {
             lock: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
