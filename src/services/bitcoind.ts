@@ -6,42 +6,6 @@ import { Cradle } from '../container';
 import { NetworkType } from '../constants';
 import { randomUUID } from 'node:crypto';
 
-type TransactionCategory = 'send' | 'receive' | 'generate' | 'immature' | 'orphan';
-
-type Bip125Replaceable = 'yes' | 'no' | 'unknown';
-
-interface TransactionDetail {
-  involvesWatchonly?: boolean;
-  address: string;
-  category: TransactionCategory;
-  amount: number;
-  label?: string;
-  vout: number;
-  fee?: number;
-  abandoned?: boolean;
-}
-
-interface Transaction {
-  amount: number;
-  fee?: number;
-  confirmations: number;
-  generated?: boolean;
-  trusted?: boolean;
-  blockhash?: string;
-  blockheight?: number;
-  blockindex?: number;
-  blocktime?: number;
-  txid: string;
-  walletconflicts: string[];
-  time: number;
-  timereceived: number;
-  comment?: string;
-  bip125_replaceable?: Bip125Replaceable;
-  details: TransactionDetail[];
-  hex: string;
-  decoded?: unknown;
-}
-
 /**
  * Bitcoind, a wrapper for Bitcoin Core JSON-RPC
  */
@@ -75,6 +39,9 @@ export default class Bitcoind {
         method,
         params,
       });
+      if (response.data.error) {
+        throw new Error(response.data.error.message);
+      }
       return response.data.result;
     });
   }

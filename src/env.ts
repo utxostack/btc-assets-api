@@ -35,6 +35,12 @@ const envSchema = z.object({
    * It is used to query the Bitcoin blockchain (balance, transactions, etc).
    */
   BITCOIN_ELECTRS_API_URL: z.string(),
+
+  /**
+   * Bitcoin SPV service URL
+   * https://github.com/ckb-cell/ckb-bitcoin-spv-service
+   */
+  BITCOIN_SPV_SERVICE_URL: z.string(),
   /**
    * The URL of the CKB JSON-RPC server and indexer.
    */
@@ -51,7 +57,6 @@ const envSchema = z.object({
   UNLOCKER_CELL_BATCH_SIZE: z.coerce.number().default(100),
 
   TRANSACTION_QUEUE_JOB_DELAY: z.coerce.number().default(120 * 1000),
-  TRANSACTION_SPV_SERVICE_URL: z.string(),
 });
 
 export type Env = z.infer<typeof envSchema>;

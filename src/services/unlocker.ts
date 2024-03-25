@@ -27,7 +27,7 @@ export default class Unlocker implements IUnlocker {
     this.collector = this.cradle.ckbIndexer.collector({
       lock: this.lockScript,
     }) as CellCollector;
-    this.spvService = new SPVService(this.cradle.env.TRANSACTION_SPV_SERVICE_URL);
+    this.spvService = new SPVService(this.cradle.env.BITCOIN_SPV_SERVICE_URL);
   }
 
   private get isMainnet() {
