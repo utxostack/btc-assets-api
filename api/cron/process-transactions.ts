@@ -14,7 +14,7 @@ export default async () => {
         logger.info(`Job completed: ${job.id}`);
       },
     }),
-    new Promise((resolve) => setTimeout(resolve, VERCEL_MAX_DURATION - 1000)),
+    new Promise((resolve) => setTimeout(resolve, VERCEL_MAX_DURATION - 3000)),
   ]);
   await transactionManager.pauseProcess();
   await transactionManager.closeProcess();

@@ -8,6 +8,6 @@ export default async () => {
   const unlocker: Unlocker = container.resolve('unlocker');
   await Promise.race([
     unlocker.unlockCells(),
-    new Promise((resolve) => setTimeout(resolve, VERCEL_MAX_DURATION - 1000)),
+    new Promise((resolve) => setTimeout(resolve, VERCEL_MAX_DURATION - 3000)),
   ]);
 };
