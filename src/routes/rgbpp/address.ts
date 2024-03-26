@@ -5,7 +5,7 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Cell, Script } from './types';
 import { buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
-import { TypeScript } from './utils';
+import { blockchain } from '@ckb-lumos/base'
 import z from 'zod';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
@@ -49,7 +49,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
 
           if (type_script) {
             if (typeof type_script === 'string') {
-              query.type = TypeScript.unpack(type_script) as Script;
+              query.type = blockchain.Script.unpack(type_script);
             } else {
               query.type = type_script;
             }

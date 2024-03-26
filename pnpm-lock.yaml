@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@ckb-lumos/base':
+    specifier: ^0.21.1
+    version: 0.21.1
   '@ckb-lumos/ckb-indexer':
     specifier: ^0.21.1
     version: 0.21.1
