@@ -21,7 +21,8 @@ const transactionsCronRoute: FastifyPluginCallback<Record<never, never>, Server,
     async () => {
       const logger = container.resolve<pino.BaseLogger>('logger');
       const transactionManager: TransactionManager = container.resolve('transactionManager');
-      await Promise.race([
+      await new Promise((resolve) => {
+        setTimeout(resolve, 59_000);
         transactionManager.startProcess({
           onActive: (job) => {
             logger.info(`Job active: ${job.id}`);
@@ -29,9 +30,8 @@ const transactionsCronRoute: FastifyPluginCallback<Record<never, never>, Server,
           onCompleted: (job) => {
             logger.info(`Job completed: ${job.id}`);
           },
-        }),
-        new Promise((resolve) => setTimeout(resolve, 59_000)),
-      ]);
+        });
+      });
       await transactionManager.pauseProcess();
       await transactionManager.closeProcess();
     },
