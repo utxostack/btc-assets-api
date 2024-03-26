@@ -4,8 +4,15 @@ import { Server } from 'http';
 import z from 'zod';
 import { CKBVirtualResult } from './types';
 import { Job } from 'bullmq';
-import { buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb';
+import {
+  BTCTimeLock,
+  btcTxIdFromBtcTimeLockArgs,
+  buildRgbppLockArgs,
+  genRgbppLockScript,
+  getBtcTimeLockScript,
+} from '@rgbpp-sdk/ckb';
 import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
+import { remove0x } from '@rgbpp-sdk/btc';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
@@ -51,20 +58,43 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     },
     async (request, reply) => {
       const { btc_txid } = request.params;
+      const isMainnet = process.env.NETWORK === 'mainnet';
       const transaction = await fastify.electrs.getTransaction(btc_txid);
+      // query CKB transaction hash by RGBPP_LOCK cells
       for (let index = 0; index < transaction.vout.length; index++) {
         const args = buildRgbppLockArgs(index, btc_txid);
-        const query: CKBIndexerQueryOptions = {
-          lock: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
-        };
-
-        const collector = fastify.ckbIndexer.collector(query).collect();
-        const { value: cell } = await collector[Symbol.asyncIterator]().next();
-        console.log(cell);
+        const collector = fastify.ckbIndexer
+          .collector({
+            lock: genRgbppLockScript(args, isMainnet),
+          })
+          .collect();
+        const { value: cell, done } = await collector[Symbol.asyncIterator]().next();
         if (cell) {
           return { txhash: cell.outPoint.txHash };
         }
+        if (done) {
+          break;
+        }
       }
+
+      // query CKB transaction hash by BTC_TIME_LOCK cells
+      const btcTimeLockScript = getBtcTimeLockScript(isMainnet);
+      const timeLockCollector = fastify.ckbIndexer
+        .collector({
+          lock: {
+            codeHash: btcTimeLockScript.codeHash,
+            hashType: btcTimeLockScript.hashType,
+            args: '0x',
+          },
+        })
+        .collect();
+      for await (const cell of timeLockCollector) {
+        const btcTxid = btcTxIdFromBtcTimeLockArgs(cell.cellOutput.lock.args);
+        if (remove0x(btcTxid) === btc_txid) {
+          return { txhash: cell.outPoint?.txHash };
+        }
+      }
+
       reply.status(404);
     },
   );
