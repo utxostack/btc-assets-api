@@ -16,7 +16,7 @@ export const TxProof = z.object({
 export type TxProof = z.infer<typeof TxProof>;
 
 /**
- *
+ * Bitcoin SPV service client
  */
 export default class BitcoinSPV {
   private request: AxiosInstance;

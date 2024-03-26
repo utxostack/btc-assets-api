@@ -38,7 +38,7 @@ container.register({
     }),
   ),
   ckbRpc: asFunction(() => new CkbRPC(env.CKB_RPC_URL)).singleton(),
-  ckbIndexer: asFunction(() => new CkbIndexer(env.CKB_INDEXER_URL)).singleton(),
+  ckbIndexer: asFunction(() => new CkbIndexer(env.CKB_RPC_URL)).singleton(),
   bitcoind: asClass(Bitcoind).singleton(),
   electrs: asClass(ElectrsAPI).singleton(),
   bitcoinSPV: asClass(BitcoinSPV).singleton(),

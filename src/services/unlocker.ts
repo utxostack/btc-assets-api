@@ -14,7 +14,10 @@ import {
 } from '@rgbpp-sdk/ckb';
 import { btcTxIdFromBtcTimeLockArgs } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 
-interface IUnlocker {}
+interface IUnlocker {
+  getNextBatchLockCell(): Promise<IndexerCell[]>;
+  unlockCells(): Promise<string | undefined>;
+}
 
 /**
  * BTC Time lock cell unlocker
@@ -101,7 +104,7 @@ export default class Unlocker implements IUnlocker {
 
     const collector = new Collector({
       ckbNodeUrl: this.cradle.env.CKB_RPC_URL,
-      ckbIndexerUrl: this.cradle.env.CKB_INDEXER_URL,
+      ckbIndexerUrl: this.cradle.env.CKB_RPC_URL,
     });
     const ckbRawTx = await buildBtcTimeCellsSpentTx({
       btcTimeCellPairs,

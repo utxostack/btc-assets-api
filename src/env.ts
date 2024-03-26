@@ -42,10 +42,9 @@ const envSchema = z.object({
    */
   BITCOIN_SPV_SERVICE_URL: z.string(),
   /**
-   * The URL of the CKB JSON-RPC server and indexer.
+   * The URL of the CKB JSON-RPC server.
    */
   CKB_RPC_URL: z.string(),
-  CKB_INDEXER_URL: z.string(),
   /**
    * Paymaster private key, used to sign the transaction with paymaster cell.
    */
