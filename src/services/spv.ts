@@ -15,6 +15,32 @@ export const TxProof = z.object({
 });
 export type TxProof = z.infer<typeof TxProof>;
 
+
+// https://github.com/ckb-cell/ckb-bitcoin-spv-service/blob/master/src/components/api_service/error.rs
+export enum BitcoinSPVErrorCode {
+  StorageTxTooNew = 23101,
+  StorageTxUnconfirmed,
+  StorageHeaderMissing = 23301,
+  StorageHeaderUnmatched,
+  OnchainTxUnconfirmed = 25101,
+  OnchainReorgRequired = 25901,
+}
+
+export class BitcoinSPVError extends Error {
+  public code: BitcoinSPVErrorCode;
+
+  public static schema = z.object({
+    code: z.number(),
+    message: z.string(),
+  });
+
+  constructor(code: BitcoinSPVErrorCode, message: string) {
+    super(message);
+    this.name = this.constructor.name;
+    this.code = code;
+  }
+}
+
 /**
  * Bitcoin SPV service client
  */
@@ -39,7 +65,8 @@ export default class BitcoinSPV {
         params,
       });
       if (response.data.error) {
-        throw new Error(response.data.error.message);
+        const { code, message } = response.data.error;
+        throw new BitcoinSPVError(code, message);
       }
       return response.data.result;
     });
