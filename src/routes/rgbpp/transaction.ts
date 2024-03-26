@@ -5,13 +5,11 @@ import z from 'zod';
 import { CKBVirtualResult } from './types';
 import { Job } from 'bullmq';
 import {
-  BTCTimeLock,
   btcTxIdFromBtcTimeLockArgs,
   buildRgbppLockArgs,
   genRgbppLockScript,
   getBtcTimeLockScript,
 } from '@rgbpp-sdk/ckb';
-import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
 import { remove0x } from '@rgbpp-sdk/btc';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
@@ -68,12 +66,10 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
             lock: genRgbppLockScript(args, isMainnet),
           })
           .collect();
-        const { value: cell, done } = await collector[Symbol.asyncIterator]().next();
-        if (cell) {
-          return { txhash: cell.outPoint.txHash };
-        }
-        if (done) {
-          break;
+        for await (const cell of collector) {
+          if (cell) {
+            return { txhash: cell.outPoint!.txHash };
+          }
         }
       }
 
@@ -91,7 +87,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
       for await (const cell of timeLockCollector) {
         const btcTxid = btcTxIdFromBtcTimeLockArgs(cell.cellOutput.lock.args);
         if (remove0x(btcTxid) === btc_txid) {
-          return { txhash: cell.outPoint?.txHash };
+          return { txhash: cell.outPoint!.txHash };
         }
       }
 
