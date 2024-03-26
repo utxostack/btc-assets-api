@@ -1,4 +1,4 @@
-import { Cell } from '@ckb-lumos/lumos';
+import { Cell, helpers } from '@ckb-lumos/lumos';
 import { Cradle } from '../container';
 import { Queue, Worker } from 'bullmq';
 import { AppendPaymasterCellAndSignTxParams, IndexerCell, appendPaymasterCellAndSignCkbTx } from '@rgbpp-sdk/ckb';
@@ -56,10 +56,6 @@ export default class Paymaster implements IPaymaster {
     this.refillThreshold = this.cradle.env.PAYMASTER_CELL_REFILL_THRESHOLD;
   }
 
-  private get privateKey() {
-    return this.cradle.env.PAYMASTER_PRIVATE_KEY;
-  }
-
   private get lockScript() {
     const args = hd.key.privateKeyToBlake160(this.privateKey);
     const scripts =
@@ -71,6 +67,25 @@ export default class Paymaster implements IPaymaster {
       args: args,
     };
     return lockScript;
+  }
+
+  public get privateKey() {
+    return this.cradle.env.PAYMASTER_PRIVATE_KEY;
+  }
+
+  public get address() {
+    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
+    const lumosConfig = isMainnet ? config.predefined.LINA : config.predefined.AGGRON4;
+    const args = hd.key.privateKeyToBlake160(this.privateKey);
+    const template = lumosConfig.SCRIPTS['SECP256K1_BLAKE160'];
+    const lockScript = {
+      codeHash: template.CODE_HASH,
+      hashType: template.HASH_TYPE,
+      args: args,
+    };
+    return helpers.encodeToAddress(lockScript, {
+      config: lumosConfig,
+    });
   }
 
   /**

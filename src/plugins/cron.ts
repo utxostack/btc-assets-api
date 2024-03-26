@@ -2,9 +2,12 @@ import fp from 'fastify-plugin';
 import * as Sentry from '@sentry/node';
 import TransactionManager from '../services/transaction';
 import cron from 'fastify-cron';
+import { Env } from '../env';
 
 export default fp(async (fastify) => {
   try {
+    const env: Env = fastify.container.resolve('env');
+
     // processing rgb++ ckb transaction
     const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
     fastify.addHook('onReady', async () => {
@@ -27,10 +30,10 @@ export default fp(async (fastify) => {
       jobs: [
         {
           name: 'unlock-btc-time-lock-cells',
-          cronTime: '*/1 * * * *',
+          cronTime: env.UNLOCKER_CRON_SCHEDULE,
           onTick: async () => {
             try {
-              // await unlocker.unlockCells();
+              await unlocker.unlockCells();
             } catch (err) {
               fastify.log.error(err);
               Sentry.captureException(err);

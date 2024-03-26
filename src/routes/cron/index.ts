@@ -1,10 +1,12 @@
 import { FastifyPluginCallback } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import { Server } from "http";
-import transactionsCronRoute from "./transactions";
+import processTransactionsCronRoute from "./process-transactions";
+import unlockCellsCronRoute from "./unlock-cells";
 
 const cronRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
-  fastify.register(transactionsCronRoute);
+  fastify.register(processTransactionsCronRoute);
+  fastify.register(unlockCellsCronRoute);
   done();
 };
 

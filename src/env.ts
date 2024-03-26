@@ -54,6 +54,7 @@ const envSchema = z.object({
   PAYMASTER_CELL_PRESET_COUNT: z.coerce.number().default(500),
   PAYMASTER_CELL_REFILL_THRESHOLD: z.coerce.number().default(0.3),
 
+  UNLOCKER_CRON_SCHEDULE: z.string().default('*/5 * * * *'),
   UNLOCKER_CELL_BATCH_SIZE: z.coerce.number().default(100),
 
   TRANSACTION_QUEUE_JOB_DELAY: z.coerce.number().default(120 * 1000),

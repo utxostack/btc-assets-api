@@ -7,8 +7,12 @@
   ],
   "crons": [
     {
-      "path": "/api/cron/process-transactions",
-      "schedule": "* * * * *"
+      "path": "/cron/process-transactions",
+      "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/cron/unlock-cells",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

@@ -167,7 +167,6 @@ export default class TransactionManager implements ITransactionManager {
           return output;
         }
         const toLock = lockScriptFromBtcTimeLockArgs(lock.args);
-        console.log(toLock);
         return {
           ...output,
           lock: genBtcTimeLockScript(toLock, this.isMainnet),
