@@ -20,8 +20,8 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         description: 'Submit a RGB++ CKB transaction',
         tags: ['RGB++'],
         body: z.object({
-          txid: z.string(),
-          ckbVirtualResult: CKBVirtualResult,
+          btc_txid: z.string(),
+          ckb_virtual_result: CKBVirtualResult,
         }),
         response: {
           200: z.object({
@@ -31,8 +31,11 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
       },
     },
     async (request, reply) => {
-      const { txid, ckbVirtualResult } = request.body;
-      const job: Job = await fastify.transactionManager.enqueueTransaction({ txid, ckbVirtualResult });
+      const { btc_txid, ckb_virtual_result } = request.body;
+      const job: Job = await fastify.transactionManager.enqueueTransaction({
+        txid: btc_txid,
+        ckbVirtualResult: ckb_virtual_result,
+      });
       const state = await job.getState();
       reply.send({ state });
     },
