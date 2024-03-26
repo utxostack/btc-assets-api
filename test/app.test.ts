@@ -17,6 +17,7 @@ test('`/docs/json` - 200', async () => {
     '/token/generate',
     '/bitcoin/v1/info',
     '/bitcoin/v1/block/{hash}',
+    '/bitcoin/v1/block/{hash}/txids',
     '/bitcoin/v1/block/{hash}/header',
     '/bitcoin/v1/block/height/{height}',
     '/bitcoin/v1/transaction',
@@ -24,6 +25,15 @@ test('`/docs/json` - 200', async () => {
     '/bitcoin/v1/address/{address}/balance',
     '/bitcoin/v1/address/{address}/unspent',
     '/bitcoin/v1/address/{address}/txs',
+    '/rgbpp/v1/transaction/ckb-tx',
+    '/rgbpp/v1/transaction/{btc_txid}',
+    '/rgbpp/v1/transaction/{btc_txid}/job',
+    '/rgbpp/v1/assets/{btc_txid}',
+    '/rgbpp/v1/assets/{btc_txid}/{vout}',
+    '/rgbpp/v1/address/{btc_address}/assets',
+    '/rgbpp/v1/btc-spv/proof',
+    '/cron/process-transactions',
+    '/cron/unlock-cells',
   ]);
 
   await fastify.close();

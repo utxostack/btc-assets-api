@@ -29,3 +29,5 @@ yarn.lock
 coverage
 data
 redis.conf
+dump.rdb
+.envrc

@@ -1,8 +1,10 @@
-import { vi } from 'vitest';
-import Redis from 'ioredis-mock';
+import { afterAll, vi } from 'vitest';
+import container from '../src/container';
 
-vi.stubEnv('REDIS_URL', '');
+if (process.env.CI_REDIS_URL) {
+  vi.stubEnv('REDIS_URL', process.env.CI_REDIS_URL);
+}
 
-vi.mock('ioredis', () => ({
-  Redis,
-}));
+afterAll(async () => {
+  container.cradle.redis.flushall();
+});

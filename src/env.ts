@@ -12,7 +12,7 @@ const envSchema = z.object({
   DOMAIN: z.string().optional(),
 
   SENTRY_DSN_URL: z.string().optional(),
-  REDIS_URL: z.string().optional(),
+  REDIS_URL: z.string(),
   RATE_LIMIT_PER_MINUTE: z.number().default(100),
 
   ADMIN_USERNAME: z.string().optional(),
@@ -35,6 +35,28 @@ const envSchema = z.object({
    * It is used to query the Bitcoin blockchain (balance, transactions, etc).
    */
   BITCOIN_ELECTRS_API_URL: z.string(),
+
+  /**
+   * Bitcoin SPV service URL
+   * https://github.com/ckb-cell/ckb-bitcoin-spv-service
+   */
+  BITCOIN_SPV_SERVICE_URL: z.string(),
+  /**
+   * The URL of the CKB JSON-RPC server.
+   */
+  CKB_RPC_URL: z.string(),
+  /**
+   * Paymaster private key, used to sign the transaction with paymaster cell.
+   */
+  PAYMASTER_PRIVATE_KEY: z.string(),
+  PAYMASTER_CELL_CAPACITY: z.coerce.number().default(220),
+  PAYMASTER_CELL_PRESET_COUNT: z.coerce.number().default(500),
+  PAYMASTER_CELL_REFILL_THRESHOLD: z.coerce.number().default(0.3),
+
+  UNLOCKER_CRON_SCHEDULE: z.string().default('*/5 * * * *'),
+  UNLOCKER_CELL_BATCH_SIZE: z.coerce.number().default(100),
+
+  TRANSACTION_QUEUE_JOB_DELAY: z.coerce.number().default(120 * 1000),
 });
 
 export type Env = z.infer<typeof envSchema>;

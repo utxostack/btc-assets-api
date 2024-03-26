@@ -18,6 +18,8 @@ import options from './options';
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import cors from './plugins/cors';
 import { NetworkType } from './constants';
+import rgbppRoutes from './routes/rgbpp';
+import cronRoutes from './routes/cron';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   Sentry.init({
@@ -32,9 +34,6 @@ const isTokenRoutesEnable = env.NODE_ENV === 'production' ? env.ADMIN_USERNAME &
 
 async function routes(fastify: FastifyInstance) {
   fastify.log.info(`Process env: ${JSON.stringify(getSafeEnvs(), null, 2)}`);
-
-  container.register({ logger: asValue(fastify.log) });
-  fastify.decorate('container', container);
 
   await fastify.register(cors);
   fastify.register(sensible);
@@ -53,6 +52,8 @@ async function routes(fastify: FastifyInstance) {
     fastify.register(tokenRoutes, { prefix: '/token' });
   }
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
+  fastify.register(rgbppRoutes, { prefix: '/rgbpp/v1' });
+  fastify.register(cronRoutes, { prefix: '/cron' });
 
   fastify.setErrorHandler((error, _, reply) => {
     fastify.log.error(error);
@@ -70,6 +71,10 @@ export function buildFastify() {
   const app = fastify(options).withTypeProvider<ZodTypeProvider>();
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+
+  container.register({ logger: asValue(app.log) });
+  app.decorate('container', container);
+
   app.register(routes);
   return app;
 }
