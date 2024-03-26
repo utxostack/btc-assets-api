@@ -144,16 +144,16 @@ export default class Paymaster implements IPaymaster {
    */
   public async refillCellQueue() {
     const queueSize = await this.queue.getWaitingCount();
+    let filled = 0;
+    if (queueSize >= this.presetCount) {
+      return filled;
+    }
+
     const collector = this.cradle.ckbIndexer.collector({
       lock: this.lockScript,
       outputCapacityRange: [BI.from(this.cellCapacity).toHexString(), BI.from(this.cellCapacity + 1).toHexString()],
     });
     const cells = collector.collect();
-
-    let filled = 0;
-    if (queueSize >= this.presetCount) {
-      return filled;
-    }
 
     for await (const cell of cells) {
       const outPoint = cell.outPoint!;
