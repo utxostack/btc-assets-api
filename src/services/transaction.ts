@@ -180,6 +180,8 @@ export default class TransactionManager implements ITransactionManager {
       this.cradle.logger.info(`[TransactionManager] Bitcoin Transaction Not Confirmed: ${txid}`);
       throw new DelayedError();
     }
+
+    this.cradle.logger.info(`[TransactionManager] Transaction Verified: ${txid}`);
     return true;
   }
 
@@ -294,10 +296,13 @@ export default class TransactionManager implements ITransactionManager {
         signedTx,
       });
       job.returnvalue = txHash;
+      this.cradle.logger.info(`[TransactionManager] Transaction sent: ${txHash}`);
 
       await this.waitForTranscationConfirmed(txHash);
+      this.cradle.logger.info(`[TransactionManager] Transaction confirmed: ${txHash}`);
       // mark the paymaster cell as spent to avoid double spending
       if (ckbVirtualResult.needPaymasterCell) {
+        this.cradle.logger.info(`[TransactionManager] Mark paymaster cell as spent: ${txHash}`);
         await this.cradle.paymaster.markPaymasterCellAsSpent(txid, signedTx!);
       }
       return txHash;
