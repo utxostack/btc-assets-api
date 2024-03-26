@@ -17,6 +17,7 @@ test('`/docs/json` - 200', async () => {
     '/token/generate',
     '/bitcoin/v1/info',
     '/bitcoin/v1/block/{hash}',
+    '/bitcoin/v1/block/{hash}/txids',
     '/bitcoin/v1/block/{hash}/header',
     '/bitcoin/v1/block/height/{height}',
     '/bitcoin/v1/transaction',
@@ -28,6 +29,8 @@ test('`/docs/json` - 200', async () => {
     '/rgbpp/v1/transaction/{btc_txid}',
     '/rgbpp/v1/assets/{btc_txid}/{vout}',
     '/rgbpp/v1/address/{btc_address}/assets',
+    '/rgbpp/v1/spv/proof',
+    '/cron/transactions',
   ]);
 
   await fastify.close();
