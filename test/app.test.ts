@@ -27,9 +27,11 @@ test('`/docs/json` - 200', async () => {
     '/bitcoin/v1/address/{address}/txs',
     '/rgbpp/v1/transaction/ckb-tx',
     '/rgbpp/v1/transaction/{btc_txid}',
+    '/rgbpp/v1/transaction/{btc_txid}/job',
+    '/rgbpp/v1/assets/{btc_txid}',
     '/rgbpp/v1/assets/{btc_txid}/{vout}',
     '/rgbpp/v1/address/{btc_address}/assets',
-    '/rgbpp/v1/spv/proof',
+    '/rgbpp/v1/btc-spv/proof',
     '/cron/transactions',
   ]);
 
