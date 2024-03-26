@@ -49,6 +49,7 @@ export default class Paymaster implements IPaymaster {
       connection: cradle.redis,
       lockDuration: 60_000,
       removeOnComplete: { count: 0 },
+      removeOnFail: { count: 0 },
     });
     this.cellCapacity = this.cradle.env.PAYMASTER_CELL_CAPACITY;
     this.presetCount = this.cradle.env.PAYMASTER_CELL_PRESET_COUNT;
@@ -105,7 +106,7 @@ export default class Paymaster implements IPaymaster {
       const data = job.data;
       const liveCell = await this.cradle.ckbRpc.getLiveCell(data.outPoint!, false);
       if (!liveCell || liveCell.status !== 'live') {
-        job.remove();
+        job.moveToFailed(new Error('The paymaster cell is not live'), token);
         continue;
       }
 
