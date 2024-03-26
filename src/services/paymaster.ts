@@ -170,7 +170,7 @@ export default class Paymaster implements IPaymaster {
   ) {
     const { ckbRawTx, sumInputsCapacity } = params;
     const paymasterCell = await this.getNextCell(token);
-    this.cradle.logger.debug(`[Paymaster] Get paymaster cell: ${JSON.stringify(paymasterCell)}`);
+    this.cradle.logger.info(`[Paymaster] Get paymaster cell: ${JSON.stringify(paymasterCell)}`);
 
     if (!paymasterCell) {
       throw new PaymasterCellNotEnoughError('No paymaster cell available');
@@ -183,7 +183,7 @@ export default class Paymaster implements IPaymaster {
       secp256k1PrivateKey: this.privateKey,
       isMainnet: this.cradle.env.NETWORK === 'mainnet',
     });
-    this.cradle.logger.debug(`[Paymaster] Signed transaction: ${JSON.stringify(signedTx)}`);
+    this.cradle.logger.info(`[Paymaster] Signed transaction: ${JSON.stringify(signedTx)}`);
     return signedTx;
   }
 
