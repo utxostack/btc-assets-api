@@ -45,11 +45,11 @@ dependencies:
     specifier: ^0.109.1
     version: 0.109.1
   '@rgbpp-sdk/btc':
-    specifier: 0.0.0-snap-20240325120223
-    version: 0.0.0-snap-20240325120223
+    specifier: 0.0.0-snap-20240326062949
+    version: 0.0.0-snap-20240326062949
   '@rgbpp-sdk/ckb':
-    specifier: 0.0.0-snap-20240325120223
-    version: 0.0.0-snap-20240325120223
+    specifier: 0.0.0-snap-20240326062949
+    version: 0.0.0-snap-20240326062949
   '@sentry/node':
     specifier: ^7.102.1
     version: 7.102.1
@@ -1347,13 +1347,13 @@ packages:
     resolution: {integrity: sha512-2LuNTFBIO0m7kKIQvvPHN6UE63VjpmL9rnEEaOOaiSPbZK+zUOYIzBAWcED+3XYzhYsd/0mD57VdxAEqqV52CQ==}
     dev: true
 
-  /@rgbpp-sdk/btc@0.0.0-snap-20240325120223:
-    resolution: {integrity: sha512-rBhpqI9g9BEDDYhYMNrWLOzvsFfDiXvAKJyOP9ehblE0uFpRty5cCcmvgE9J+HK/mn/xzLWAftkKFShuXGK/Uw==}
+  /@rgbpp-sdk/btc@0.0.0-snap-20240326062949:
+    resolution: {integrity: sha512-eTcXGs6xrReDOPCsVbLihyoULRpXcR6p5qN6D9BeXzrIrwLNI5YnvtIL67BgatYLC0NI5HpQhNU+oQmSb3nc4g==}
     dependencies:
       '@bitcoinerlab/secp256k1': 1.1.1
       '@ckb-lumos/lumos': 0.22.0-next.5
       '@nervosnetwork/ckb-types': 0.109.1
-      '@rgbpp-sdk/ckb': 0.0.0-snap-20240325120223
+      '@rgbpp-sdk/ckb': 0.0.0-snap-20240326062949
       bip32: 4.0.0
       bitcoinjs-lib: 6.1.5
       ecpair: 2.1.0
@@ -1363,8 +1363,8 @@ packages:
       - encoding
     dev: false
 
-  /@rgbpp-sdk/ckb@0.0.0-snap-20240325120223:
-    resolution: {integrity: sha512-ZAPkeCHMkzanyF/RhFoGH3M2mjQm+HM4g75O0mI1K47Afpkr1P/ERaltfxnNtsRxGJircdzT/Lh6tpg4NSBE5w==}
+  /@rgbpp-sdk/ckb@0.0.0-snap-20240326062949:
+    resolution: {integrity: sha512-MpilSYXDsShHSBWfNsF1J8LaS1AmDwfEzHnqlFiU55RdiG64M+EgTIQ32ObCMApXttq7BVdazYAfjFkotSPOeg==}
     dependencies:
       '@ckb-lumos/base': 0.21.1
       '@ckb-lumos/codec': 0.22.0-next.5
