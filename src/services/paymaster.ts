@@ -12,7 +12,7 @@ interface IPaymaster {
     txid: string,
     params: Pick<AppendPaymasterCellAndSignTxParams, 'ckbRawTx' | 'sumInputsCapacity'>,
   ): ReturnType<typeof appendPaymasterCellAndSignCkbTx>;
-  makePaymasterCellAsSpent(txid: string, signedTx: CKBComponents.RawTransaction): Promise<void>;
+  markPaymasterCellAsSpent(txid: string, signedTx: CKBComponents.RawTransaction): Promise<void>;
 }
 
 export const PAYMASTER_CELL_QUEUE_NAME = 'rgbpp-ckb-paymaster-cell-queue';
@@ -191,7 +191,7 @@ export default class Paymaster implements IPaymaster {
    * @param token - the job token moved from the queue to the completed
    * @param signedTx - the signed transaction to get the paymaster cell input to mark as spent
    */
-  public async makePaymasterCellAsSpent(token: string, signedTx: CKBComponents.RawTransaction) {
+  public async markPaymasterCellAsSpent(token: string, signedTx: CKBComponents.RawTransaction) {
     for await (const input of signedTx.inputs) {
       const outPoint = input.previousOutput;
       if (!outPoint) {

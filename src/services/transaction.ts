@@ -92,10 +92,6 @@ export default class TransactionManager implements ITransactionManager {
       concurrency: 10,
     });
     this.spvService = new SPVService(cradle.env.BITCOIN_SPV_SERVICE_URL);
-    // FIXME: remove this line after testing
-    this.queue.getJob('bbb51bf1ac43fcb033ae64a3aeb4c0fb4af9f743ecf9173ec55fb2f9f499a31f').then((job) => {
-      job?.retry();
-    });
   }
 
   private get isMainnet() {
@@ -167,21 +163,21 @@ export default class TransactionManager implements ITransactionManager {
     // make sure the commitment matches the Bitcoin transaction
     const btcTxCommitment = await this.getCommitmentFromBtcTx(btcTx);
     if (commitment !== btcTxCommitment.toString('hex')) {
-      this.cradle.logger.info(`[TransactionManager] Bitcoin Transaction Commitment Mismatch`);
+      this.cradle.logger.info(`[TransactionManager] Bitcoin Transaction Commitment Mismatch: ${txid}`);
       return false;
     }
 
     // make sure the CKB Virtual Transaction is valid
     const ckbRawTxWithoutBtcTxId = await this.clearBtcTxIdInRgbppLockScript(ckbRawTx, txid);
     if (commitment !== calculateCommitment(ckbRawTxWithoutBtcTxId)) {
-      this.cradle.logger.info(`[TransactionManager] Invalid CKB Virtual Transaction`);
+      this.cradle.logger.info(`[TransactionManager] Invalid CKB Virtual Transaction: ${txid}`);
       return false;
     }
 
     // make sure the Bitcoin transaction is confirmed
     if (!btcTx.status.confirmed) {
       // https://docs.bullmq.io/patterns/process-step-jobs#delaying
-      this.cradle.logger.info(`[TransactionManager] Bitcoin Transaction Not Confirmed`);
+      this.cradle.logger.info(`[TransactionManager] Bitcoin Transaction Not Confirmed: ${txid}`);
       throw new DelayedError();
     }
     return true;
@@ -301,9 +297,9 @@ export default class TransactionManager implements ITransactionManager {
 
       await this.waitForTranscationConfirmed(txHash);
       // mark the paymaster cell as spent to avoid double spending
-      // if (ckbVirtualResult.needPaymasterCell) {
-      //   await this.cradle.paymaster.makePaymasterCellAsSpent(txid, signedTx!);
-      // }
+      if (ckbVirtualResult.needPaymasterCell) {
+        await this.cradle.paymaster.markPaymasterCellAsSpent(txid, signedTx!);
+      }
       return txHash;
     } catch (err) {
       this.cradle.logger.debug(err);
