@@ -1,3 +1,4 @@
+import { CellCollector } from '@ckb-lumos/lumos';
 import { Cradle } from '../container';
 import {
   BtcTimeCellPair,
@@ -21,10 +22,17 @@ interface IUnlocker {}
  */
 export default class Unlocker implements IUnlocker {
   private cradle: Cradle;
+  private collector: CellCollector;
   private spvService: SPVService;
 
   constructor(cradle: Cradle) {
     this.cradle = cradle;
+    this.collector = this.cradle.ckbIndexer.collector({
+      lock: {
+        ...this.lockScript,
+        args: '0x',
+      },
+    }) as CellCollector;
     this.spvService = new SPVService(this.cradle.env.BITCOIN_SPV_SERVICE_URL);
   }
 
@@ -40,14 +48,7 @@ export default class Unlocker implements IUnlocker {
    * Get next batch of BTC time lock cells
    */
   public async getNextBatchLockCell() {
-    const collect = this.cradle.ckbIndexer
-      .collector({
-        lock: {
-          ...this.lockScript,
-          args: '0x',
-        },
-      })
-      .collect();
+    const collect = this.collector.collect();
     const cells: IndexerCell[] = [];
 
     const { blocks } = await this.cradle.bitcoind.getBlockchainInfo();
