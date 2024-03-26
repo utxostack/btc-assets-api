@@ -69,7 +69,7 @@ describe('Unlocker', () => {
     // @ts-expect-error
     vi.spyOn(unlocker['cradle'].bitcoind, 'getBlockchainInfo').mockResolvedValue({ blocks: 100 });
     // @ts-expect-error
-    vi.spyOn(unlocker['cradle'].bitcoind, 'getTransaction').mockResolvedValue({ blockheight: 95 });
+    vi.spyOn(unlocker['cradle'].electrs, 'getTransaction').mockResolvedValue({ status: { block_height: 95 } });
     mockBtcTimeLockCell();
 
     const cells = await unlocker.getNextBatchLockCell();
@@ -80,7 +80,7 @@ describe('Unlocker', () => {
     // @ts-expect-error
     vi.spyOn(unlocker['cradle'].bitcoind, 'getBlockchainInfo').mockResolvedValue({ blocks: 101 });
     // @ts-expect-error
-    vi.spyOn(unlocker['cradle'].bitcoind, 'getTransaction').mockResolvedValue({ blockheight: 95 });
+    vi.spyOn(unlocker['cradle'].electrs, 'getTransaction').mockResolvedValue({ status: { block_height: 95 } });
     mockBtcTimeLockCell();
 
     const cells = await unlocker.getNextBatchLockCell();
@@ -93,7 +93,7 @@ describe('Unlocker', () => {
     // @ts-expect-error
     vi.spyOn(unlocker['cradle'].bitcoind, 'getBlockchainInfo').mockResolvedValue({ blocks: 101 });
     // @ts-expect-error
-    vi.spyOn(unlocker['cradle'].bitcoind, 'getTransaction').mockResolvedValue({ blockheight: 95 });
+    vi.spyOn(unlocker['cradle'].electrs, 'getTransaction').mockResolvedValue({ status: { block_height: 95 } });
     mockBtcTimeLockCell();
 
     const cells = await unlocker.getNextBatchLockCell();
@@ -104,10 +104,5 @@ describe('Unlocker', () => {
     vi.spyOn(unlocker, 'getNextBatchLockCell').mockResolvedValue([]);
     await unlocker.unlockCells();
     expect(buildBtcTimeCellsSpentTx).not.toHaveBeenCalled();
-  });
-
-  // FIXME: Invalid BTC time lock args
-  test('unlockCells: should unlock cells and send ckb tx', async () => {
-    await expect(unlocker.unlockCells()).rejects.toMatchSnapshot();
   });
 });

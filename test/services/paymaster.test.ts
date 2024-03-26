@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import container from '../../src/container';
 import Paymaster from '../../src/services/paymaster';
 import { Cell, hd } from '@ckb-lumos/lumos';
 import { describe, beforeEach, expect, test, vi } from 'vitest';
 import { Job } from 'bullmq';
+import { asValue } from 'awilix';
 
 const { mnemonic, ExtendedPrivateKey, AddressType } = hd;
 
@@ -26,7 +28,7 @@ describe('Paymaster', () => {
     paymaster = new Paymaster(cradle);
   });
 
-  test('getNextCellJob: should not trigger refill if already refilling', async () => {
+  test('getNextCell: should not trigger refill if already refilling', async () => {
     paymaster['refilling'] = true;
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(2);
     vi.spyOn(paymaster, 'refillCellQueue');
@@ -35,32 +37,42 @@ describe('Paymaster', () => {
     expect(paymaster.refillCellQueue).not.toHaveBeenCalled();
   });
 
-  test('getNextCellJob: should return the next job when queue has sufficient jobs', async () => {
+  test('getNextCell: should return the next job when queue has sufficient jobs', async () => {
+    container.register('ckbRpc', asValue({
+      getLiveCell: vi.fn().mockResolvedValue({
+        status: 'live',
+      }),
+    }));
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(10);
     vi.spyOn(paymaster['worker'], 'getNextJob').mockResolvedValue(
-      new Job(paymaster['queue'], 'test-job', {}) as Job<Cell>,
+      new Job(paymaster['queue'], 'test-job', { outPoint: {}, cellOutput: {}, data: '0x123' }) as Job<Cell>,
     );
     vi.spyOn(paymaster, 'refillCellQueue');
 
-    const job = await paymaster.getNextCell('token');
-    expect(job).toBeInstanceOf(Job);
+    const cell = await paymaster.getNextCell('token');
+    expect(cell?.outputData).toEqual('0x123');
     expect(paymaster.refillCellQueue).not.toHaveBeenCalled();
     expect(paymaster['refilling']).toBeFalsy();
   });
 
-  test('getNextCellJob: should trigger refill when queue has fewer jobs than threshold', async () => {
+  test('getNextCell: should trigger refill when queue has fewer jobs than threshold', async () => {
+    container.register('ckbRpc', asValue({
+      getLiveCell: vi.fn().mockResolvedValue({
+        status: 'live',
+      }),
+    }));
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(2);
     vi.spyOn(paymaster, 'refillCellQueue').mockResolvedValue(8);
     vi.spyOn(paymaster['worker'], 'getNextJob').mockResolvedValue(
-      new Job(paymaster['queue'], 'test-job', {}) as Job<Cell>,
+      new Job(paymaster['queue'], 'test-job', { outPoint: {}, cellOutput: {}, data: '0x123' }) as Job<Cell>,
     );
 
-    const job = await paymaster.getNextCell('token');
-    expect(job).toBeInstanceOf(Job);
+    const cell = await paymaster.getNextCell('token');
+    expect(cell?.outputData).toEqual('0x123');
     expect(paymaster.refillCellQueue).toHaveBeenCalled();
   });
 
-  test('getNextCellJob: should return a job when queue is empty and refill is successful', async () => {
+  test('getNextCell: should return a job when queue is empty and refill is successful', async () => {
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(0);
     vi.spyOn(paymaster, 'refillCellQueue').mockResolvedValue(1);
     vi.spyOn(paymaster['worker'], 'getNextJob').mockResolvedValue(
@@ -71,7 +83,7 @@ describe('Paymaster', () => {
     expect(paymaster.refillCellQueue).toHaveBeenCalled();
   });
 
-  test('getNextCellJob: should handle error when queue is empty and refill fails', async () => {
+  test('getNextCell: should handle error when queue is empty and refill fails', async () => {
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(0);
     vi.spyOn(paymaster, 'refillCellQueue').mockRejectedValue(new Error('Refill failed'));
     vi.spyOn(paymaster['worker'], 'getNextJob');
