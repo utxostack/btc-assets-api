@@ -4,6 +4,8 @@ import { Server } from 'http';
 import z from 'zod';
 import { CKBVirtualResult } from './types';
 import { Job } from 'bullmq';
+import { buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb';
+import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
@@ -35,8 +37,44 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     '/:btc_txid',
     {
       schema: {
+        description: `Get the CKB transaction hash by BTC txid.`,
+        tags: ['RGB++'],
+        params: z.object({
+          btc_txid: z.string(),
+        }),
+        response: {
+          200: z.object({
+            txhash: z.string().describe('The CKB transaction hash'),
+          }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const { btc_txid } = request.params;
+      const transaction = await fastify.electrs.getTransaction(btc_txid);
+      for (let index = 0; index < transaction.vout.length; index++) {
+        const args = buildRgbppLockArgs(index, btc_txid);
+        const query: CKBIndexerQueryOptions = {
+          lock: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
+        };
+
+        const collector = fastify.ckbIndexer.collector(query).collect();
+        const { value: cell } = await collector[Symbol.asyncIterator]().next();
+        console.log(cell);
+        if (cell) {
+          return { txhash: cell.outPoint.txHash };
+        }
+      }
+      reply.status(404);
+    },
+  );
+
+  fastify.get(
+    '/:btc_txid/job',
+    {
+      schema: {
         description: `
-          Get RGB++ CKB transaction by btc txid
+          Get the job state of a transaction by BTC txid.
 
           * completed: The CKB transaction has been sent and confirmed.
           * failed: Something went wrong during the process, and it has failed.
@@ -50,7 +88,6 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         }),
         response: {
           200: z.object({
-            ckbTxHash: z.string().or(z.null()).describe('The CKB transaction hash'),
             state: z.string().describe('The state of the transaction'),
           }),
         },
@@ -63,9 +100,8 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         reply.status(404);
         return;
       }
-      const ckbTxHash = job.returnvalue;
       const state = await job.getState();
-      return { ckbTxHash, state };
+      return { state };
     },
   );
 

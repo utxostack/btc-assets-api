@@ -17,7 +17,7 @@ const rgbppRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
   fastify.register(transactionRoutes, { prefix: '/transaction' });
   fastify.register(assetsRoute, { prefix: '/assets' });
   fastify.register(addressRoutes, { prefix: '/address' });
-  fastify.register(spvRoute, { prefix: '/spv' });
+  fastify.register(spvRoute, { prefix: '/btc-spv' });
   done();
 };
 
