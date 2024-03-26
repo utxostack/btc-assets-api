@@ -9,6 +9,9 @@ export default fp(async (fastify) => {
     const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
     fastify.addHook('onReady', async () => {
       transactionManager.startProcess({
+        onActive: (job) => {
+          fastify.log.info(`Job active: ${job.id}`);
+        },
         onCompleted: (job) => {
           fastify.log.info(`Job completed: ${job.id}`);
         },
@@ -24,7 +27,7 @@ export default fp(async (fastify) => {
       jobs: [
         {
           name: 'unlock-btc-time-lock-cells',
-          cronTime: '*/10 * * * *',
+          cronTime: '*/1 * * * *',
           onTick: async () => {
             try {
               // await unlocker.unlockCells();
