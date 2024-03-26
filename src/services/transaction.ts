@@ -142,7 +142,6 @@ export default class TransactionManager implements ITransactionManager {
 
   /**
    * Clear the btcTxId in the RGBPP_LOCK/BTC_TIME_LOCK script to avoid the mismatch between the CKB and BTC transactions
-   * to avoid the mismatch between the CKB and BTC transactions
    * @param ckbRawTx - CKB Raw Transaction
    * @param txid - Bitcoin transaction id
    */
@@ -333,7 +332,7 @@ export default class TransactionManager implements ITransactionManager {
       const txHash = await sendCkbTx({
         collector: new Collector({
           ckbNodeUrl: this.cradle.env.CKB_RPC_URL,
-          ckbIndexerUrl: this.cradle.env.CKB_INDEXER_URL,
+          ckbIndexerUrl: this.cradle.env.CKB_RPC_URL,
         }),
         signedTx,
       });
