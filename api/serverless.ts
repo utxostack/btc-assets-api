@@ -1,7 +1,7 @@
 import { buildFastify } from '../src/app';
 
 export const config = {
-  maxDuration: 60,
+  maxDuration: 300,
 };
 
 const app = buildFastify();

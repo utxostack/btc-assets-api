@@ -4,6 +4,7 @@ import { Server } from 'http';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import container from '../../container';
 import TransactionManager from '../../services/transaction';
+import { VERCEL_MAX_DURATION } from '../../constants';
 
 const transactionsCronRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (
   fastify,
@@ -22,7 +23,7 @@ const transactionsCronRoute: FastifyPluginCallback<Record<never, never>, Server,
       const logger = container.resolve<pino.BaseLogger>('logger');
       const transactionManager: TransactionManager = container.resolve('transactionManager');
       await new Promise((resolve) => {
-        setTimeout(resolve, 59_000);
+        setTimeout(resolve, (VERCEL_MAX_DURATION - 10) * 1000);
         transactionManager.startProcess({
           onActive: (job) => {
             logger.info(`Job active: ${job.id}`);

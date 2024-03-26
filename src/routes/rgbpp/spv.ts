@@ -14,7 +14,6 @@ const spvRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvi
         tags: ['RGB++'],
         querystring: z.object({
           txid: z.string().describe('The Bitcoin transaction id'),
-          index: z.coerce.number().describe('The output index'),
           confirmations: z.coerce.number().describe('The number of confirmations'),
         }),
         response: {
@@ -23,7 +22,10 @@ const spvRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvi
       },
     },
     async (request, reply) => {
-      const { txid, index, confirmations } = request.query;
+      const { txid, confirmations } = request.query;
+      const btcTx = await fastify.electrs.getTransaction(txid);
+      const txids = await fastify.electrs.getBlockTxIdsByHash(btcTx.status.block_hash!);
+      const index = txids.findIndex((id) => id === txid);
       const proof = await fastify.bitcoinSPV.getTxProof(txid, index, confirmations);
       reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
       return proof;

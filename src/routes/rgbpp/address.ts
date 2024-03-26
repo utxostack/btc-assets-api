@@ -38,7 +38,6 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { btc_address } = request.params;
       const { type_script } = request.query;
       const utxos = await fastify.electrs.getUtxoByAddress(btc_address);
-      console.log(utxos);
       const cells = await Promise.all(
         utxos.map(async (utxo) => {
           const { txid, vout } = utxo;
