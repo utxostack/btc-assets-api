@@ -128,7 +128,7 @@ export default class Paymaster implements IPaymaster {
    * The paymaster BTC address to receive the BTC UTXO
    */
   public get btcAddress() {
-    return this.cradle.env.PAYMASTER_RECEIVING_BTC_ADDRESS;
+    return this.cradle.env.PAYMASTER_RECEIVE_BTC_ADDRESS;
   }
 
   /**
@@ -144,7 +144,7 @@ export default class Paymaster implements IPaymaster {
    * Check if the paymaster has received the BTC UTXO
    * @param btcTx - the BTC transaction
    */
-  public async hasPaymasterReceivedBtcUTXO(btcTx: Transaction) {
+  public hasPaymasterReceivedBtcUTXO(btcTx: Transaction) {
     const hasVaildOutput = btcTx.vout.some((output) => {
       return output.scriptpubkey_address === this.btcAddress && output.value >= this.containerFee;
     });

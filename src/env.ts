@@ -57,7 +57,7 @@ const envSchema = z.object({
   PAYMASTER_CELL_CAPACITY: z.coerce.number().default(316 * 10 ** 8),
   PAYMASTER_CELL_PRESET_COUNT: z.coerce.number().default(500),
   PAYMASTER_CELL_REFILL_THRESHOLD: z.coerce.number().default(0.3),
-  PAYMASTER_RECEIVING_BTC_ADDRESS: z.string(),
+  PAYMASTER_RECEIVE_BTC_ADDRESS: z.string(),
   PAYMASTER_BTC_CONTAINER_FEE_SATS: z.coerce.number().default(7000),
 
   UNLOCKER_CRON_SCHEDULE: z.string().default('*/5 * * * *'),

@@ -5,6 +5,7 @@ import { Cell, hd } from '@ckb-lumos/lumos';
 import { describe, beforeEach, expect, test, vi } from 'vitest';
 import { Job } from 'bullmq';
 import { asValue } from 'awilix';
+import { Transaction } from '../../src/routes/bitcoin/types';
 
 const { mnemonic, ExtendedPrivateKey, AddressType } = hd;
 
@@ -24,8 +25,54 @@ describe('Paymaster', () => {
     cradle.env.PAYMASTER_CELL_CAPACITY = 10;
     cradle.env.PAYMASTER_CELL_PRESET_COUNT = 10;
     cradle.env.PAYMASTER_CELL_REFILL_THRESHOLD = 0.3;
+    cradle.env.PAYMASTER_RECEIVE_BTC_ADDRESS = 'tb1q93nrfpmfz0h2u4ef94eew37qvmvrks4ataf42c';
 
     paymaster = new Paymaster(cradle);
+  });
+
+  test('hasPaymasterReceivedBtcUTXO: should return true when paymaster has received BTC UTXO', async () => {
+    const tx = {
+      vout: [
+        {
+          scriptpubkey: '00142c6634876913eeae57292d739747c066d83b42bd',
+          scriptpubkey_type: 'v0_p2wpkh',
+          scriptpubkey_address: 'tb1q93nrfpmfz0h2u4ef94eew37qvmvrks4ataf42c',
+          value: 9999,
+        },
+      ],
+    } as unknown as Transaction;
+    const received = paymaster.hasPaymasterReceivedBtcUTXO(tx);
+    expect(received).toBeTruthy();
+  });
+
+  test('hasPaymasterReceivedBtcUTXO: should return false when paymaster has not received BTC UTXO', async () => {
+    const tx = {
+      vout: [
+        {
+          scriptpubkey: '00142c6634876913eeae57292d739747c066d83b42bd',
+          scriptpubkey_type: 'v0_p2wpkh',
+          scriptpubkey_address: 'tb1q93nrfpmfz0h2u4ef94eew37qvmvrks4ataf42b',
+          value: 9999,
+        },
+      ],
+    } as unknown as Transaction;
+    const received = paymaster.hasPaymasterReceivedBtcUTXO(tx);
+    expect(received).toBeFalsy();
+  });
+
+  test('hasPaymasterReceivedBtcUTXO: should return false when paymaster has received BTC UTXO but value is less than container fee', async () => {
+    const tx = {
+      vout: [
+        {
+          scriptpubkey: '00142c6634876913eeae57292d739747c066d83b42bd',
+          scriptpubkey_type: 'v0_p2wpkh',
+          scriptpubkey_address: 'tb1q93nrfpmfz0h2u4ef94eew37qvmvrks4ataf42c',
+          value: 6999,
+        },
+      ],
+    } as unknown as Transaction;
+    const received = paymaster.hasPaymasterReceivedBtcUTXO(tx);
+    expect(received).toBeFalsy();
   });
 
   test('getNextCell: should not trigger refill if already refilling', async () => {
@@ -38,11 +85,14 @@ describe('Paymaster', () => {
   });
 
   test('getNextCell: should return the next job when queue has sufficient jobs', async () => {
-    container.register('ckbRpc', asValue({
-      getLiveCell: vi.fn().mockResolvedValue({
-        status: 'live',
+    container.register(
+      'ckbRpc',
+      asValue({
+        getLiveCell: vi.fn().mockResolvedValue({
+          status: 'live',
+        }),
       }),
-    }));
+    );
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(10);
     vi.spyOn(paymaster['worker'], 'getNextJob').mockResolvedValue(
       new Job(paymaster['queue'], 'test-job', { outPoint: {}, cellOutput: {}, data: '0x123' }) as Job<Cell>,
@@ -56,11 +106,14 @@ describe('Paymaster', () => {
   });
 
   test('getNextCell: should trigger refill when queue has fewer jobs than threshold', async () => {
-    container.register('ckbRpc', asValue({
-      getLiveCell: vi.fn().mockResolvedValue({
-        status: 'live',
+    container.register(
+      'ckbRpc',
+      asValue({
+        getLiveCell: vi.fn().mockResolvedValue({
+          status: 'live',
+        }),
       }),
-    }));
+    );
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(2);
     vi.spyOn(paymaster, 'refillCellQueue').mockResolvedValue(8);
     vi.spyOn(paymaster['worker'], 'getNextJob').mockResolvedValue(
