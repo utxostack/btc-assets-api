@@ -1,9 +1,41 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
 import { Block, Transaction, UTXO } from '../routes/bitcoin/types';
 import * as Sentry from '@sentry/node';
 import { Cradle } from '../container';
 import { addLoggerInterceptor } from '../utils/interceptors';
 import { NetworkType } from '../constants';
+import { z } from 'zod';
+
+// https://github.com/mempool/electrs/blob/d4f788fc3d7a2b4eca4c5629270e46baba7d0f19/src/errors.rs#L6
+export enum ElectrsErrorMessage {
+  Connection = 'Connection error',
+  Interrupt = 'Interruption by external signal',
+  TooManyUtxos = 'Too many unspent transaction outputs',
+  TooManyTxs = 'Too many history transactions',
+  ElectrumClient = 'Electrum client error',
+}
+
+export const ElectrsAPIErrorCode = {
+  [ElectrsErrorMessage.Connection]: 0x1000,
+  [ElectrsErrorMessage.Interrupt]: 0x1001,
+  [ElectrsErrorMessage.TooManyUtxos]: 0x1002,
+  [ElectrsErrorMessage.TooManyTxs]: 0x1003,
+  [ElectrsErrorMessage.ElectrumClient]: 0x1004,
+}
+
+export class ElectrsAPIError extends Error {
+  public errorCode: number;
+
+  public static schema = z.object({
+    message: z.string(),
+  });
+
+  constructor(message: ElectrsErrorMessage) {
+    super(message);
+    this.name = this.constructor.name;
+    this.errorCode = ElectrsAPIErrorCode[message];
+  }
+}
 
 export default class ElectrsAPI {
   private request: AxiosInstance;
@@ -17,11 +49,19 @@ export default class ElectrsAPI {
 
   private async get<T>(path: string): Promise<AxiosResponse<T>> {
     return Sentry.startSpan({ op: this.constructor.name, name: path }, async () => {
-      const response = await this.request.get(path);
-      if (response.data.error) {
-        throw new Error(response.data.error.message);
+      try {
+        const response = await this.request.get(path);
+        return response;
+      } catch (err) {
+        if (err instanceof AxiosError && err.response?.data && typeof err.response.data === 'string') {
+          const { data } = err.response;
+          const message = Object.values(ElectrsErrorMessage).find((message) => data.startsWith(message));
+          if (message) {
+            throw new ElectrsAPIError(message);
+          }
+        }
+        throw err;
       }
-      return response;
     });
   }
 
