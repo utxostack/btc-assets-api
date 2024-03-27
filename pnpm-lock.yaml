@@ -48,11 +48,11 @@ dependencies:
     specifier: ^0.109.1
     version: 0.109.1
   '@rgbpp-sdk/btc':
-    specifier: 0.0.0-snap-20240326062949
-    version: 0.0.0-snap-20240326062949
+    specifier: 0.0.0-snap-20240327091939
+    version: 0.0.0-snap-20240327091939
   '@rgbpp-sdk/ckb':
-    specifier: 0.0.0-snap-20240326062949
-    version: 0.0.0-snap-20240326062949
+    specifier: 0.0.0-snap-20240327091939
+    version: 0.0.0-snap-20240327091939
   '@sentry/node':
     specifier: ^7.102.1
     version: 7.102.1
@@ -1230,6 +1230,17 @@ packages:
       - supports-color
     dev: true
 
+  /@mempool/mempool.js@2.3.0:
+    resolution: {integrity: sha512-FrN9WjZCEyyLodrTPQxmlWDh8B/UGK0jlKfVNzJxqzQ1IMPo/Hpdws8xwYEcsks5JqsaxbjLwaC3GAtJ6Brd0A==}
+    dependencies:
+      axios: 0.24.0
+      ws: 8.3.0
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - utf-8-validate
+    dev: false
+
   /@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.2:
     resolution: {integrity: sha512-9bfjwDxIDWmmOKusUcqdS4Rw+SETlp9Dy39Xui9BEGEk19dDwH0jhipwFzEff/pFg95NKymc6TOTbRKcWeRqyQ==}
     cpu: [arm64]
@@ -1350,36 +1361,50 @@ packages:
     resolution: {integrity: sha512-2LuNTFBIO0m7kKIQvvPHN6UE63VjpmL9rnEEaOOaiSPbZK+zUOYIzBAWcED+3XYzhYsd/0mD57VdxAEqqV52CQ==}
     dev: true
 
-  /@rgbpp-sdk/btc@0.0.0-snap-20240326062949:
-    resolution: {integrity: sha512-eTcXGs6xrReDOPCsVbLihyoULRpXcR6p5qN6D9BeXzrIrwLNI5YnvtIL67BgatYLC0NI5HpQhNU+oQmSb3nc4g==}
+  /@rgbpp-sdk/btc@0.0.0-snap-20240327091939:
+    resolution: {integrity: sha512-yaHrR7JjN3Oi8QOKCwSsUFTi8C3L1HEWAI9noSkkWajTlHRw1SfrZ6O/A+0lepuRrrIpTYq6ZHoRjtizaMVV9Q==}
     dependencies:
       '@bitcoinerlab/secp256k1': 1.1.1
       '@ckb-lumos/lumos': 0.22.0-next.5
+      '@mempool/mempool.js': 2.3.0
       '@nervosnetwork/ckb-types': 0.109.1
-      '@rgbpp-sdk/ckb': 0.0.0-snap-20240326062949
+      '@rgbpp-sdk/ckb': 0.0.0-snap-20240327091939
+      '@rgbpp-sdk/service': 0.0.0-snap-20240327091939
       bip32: 4.0.0
       bitcoinjs-lib: 6.1.5
       ecpair: 2.1.0
       lodash: 4.17.21
     transitivePeerDependencies:
+      - bufferutil
       - debug
       - encoding
+      - utf-8-validate
     dev: false
 
-  /@rgbpp-sdk/ckb@0.0.0-snap-20240326062949:
-    resolution: {integrity: sha512-MpilSYXDsShHSBWfNsF1J8LaS1AmDwfEzHnqlFiU55RdiG64M+EgTIQ32ObCMApXttq7BVdazYAfjFkotSPOeg==}
+  /@rgbpp-sdk/ckb@0.0.0-snap-20240327091939:
+    resolution: {integrity: sha512-6pEkuBhgyhIP/XU2m3u0IHqSmAIj0L9HDvQQ1i0pspbwNpukCsZDm7OgLBWxtmwdqZ+D9+DjCs5DFuMfkQlrqQ==}
     dependencies:
       '@ckb-lumos/base': 0.21.1
       '@ckb-lumos/codec': 0.22.0-next.5
       '@nervosnetwork/ckb-sdk-core': 0.109.1
       '@nervosnetwork/ckb-sdk-utils': 0.109.1
       '@nervosnetwork/ckb-types': 0.109.1
+      '@rgbpp-sdk/service': 0.0.0-snap-20240327091939
       axios: 1.6.8
-      bignumber.js: 9.1.2
       camelcase-keys: 7.0.2
       js-sha256: 0.11.0
     transitivePeerDependencies:
       - debug
+      - encoding
+    dev: false
+
+  /@rgbpp-sdk/service@0.0.0-snap-20240327091939:
+    resolution: {integrity: sha512-8ABgT3uu9Op0SJ1NGERFB9hq6vYypbscRUBqgCHIB1cyG4FhaZjUkCYLsD2nB/bS9DZfrkYDYzPvEJVIhPjeRA==}
+    dependencies:
+      '@ckb-lumos/lumos': 0.22.0-next.5
+      '@nervosnetwork/ckb-types': 0.109.1
+    transitivePeerDependencies:
+      - encoding
     dev: false
 
   /@rollup/pluginutils@4.2.1:
@@ -2261,6 +2286,14 @@ packages:
       fast-glob: 3.3.2
     dev: false
 
+  /axios@0.24.0:
+    resolution: {integrity: sha512-Q6cWsys88HoPgAaFAVUb0WpPk0O8iTeisR9IMqy9G8AbO4NlpVknrnQS03zzF9PGAWgO3cgletO3VjV/P7VztA==}
+    dependencies:
+      follow-redirects: 1.15.6
+    transitivePeerDependencies:
+      - debug
+    dev: false
+
   /axios@1.6.7:
     resolution: {integrity: sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==}
     dependencies:
@@ -2301,10 +2334,6 @@ packages:
 
   /bech32@2.0.0:
     resolution: {integrity: sha512-LcknSilhIGatDAsY1ak2I8VtGaHNhgMSYVxFrGLXv+xLHytaKZKcaUJJUE7qmBr7h33o5YQwP55pMI0xmkpJwg==}
-
-  /bignumber.js@9.1.2:
-    resolution: {integrity: sha512-2/mKyZH9K85bzOEfhXDBFZTGd1CTs+5IHpeFQo9luiBG7hghdC851Pj2WAhb6E3R6b9tZj/XKhbg4fum+Kepug==}
-    dev: false
 
   /binary-extensions@2.2.0:
     resolution: {integrity: sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==}
@@ -6066,6 +6095,19 @@ packages:
     peerDependencies:
       bufferutil: ^4.0.1
       utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+    dev: false
+
+  /ws@8.3.0:
+    resolution: {integrity: sha512-Gs5EZtpqZzLvmIM59w4igITU57lrtYVFneaa434VROv4thzJyV6UjIL3D42lslWlI+D4KzLYnxSwtfuiO79sNw==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: ^5.0.2
     peerDependenciesMeta:
       bufferutil:
         optional: true
