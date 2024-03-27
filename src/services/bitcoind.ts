@@ -1,10 +1,44 @@
 import { ChainInfo } from '../routes/bitcoin/types';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import * as Sentry from '@sentry/node';
 import { addLoggerInterceptor } from '../utils/interceptors';
 import { Cradle } from '../container';
 import { NetworkType } from '../constants';
 import { randomUUID } from 'node:crypto';
+import { z } from 'zod';
+
+// https://github.com/bitcoin/bitcoin/blob/26.x/src/rpc/protocol.h#L23
+export enum RPCErrorCode {
+  RPC_MISC_ERROR = -1,
+  RPC_TYPE_ERROR = -3,
+  RPC_INVALID_ADDRESS_OR_KEY = -5,
+  RPC_OUT_OF_MEMORY = -7,
+  RPC_INVALID_PARAMETER = -8,
+  RPC_DATABASE_ERROR = -20,
+  RPC_DESERIALIZATION_ERROR = -22,
+  RPC_VERIFY_ERROR = -25,
+  RPC_VERIFY_REJECTED = -26,
+  RPC_VERIFY_ALREADY_IN_CHAIN = -27,
+  RPC_IN_WARMUP = -28,
+  RPC_METHOD_DEPRECATED = -32,
+}
+
+export class BitcoinRPCError extends Error {
+  public statusCode: number;
+  public errorCode: RPCErrorCode;
+
+  public static schema = z.object({
+    code: z.number(),
+    message: z.string(),
+  });
+
+  constructor(statusCode: number, code: RPCErrorCode, message: string) {
+    super(message);
+    this.name = this.constructor.name;
+    this.statusCode = statusCode;
+    this.errorCode = code;
+  }
+}
 
 /**
  * Bitcoind, a wrapper for Bitcoin Core JSON-RPC
@@ -32,17 +66,22 @@ export default class Bitcoind {
 
   private async callMethod<T>(method: string, params: unknown): Promise<T> {
     return Sentry.startSpan({ op: this.constructor.name, name: method }, async () => {
-      const id = randomUUID();
-      const response = await this.request.post('', {
-        jsonrpc: '1.0',
-        id,
-        method,
-        params,
-      });
-      if (response.data.error) {
-        throw new Error(response.data.error.message);
+      try {
+        const id = randomUUID();
+        const response = await this.request.post('', {
+          jsonrpc: '1.0',
+          id,
+          method,
+          params,
+        });
+        return response.data.result;
+      } catch (err) {
+        if (err instanceof AxiosError && err.response?.data.error) {
+          const { code, message } = BitcoinRPCError.schema.parse(err.response.data.error);
+          throw new BitcoinRPCError(err.response.status, code, message);
+        }
+        throw err;
       }
-      return response.data.result;
     });
   }
 

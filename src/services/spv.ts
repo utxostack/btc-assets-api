@@ -15,6 +15,31 @@ export const TxProof = z.object({
 });
 export type TxProof = z.infer<typeof TxProof>;
 
+// https://github.com/ckb-cell/ckb-bitcoin-spv-service/blob/master/src/components/api_service/error.rs
+export enum BitcoinSPVErrorCode {
+  StorageTxTooNew = 23101,
+  StorageTxUnconfirmed,
+  StorageHeaderMissing = 23301,
+  StorageHeaderUnmatched,
+  OnchainTxUnconfirmed = 25101,
+  OnchainReorgRequired = 25901,
+}
+
+export class BitcoinSPVError extends Error {
+  public code: BitcoinSPVErrorCode;
+
+  public static schema = z.object({
+    code: z.number(),
+    message: z.string(),
+  });
+
+  constructor(code: BitcoinSPVErrorCode, message: string) {
+    super(message);
+    this.name = this.constructor.name;
+    this.code = code;
+  }
+}
+
 /**
  * Bitcoin SPV service client
  */
@@ -31,17 +56,22 @@ export default class BitcoinSPV {
 
   private async callMethod<T>(method: string, params: unknown): Promise<T> {
     return Sentry.startSpan({ op: this.constructor.name, name: method }, async () => {
-      const id = randomUUID();
-      const response = await this.request.post('', {
-        jsonrpc: '2.0',
-        id,
-        method,
-        params,
-      });
-      if (response.data.error) {
-        throw new Error(response.data.error.message);
+      try {
+        const id = randomUUID();
+        const response = await this.request.post('', {
+          jsonrpc: '2.0',
+          id,
+          method,
+          params,
+        });
+        return response.data.result;
+      } catch (err) {
+        if (err instanceof axios.AxiosError && err.response?.data.error) {
+          const { code, message } = BitcoinSPVError.schema.parse(err.response.data.error);
+          throw new BitcoinSPVError(code, message);
+        }
+        throw err;
       }
-      return response.data.result;
     });
   }
 
