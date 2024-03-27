@@ -9,6 +9,7 @@ import spvRoute from './spv';
 
 const rgbppRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.decorate('transactionManager', container.resolve('transactionManager'));
+  fastify.decorate('paymaster', container.resolve('paymaster'));
   fastify.decorate('ckbRPC', container.resolve('ckbRpc'));
   fastify.decorate('ckbIndexer', container.resolve('ckbIndexer'));
   fastify.decorate('electrs', container.resolve('electrs'));

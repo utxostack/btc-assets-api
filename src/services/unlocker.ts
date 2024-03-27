@@ -119,8 +119,8 @@ export default class Unlocker implements IUnlocker {
       isMainnet: this.isMainnet,
     });
     const signedTx = await signBtcTimeCellSpentTx({
-      secp256k1PrivateKey: this.cradle.paymaster.privateKey,
-      masterCkbAddress: this.cradle.paymaster.address,
+      secp256k1PrivateKey: this.cradle.paymaster.ckbPrivateKey,
+      masterCkbAddress: this.cradle.paymaster.ckbAddress,
       collector,
       ckbRawTx,
       isMainnet: this.isMainnet,
