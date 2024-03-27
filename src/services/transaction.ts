@@ -1,22 +1,18 @@
-import { Cradle } from '../container';
-import { DelayedError, Job, Queue, Worker } from 'bullmq';
-import { AxiosError } from 'axios';
-import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
+import { bytes } from '@ckb-lumos/codec';
 import { opReturnScriptPubKeyToData, transactionToHex } from '@rgbpp-sdk/btc';
 import {
-  appendCkbTxWitnesses,
-  SPVService,
-  sendCkbTx,
-  Collector,
-  append0x,
-  RGBPPLock,
-  updateCkbTxWithRealBtcTxId,
-  SpvRpcError,
   BTCTimeLock,
-  getBtcTimeLockScript,
-  RGBPP_TX_ID_PLACEHOLDER,
-  getRgbppLockScript,
   BTC_JUMP_CONFIRMATION_BLOCKS,
+  Collector,
+  RGBPPLock,
+  RGBPP_TX_ID_PLACEHOLDER,
+  SpvRpcError,
+  append0x,
+  appendCkbTxWitnesses,
+  getBtcTimeLockScript,
+  getRgbppLockScript,
+  sendCkbTx,
+  updateCkbTxWithRealBtcTxId,
 } from '@rgbpp-sdk/ckb';
 import {
   btcTxIdFromBtcTimeLockArgs,
@@ -27,9 +23,12 @@ import {
   lockScriptFromBtcTimeLockArgs,
 } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import * as Sentry from '@sentry/node';
-import { Transaction } from '../routes/bitcoin/types';
-import { bytes } from '@ckb-lumos/codec';
+import { AxiosError } from 'axios';
 import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
+import { DelayedError, Job, Queue, Worker } from 'bullmq';
+import { Cradle } from '../container';
+import { Transaction } from '../routes/bitcoin/types';
+import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
 
 export interface ITransactionRequest {
   txid: string;
@@ -83,7 +82,6 @@ export default class TransactionManager implements ITransactionManager {
   private cradle: Cradle;
   private queue: Queue<ITransactionRequest>;
   private worker: Worker<ITransactionRequest>;
-  private spvService: SPVService;
 
   constructor(cradle: Cradle) {
     this.cradle = cradle;
@@ -103,7 +101,6 @@ export default class TransactionManager implements ITransactionManager {
       autorun: false,
       concurrency: 10,
     });
-    this.spvService = new SPVService(cradle.env.BITCOIN_SPV_SERVICE_URL);
   }
 
   private get isMainnet() {
@@ -304,19 +301,16 @@ export default class TransactionManager implements ITransactionManager {
       const ckbRawTx = this.getCkbRawTxWithRealBtcTxid(ckbVirtualResult, txid);
       // bitcoin JSON-RPC gettransaction is wallet only
       // we need to use electrs to get the transaction hex and index in block
-      const [hex, btcTxIndexInBlock] = await Promise.all([
+      const [hex, rgbppApiSpvProof] = await Promise.all([
         this.cradle.electrs.getTransactionHex(txid),
-        this.cradle.electrs.getBlockTxIdsByHash(btcTx.status.block_hash!).then((txids) => txids.indexOf(txid)),
+        this.cradle.bitcoinSPV.getBtcTxProof(txid),
       ]);
       // using for spv proof, we need to remove the witness data from the transaction
       const hexWithoutWitness = transactionToHex(BitcoinTransaction.fromHex(hex), false);
       let signedTx = await appendCkbTxWitnesses({
-        ...ckbVirtualResult,
         ckbRawTx,
-        spvService: this.spvService,
-        btcTxId: txid,
         btcTxBytes: hexWithoutWitness,
-        btcTxIndexInBlock,
+        rgbppApiSpvProof,
       })!;
 
       // append paymaster cell and sign the transaction if needed
