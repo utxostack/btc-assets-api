@@ -30,7 +30,9 @@ const spvRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvi
         const txids = await fastify.electrs.getBlockTxIdsByHash(btcTx.status.block_hash!);
         const index = txids.findIndex((id) => id === txid);
         const proof = await fastify.bitcoinSPV.getTxProof(txid, index, confirmations);
-        reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
+        if (proof) {
+          reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
+        }
         return proof;
       } catch (err) {
         if (err instanceof BitcoinSPVError) {
