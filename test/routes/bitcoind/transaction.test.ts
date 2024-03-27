@@ -62,7 +62,8 @@ describe('/bitcoin/v1/transaction', () => {
     const data = response.json();
 
     expect(response.statusCode).toBe(500);
-    expect(data.error.error.message).toBe('bad-txns-inputs-missingorspent');
+    expect(data.code).toBe(-25);
+    expect(data.message).toBe('bad-txns-inputs-missingorspent');
 
     await fastify.close();
   });

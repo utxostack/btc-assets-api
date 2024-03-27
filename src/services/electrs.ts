@@ -15,12 +15,20 @@ export enum ElectrsErrorMessage {
   ElectrumClient = 'Electrum client error',
 }
 
-export const ElectrsAPIErrorCode = {
-  [ElectrsErrorMessage.Connection]: 0x1000,
-  [ElectrsErrorMessage.Interrupt]: 0x1001,
-  [ElectrsErrorMessage.TooManyUtxos]: 0x1002,
-  [ElectrsErrorMessage.TooManyTxs]: 0x1003,
-  [ElectrsErrorMessage.ElectrumClient]: 0x1004,
+export enum ElectrsAPIErrorCode {
+  Connection = 0x1000,
+  Interrupt = 0x1001,
+  TooManyUtxos = 0x1002,
+  TooManyTxs = 0x1003,
+  ElectrumClient = 0x1004,
+}
+
+const ElectrsAPIErrorMap = {
+  [ElectrsErrorMessage.Connection]: ElectrsAPIErrorCode.Connection,
+  [ElectrsErrorMessage.Interrupt]: ElectrsAPIErrorCode.Interrupt,
+  [ElectrsErrorMessage.TooManyUtxos]: ElectrsAPIErrorCode.TooManyUtxos,
+  [ElectrsErrorMessage.TooManyTxs]: ElectrsAPIErrorCode.TooManyTxs,
+  [ElectrsErrorMessage.ElectrumClient]: ElectrsAPIErrorCode.ElectrumClient,
 }
 
 export class ElectrsAPIError extends Error {
@@ -33,7 +41,7 @@ export class ElectrsAPIError extends Error {
   constructor(message: ElectrsErrorMessage) {
     super(message);
     this.name = this.constructor.name;
-    this.errorCode = ElectrsAPIErrorCode[message];
+    this.errorCode = ElectrsAPIErrorMap[message];
   }
 }
 

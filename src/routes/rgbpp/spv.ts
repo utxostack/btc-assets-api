@@ -1,6 +1,6 @@
 import { FastifyPluginCallback } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { BitcoinSPVError, BitcoinSPVErrorCode, TxProof } from '../../services/spv';
+import { BitcoinSPVError, TxProof } from '../../services/spv';
 import { CUSTOM_HEADERS } from '../../constants';
 import { HttpStatusCode } from 'axios';
 import { Server } from 'http';

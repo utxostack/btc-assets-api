@@ -1,5 +1,5 @@
 import { ChainInfo } from '../routes/bitcoin/types';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import * as Sentry from '@sentry/node';
 import { addLoggerInterceptor } from '../utils/interceptors';
 import { Cradle } from '../container';
@@ -66,18 +66,22 @@ export default class Bitcoind {
 
   private async callMethod<T>(method: string, params: unknown): Promise<T> {
     return Sentry.startSpan({ op: this.constructor.name, name: method }, async () => {
-      const id = randomUUID();
-      const response = await this.request.post('', {
-        jsonrpc: '1.0',
-        id,
-        method,
-        params,
-      });
-      if (response.data.error) {
-        const { code, message } = response.data.error;
-        throw new BitcoinRPCError(response.status, code, message);
+      try {
+        const id = randomUUID();
+        const response = await this.request.post('', {
+          jsonrpc: '1.0',
+          id,
+          method,
+          params,
+        });
+        return response.data.result;
+      } catch (err) {
+        if (err instanceof AxiosError && err.response?.data.error) {
+          const { code, message } = BitcoinRPCError.schema.parse(err.response.data.error);
+          throw new BitcoinRPCError(err.response.status, code, message);
+        }
+        throw err;
       }
-      return response.data.result;
     });
   }
 

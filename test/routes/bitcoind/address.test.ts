@@ -1,5 +1,6 @@
 import { describe, expect, test, beforeEach } from 'vitest';
 import { buildFastify } from '../../../src/app';
+import { ElectrsAPIErrorCode } from '../../../src/services/electrs';
 
 let token: string;
 
@@ -103,6 +104,27 @@ describe('/bitcoin/v1/address', () => {
         '9706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
       ].sort(),
     );
+
+    await fastify.close();
+  });
+
+  test('Get address unspent transaction outputs throw too many', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/bitcoin/v1/address/tb1qcq670zweall6zz4f96flfrefhr8myfxz9ll9l2/unspent',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
+      },
+    });
+    const data = response.json();
+
+    expect(response.statusCode).toBe(500);
+    expect(data.code).toEqual(ElectrsAPIErrorCode.TooManyUtxos);
+    expect(data.message).toEqual('Too many unspent transaction outputs');
 
     await fastify.close();
   });
