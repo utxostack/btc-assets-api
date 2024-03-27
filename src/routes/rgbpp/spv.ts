@@ -34,17 +34,12 @@ const spvRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvi
         return proof;
       } catch (err) {
         if (err instanceof BitcoinSPVError) {
-          if (
-            err.code === BitcoinSPVErrorCode.OnchainTxUnconfirmed ||
-            err.code === BitcoinSPVErrorCode.OnchainReorgRequired
-          ) {
-            reply.status(HttpStatusCode.ServiceUnavailable);
-            reply.header('Retry-After', '600000');
-            return {
-              code: err.code,
-              message: err.message,
-            };
-          }
+          reply.status(HttpStatusCode.ServiceUnavailable);
+          reply.header('Retry-After', '600000');
+          return {
+            code: err.code,
+            message: err.message,
+          };
         }
         throw err;
       }

@@ -1,6 +1,6 @@
 import fastify from 'fastify';
 import { FastifyInstance } from 'fastify';
-import { AxiosError } from 'axios';
+import { AxiosError, HttpStatusCode } from 'axios';
 import sensible from '@fastify/sensible';
 import compress from '@fastify/compress';
 import * as Sentry from '@sentry/node';
@@ -20,6 +20,9 @@ import cors from './plugins/cors';
 import { NetworkType } from './constants';
 import rgbppRoutes from './routes/rgbpp';
 import cronRoutes from './routes/cron';
+import { ElectrsAPIError } from './services/electrs';
+import { BitcoinRPCError } from './services/bitcoind';
+import { AppErrorCode } from './error';
 
 if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   Sentry.init({
@@ -58,12 +61,26 @@ async function routes(fastify: FastifyInstance) {
   fastify.setErrorHandler((error, _, reply) => {
     fastify.log.error(error);
     Sentry.captureException(error);
-    if (error instanceof AxiosError) {
-      const { response } = error;
-      reply.status(response?.status ?? 500).send({ ok: false, error: response?.data ?? error.message });
+    if (error instanceof ElectrsAPIError || error instanceof BitcoinRPCError) {
+      reply
+        .status(error.statusCode ?? HttpStatusCode.InternalServerError)
+        .send({ code: error.errorCode, message: error.message });
       return;
     }
-    reply.status(error.statusCode ?? 500).send({ ok: false, statusCode: error.statusCode, message: error.message });
+
+    if (error instanceof AxiosError) {
+      const { response } = error;
+      reply.status(response?.status ?? HttpStatusCode.InternalServerError).send({
+        code: AppErrorCode.UnknownResponseError,
+        message: response?.data ?? error.message,
+      });
+      return;
+    }
+
+    reply.status(error.statusCode ?? HttpStatusCode.InternalServerError).send({
+      code: AppErrorCode.UnknownResponseError,
+      message: error.message,
+    });
   });
 }
 
