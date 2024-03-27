@@ -1,20 +1,20 @@
 import { CellCollector } from '@ckb-lumos/lumos';
-import { Cradle } from '../container';
+import { serializeOutPoint, serializeWitnessArgs } from '@nervosnetwork/ckb-sdk-utils';
 import {
-  Collector,
-  IndexerCell,
-  sendCkbTx,
   BTCTimeLock,
-  getBtcTimeLockScript,
-  remove0x,
-  signBtcTimeCellSpentTx,
-  getBtcTimeLockDep,
-  getXudtDep,
-  getBtcTimeLockConfigDep,
-  Hex,
   BTC_JUMP_CONFIRMATION_BLOCKS,
+  Collector,
+  Hex,
+  IndexerCell,
   append0x,
   buildBtcTimeUnlockWitness,
+  getBtcTimeLockConfigDep,
+  getBtcTimeLockDep,
+  getBtcTimeLockScript,
+  getXudtDep,
+  remove0x,
+  sendCkbTx,
+  signBtcTimeCellSpentTx,
 } from '@rgbpp-sdk/ckb';
 import {
   btcTxIdFromBtcTimeLockArgs,
@@ -23,7 +23,7 @@ import {
   lockScriptFromBtcTimeLockArgs,
   transformSpvProof,
 } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
-import { serializeOutPoint, serializeWitnessArgs } from '@nervosnetwork/ckb-sdk-utils';
+import { Cradle } from '../container';
 
 interface IUnlocker {
   getNextBatchLockCell(): Promise<IndexerCell[]>;
@@ -69,10 +69,20 @@ export default class Unlocker implements IUnlocker {
       const { after } = BTCTimeLock.unpack(cell.cellOutput.lock.args);
       const btcTx = await this.cradle.electrs.getTransaction(btcTxid);
       const blockHeight = btcTx.status.block_height;
+
       // skip if btc tx not confirmed $after blocks yet
       if (!blockHeight || blocks - blockHeight < after) {
         continue;
       }
+
+      if (after < BTC_JUMP_CONFIRMATION_BLOCKS) {
+        // Discussion: Is it better to delay these types of unlock jobs?
+        this.cradle.logger.warn(`[Unlocker] Unlocking a btc-time-lock cell with a small confirmations: ${after}`);
+        this.cradle.logger.warn(
+          `[Unlocker] btc-time-lock cell outPoint: ${cell.outPoint?.txHash}:${cell.outPoint?.index}`,
+        );
+      }
+
       cells.push({
         blockNumber: cell.blockNumber!,
         outPoint: cell.outPoint!,
@@ -155,9 +165,11 @@ export default class Unlocker implements IUnlocker {
         continue;
       }
       lockArgsSet.add(btcTimeCell.output.lock.args);
+
+      const { after } = BTCTimeLock.unpack(btcTimeCell.output.lock.args);
       const result = await this.cradle.bitcoinSPV.getBtcTxProof(
         btcTxIdFromBtcTimeLockArgs(btcTimeCell.output.lock.args),
-        BTC_JUMP_CONFIRMATION_BLOCKS,
+        after,
       );
       const { spvClient, proof } = transformSpvProof(result);
 
