@@ -1,28 +1,17 @@
 import { CellCollector } from '@ckb-lumos/lumos';
-import { serializeOutPoint, serializeWitnessArgs } from '@nervosnetwork/ckb-sdk-utils';
 import {
   BTCTimeLock,
   BTC_JUMP_CONFIRMATION_BLOCKS,
   Collector,
-  Hex,
   IndexerCell,
-  append0x,
-  buildBtcTimeUnlockWitness,
-  getBtcTimeLockConfigDep,
-  getBtcTimeLockDep,
+  buildBtcTimeCellsSpentTx,
   getBtcTimeLockScript,
-  getXudtDep,
   remove0x,
   sendCkbTx,
   signBtcTimeCellSpentTx,
 } from '@rgbpp-sdk/ckb';
-import {
-  btcTxIdFromBtcTimeLockArgs,
-  buildSpvClientCellDep,
-  compareInputs,
-  lockScriptFromBtcTimeLockArgs,
-  transformSpvProof,
-} from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+import { btcTxIdFromBtcTimeLockArgs } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+import { BtcAssetsApi } from '@rgbpp-sdk/service';
 import { Cradle } from '../container';
 
 interface IUnlocker {
@@ -77,9 +66,12 @@ export default class Unlocker implements IUnlocker {
 
       if (after < BTC_JUMP_CONFIRMATION_BLOCKS) {
         // Discussion: Is it better to delay these types of unlock jobs?
-        this.cradle.logger.warn(`[Unlocker] Unlocking a btc-time-lock cell with a small confirmations: ${after}`);
+        const info = {
+          after,
+          output: cell.cellOutput,
+        };
         this.cradle.logger.warn(
-          `[Unlocker] btc-time-lock cell outPoint: ${cell.outPoint?.txHash}:${cell.outPoint?.index}`,
+          `[Unlocker] Unlocking a BTC_TIME_LOCK cell with a small confirmations: ${JSON.stringify(info)}`,
         );
       }
 
@@ -112,7 +104,14 @@ export default class Unlocker implements IUnlocker {
       ckbIndexerUrl: this.cradle.env.CKB_RPC_URL,
     });
 
-    const ckbRawTx = await this.buildBtcTimeCellsSpentTx(cells);
+    const btcAssetsApi = {
+      getRgbppSpvProof: this.cradle.bitcoinSPV.getTxProof.bind(this.cradle.bitcoinSPV),
+    } as unknown as BtcAssetsApi;
+    const ckbRawTx = await buildBtcTimeCellsSpentTx({
+      btcTimeCells: cells,
+      btcAssetsApi,
+      isMainnet: this.isMainnet,
+    });
     const signedTx = await signBtcTimeCellSpentTx({
       secp256k1PrivateKey: this.cradle.paymaster.privateKey,
       masterCkbAddress: this.cradle.paymaster.address,
@@ -128,72 +127,5 @@ export default class Unlocker implements IUnlocker {
     });
     this.cradle.logger.info(`[Unlocker] Transaction sent: ${txHash}`);
     return txHash;
-  }
-
-  /**
-   * Given some btc-time-lock cells, build a CKB transaction to unlock them to the target lock_script
-   * The btc-time-lock args data structure is: lock_script | after | new_bitcoin_tx_id
-   */
-  private async buildBtcTimeCellsSpentTx(btcTimeCells: IndexerCell[]): Promise<CKBComponents.RawTransaction> {
-    const sortedBtcTimeCells = btcTimeCells.sort(compareInputs);
-    const inputs: CKBComponents.CellInput[] = sortedBtcTimeCells.map((cell) => ({
-      previousOutput: cell.outPoint,
-      since: '0x0',
-    }));
-
-    const outputs: CKBComponents.CellOutput[] = sortedBtcTimeCells.map((cell) => ({
-      lock: lockScriptFromBtcTimeLockArgs(cell.output.lock.args),
-      type: cell.output.type,
-      capacity: cell.output.capacity,
-    }));
-
-    const outputsData = sortedBtcTimeCells.map((cell) => cell.outputData);
-
-    const cellDeps: CKBComponents.CellDep[] = [
-      getBtcTimeLockDep(this.isMainnet),
-      getXudtDep(this.isMainnet),
-      getBtcTimeLockConfigDep(this.isMainnet),
-    ];
-
-    const witnesses: Hex[] = [];
-
-    const lockArgsSet: Set<string> = new Set();
-    const cellDepsSet: Set<string> = new Set();
-    for await (const btcTimeCell of sortedBtcTimeCells) {
-      if (lockArgsSet.has(btcTimeCell.output.lock.args)) {
-        witnesses.push('0x');
-        continue;
-      }
-      lockArgsSet.add(btcTimeCell.output.lock.args);
-
-      const { after } = BTCTimeLock.unpack(btcTimeCell.output.lock.args);
-      const result = await this.cradle.bitcoinSPV.getBtcTxProof(
-        btcTxIdFromBtcTimeLockArgs(btcTimeCell.output.lock.args),
-        after,
-      );
-      const { spvClient, proof } = transformSpvProof(result);
-
-      if (!cellDepsSet.has(serializeOutPoint(spvClient))) {
-        cellDeps.push(buildSpvClientCellDep(spvClient));
-        cellDepsSet.add(serializeOutPoint(spvClient));
-      }
-
-      const btcTimeWitness = append0x(
-        serializeWitnessArgs({ lock: buildBtcTimeUnlockWitness(proof), inputType: '', outputType: '' }),
-      );
-      witnesses.push(btcTimeWitness);
-    }
-
-    const ckbTx: CKBComponents.RawTransaction = {
-      version: '0x0',
-      cellDeps,
-      headerDeps: [],
-      inputs,
-      outputs,
-      outputsData,
-      witnesses,
-    };
-
-    return ckbTx;
   }
 }

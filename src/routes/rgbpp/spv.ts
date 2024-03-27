@@ -26,10 +26,7 @@ const spvRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvi
     async (request, reply) => {
       try {
         const { txid, confirmations } = request.query;
-        const btcTx = await fastify.electrs.getTransaction(txid);
-        const txids = await fastify.electrs.getBlockTxIdsByHash(btcTx.status.block_hash!);
-        const index = txids.findIndex((id) => id === txid);
-        const proof = await fastify.bitcoinSPV.getTxProof(txid, index, confirmations);
+        const proof = await fastify.bitcoinSPV.getTxProof(txid, confirmations);
         if (proof) {
           reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
         }
