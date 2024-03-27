@@ -56,22 +56,18 @@ export default class BitcoinSPV {
 
   private async callMethod<T>(method: string, params: unknown): Promise<T> {
     return Sentry.startSpan({ op: this.constructor.name, name: method }, async () => {
-      try {
-        const id = randomUUID();
-        const response = await this.request.post('', {
-          jsonrpc: '2.0',
-          id,
-          method,
-          params,
-        });
-        return response.data.result;
-      } catch (err) {
-        if (err instanceof axios.AxiosError && err.response?.data.error) {
-          const { code, message } = BitcoinSPVError.schema.parse(err.response.data.error);
-          throw new BitcoinSPVError(code, message);
-        }
-        throw err;
+      const id = randomUUID();
+      const response = await this.request.post('', {
+        jsonrpc: '2.0',
+        id,
+        method,
+        params,
+      });
+      if (response.data?.error) {
+        const { code, message } = BitcoinSPVError.schema.parse(response.data.error);
+        throw new BitcoinSPVError(code, message);
       }
+      return response.data?.result;
     });
   }
 
