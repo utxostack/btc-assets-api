@@ -27,7 +27,7 @@ describe('BitcoinSPV', () => {
       },
     });
     await expect(
-      bitcoinSPV.getTxProof('ede749ecee5e607e761e4fffb6d754799498056872456a7d33abe426d7b9951c', 0, 100),
+      bitcoinSPV.getTxProof('ede749ecee5e607e761e4fffb6d754799498056872456a7d33abe426d7b9951c', 100),
     ).rejects.toThrowErrorMatchingSnapshot();
   });
 
@@ -45,7 +45,7 @@ describe('BitcoinSPV', () => {
         id: 'aa1a7882-9c0a-4eaa-87e8-1ed906b957f8',
       },
     });
-    const proof = await bitcoinSPV.getTxProof('ede749ecee5e607e761e4fffb6d754799498056872456a7d33abe426d7b9951c', 0, 100);
+    const proof = await bitcoinSPV.getTxProof('ede749ecee5e607e761e4fffb6d754799498056872456a7d33abe426d7b9951c', 100);
     expect(proof).toHaveProperty('spv_client');
     expect(proof).toHaveProperty('proof');
   });
