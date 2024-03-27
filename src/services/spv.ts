@@ -5,7 +5,6 @@ import { Cradle } from '../container';
 import { randomUUID } from 'node:crypto';
 import * as z from 'zod';
 import { remove0x } from '@rgbpp-sdk/btc';
-import ElectrsAPI from './electrs';
 
 export const TxProof = z.object({
   spv_client: z.object({
@@ -46,13 +45,13 @@ export class BitcoinSPVError extends Error {
  */
 export default class BitcoinSPV {
   private request: AxiosInstance;
-  private electrs: ElectrsAPI;
+  private cradle: Cradle;
 
-  constructor({ env, logger, electrs }: Cradle) {
-    const { BITCOIN_SPV_SERVICE_URL } = env;
-    this.electrs = electrs;
+  constructor(cradle: Cradle) {
+    const { env, logger } = cradle;
+    this.cradle = cradle;
     this.request = axios.create({
-      baseURL: BITCOIN_SPV_SERVICE_URL,
+      baseURL: env.BITCOIN_SPV_SERVICE_URL,
     });
     addLoggerInterceptor(this.request, logger);
   }
@@ -75,14 +74,15 @@ export default class BitcoinSPV {
   }
 
   // https://github.com/ckb-cell/ckb-bitcoin-spv-service?tab=readme-ov-file#json-rpc-api-reference
-  public async getTxProof(txid: string, index: number, confirmations: number) {
+  private async _getTxProof(txid: string, index: number, confirmations: number) {
     return this.callMethod<TxProof>('getTxProof', [remove0x(txid), index, confirmations]);
   }
 
-  public async getBtcTxProof(btcTxid: string, confirmations: number = 0) {
-    const btcTx = await this.electrs.getTransaction(btcTxid);
-    const btcTxids = await this.electrs.getBlockTxIdsByHash(btcTx.status.block_hash!);
-    const btcIdxInBlock = btcTxids.findIndex((id) => id === btcTxid);
-    return this.getTxProof(btcTxid, btcIdxInBlock, confirmations);
+  public async getTxProof(btcTxid: string, confirmations: number = 0) {
+    const txid = remove0x(btcTxid);
+    const btcTx = await this.cradle.electrs.getTransaction(txid);
+    const btcTxids = await this.cradle.electrs.getBlockTxIdsByHash(btcTx.status.block_hash!);
+    const btcIdxInBlock = btcTxids.findIndex((id) => id === txid);
+    return this._getTxProof(txid, btcIdxInBlock, confirmations);
   }
 }

@@ -303,7 +303,7 @@ export default class TransactionManager implements ITransactionManager {
       // we need to use electrs to get the transaction hex and index in block
       const [hex, rgbppApiSpvProof] = await Promise.all([
         this.cradle.electrs.getTransactionHex(txid),
-        this.cradle.bitcoinSPV.getBtcTxProof(txid),
+        this.cradle.bitcoinSPV.getTxProof(txid),
       ]);
       // using for spv proof, we need to remove the witness data from the transaction
       const hexWithoutWitness = transactionToHex(BitcoinTransaction.fromHex(hex), false);
