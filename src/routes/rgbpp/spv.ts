@@ -13,10 +13,17 @@ const spvRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvi
       schema: {
         description: 'Get proof of a Bitcoin transaction from SPV service',
         tags: ['RGB++'],
-        querystring: z.object({
-          txid: z.string().describe('The Bitcoin transaction id'),
-          confirmations: z.coerce.number().describe('The number of confirmations'),
-        }),
+        querystring: z
+          .object({
+            btc_txid: z.string().describe('The Bitcoin transaction id'),
+            confirmations: z.coerce.number().describe('The number of confirmations'),
+          })
+          .or(
+            z.object({
+              txid: z.string().describe('Deprecated, use btc_txid instead'),
+              confirmations: z.coerce.number().describe('The number of confirmations'),
+            }),
+          ),
         response: {
           200: TxProof,
           503: BitcoinSPVError.schema,
@@ -25,8 +32,9 @@ const spvRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvi
     },
     async (request, reply) => {
       try {
-        const { txid, confirmations } = request.query;
-        const proof = await fastify.bitcoinSPV.getTxProof(txid, confirmations);
+        const { confirmations } = request.query;
+        const btc_txid = 'btc_txid' in request.query ? request.query.btc_txid : request.query.txid;
+        const proof = await fastify.bitcoinSPV.getTxProof(btc_txid, confirmations);
         if (proof) {
           reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
         }
