@@ -56,6 +56,7 @@ const envSchema = z.object({
 
   UNLOCKER_CRON_SCHEDULE: z.string().default('*/5 * * * *'),
   UNLOCKER_CELL_BATCH_SIZE: z.coerce.number().default(100),
+  UNLOCKER_MONITOR_SLUG: z.string().default('btctimelock-cells-unlock'),
 
   TRANSACTION_QUEUE_JOB_DELAY: z.coerce.number().default(120 * 1000),
 });
