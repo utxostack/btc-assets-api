@@ -6,8 +6,6 @@ import {
   Collector,
   RGBPPLock,
   RGBPP_TX_ID_PLACEHOLDER,
-  SpvRpcError,
-  append0x,
   appendCkbTxWitnesses,
   getBtcTimeLockScript,
   getRgbppLockScript,
@@ -29,6 +27,7 @@ import { DelayedError, Job, Queue, Worker } from 'bullmq';
 import { Cradle } from '../container';
 import { Transaction } from '../routes/bitcoin/types';
 import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
+import { BitcoinSPVError } from './spv';
 
 export interface ITransactionRequest {
   txid: string;
@@ -350,8 +349,7 @@ export default class TransactionManager implements ITransactionManager {
       // move the job to delayed queue if the transaction data not found or not confirmed or spv proof not found yet
       const transactionDataNotFound = err instanceof AxiosError && err.response?.status === 404;
       const transactionNotConfirmed = err instanceof DelayedError;
-      // XXX: maybe spv service should be provided a api for checking the proof status
-      const spvProofNotFound = err instanceof SpvRpcError;
+      const spvProofNotFound = err instanceof BitcoinSPVError;
       if (transactionDataNotFound || transactionNotConfirmed || spvProofNotFound) {
         await this.moveJobToDelayed(job, token);
         return;
