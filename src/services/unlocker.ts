@@ -1,18 +1,18 @@
 import { CellCollector } from '@ckb-lumos/lumos';
-import { Cradle } from '../container';
 import {
-  BtcTimeCellPair,
-  buildBtcTimeCellsSpentTx,
+  BTCTimeLock,
+  BTC_JUMP_CONFIRMATION_BLOCKS,
   Collector,
   IndexerCell,
-  sendCkbTx,
-  SPVService,
-  BTCTimeLock,
+  buildBtcTimeCellsSpentTx,
   getBtcTimeLockScript,
   remove0x,
+  sendCkbTx,
   signBtcTimeCellSpentTx,
 } from '@rgbpp-sdk/ckb';
 import { btcTxIdFromBtcTimeLockArgs } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+import { BtcAssetsApi } from '@rgbpp-sdk/service';
+import { Cradle } from '../container';
 
 interface IUnlocker {
   getNextBatchLockCell(): Promise<IndexerCell[]>;
@@ -26,7 +26,6 @@ interface IUnlocker {
 export default class Unlocker implements IUnlocker {
   private cradle: Cradle;
   private collector: CellCollector;
-  private spvService: SPVService;
 
   constructor(cradle: Cradle) {
     this.cradle = cradle;
@@ -36,7 +35,6 @@ export default class Unlocker implements IUnlocker {
         args: '0x',
       },
     }) as CellCollector;
-    this.spvService = new SPVService(this.cradle.env.BITCOIN_SPV_SERVICE_URL);
   }
 
   private get isMainnet() {
@@ -60,10 +58,23 @@ export default class Unlocker implements IUnlocker {
       const { after } = BTCTimeLock.unpack(cell.cellOutput.lock.args);
       const btcTx = await this.cradle.electrs.getTransaction(btcTxid);
       const blockHeight = btcTx.status.block_height;
+
       // skip if btc tx not confirmed $after blocks yet
       if (!blockHeight || blocks - blockHeight < after) {
         continue;
       }
+
+      if (after < BTC_JUMP_CONFIRMATION_BLOCKS) {
+        // Discussion: Is it better to delay these types of unlock jobs?
+        const info = {
+          after,
+          output: cell.cellOutput,
+        };
+        this.cradle.logger.warn(
+          `[Unlocker] Unlocking a BTC_TIME_LOCK cell with a small confirmations: ${JSON.stringify(info)}`,
+        );
+      }
+
       cells.push({
         blockNumber: cell.blockNumber!,
         outPoint: cell.outPoint!,
@@ -88,27 +99,17 @@ export default class Unlocker implements IUnlocker {
     }
     this.cradle.logger.info(`[Unlocker] Unlock ${cells.length} BTC time lock cells`);
 
-    const btcTimeCellPairs = await Promise.all(
-      cells.map(async (cell) => {
-        const btcTxid = remove0x(btcTxIdFromBtcTimeLockArgs(cell.output.lock.args));
-        const btcTx = await this.cradle.electrs.getTransaction(btcTxid);
-        // get the btc tx index in the block to used for the spv proof
-        const txids = await this.cradle.electrs.getBlockTxIdsByHash(btcTx.status.block_hash!);
-        const blockindex = txids.findIndex((txid) => txid === btcTxid);
-        return {
-          btcTimeCell: cell,
-          btcTxIndexInBlock: blockindex,
-        } as BtcTimeCellPair;
-      }),
-    );
-
     const collector = new Collector({
       ckbNodeUrl: this.cradle.env.CKB_RPC_URL,
       ckbIndexerUrl: this.cradle.env.CKB_RPC_URL,
     });
+
+    const btcAssetsApi = {
+      getRgbppSpvProof: this.cradle.bitcoinSPV.getTxProof.bind(this.cradle.bitcoinSPV),
+    } as unknown as BtcAssetsApi;
     const ckbRawTx = await buildBtcTimeCellsSpentTx({
-      btcTimeCellPairs,
-      spvService: this.spvService,
+      btcTimeCells: cells,
+      btcAssetsApi,
       isMainnet: this.isMainnet,
     });
     const signedTx = await signBtcTimeCellSpentTx({
