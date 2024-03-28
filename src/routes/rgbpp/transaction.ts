@@ -134,7 +134,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         response: {
           200: z.object({
             state: z.string().describe('The state of the transaction'),
-            reason: z.string().optional().describe('The reason why the transaction failed'),
+            failedReason: z.string().optional().describe('The reason why the transaction failed'),
           }),
         },
       },
@@ -150,7 +150,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
       if (state === 'failed') {
         return {
           state,
-          reason: job.failedReason,
+          failedReason: job.failedReason,
         };
       }
       return { state };
