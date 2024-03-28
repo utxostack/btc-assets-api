@@ -63,4 +63,5 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 export const env = envSchema.parse(process.env);
 
-export const getSafeEnvs = () => omit(env, ['ADMIN_PASSWORD', 'JWT_SECRET', 'BITCOIN_JSON_RPC_PASSWORD']);
+export const getSafeEnvs = () =>
+  omit(env, ['ADMIN_PASSWORD', 'JWT_SECRET', 'BITCOIN_JSON_RPC_PASSWORD', 'PAYMASTER_PRIVATE_KEY']);
