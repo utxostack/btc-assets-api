@@ -109,9 +109,6 @@ dependencies:
     version: 3.22.4
 
 devDependencies:
-  '@sentry/types':
-    specifier: ^7.108.0
-    version: 7.108.0
   '@types/lodash':
     specifier: ^4.17.0
     version: 4.17.0
@@ -1570,11 +1567,6 @@ packages:
     resolution: {integrity: sha512-htKorf3t/D0XYtM7foTcmG+rM47rDP6XdbvCcX5gBCuCYlzpM1vqCt2rl3FLktZC6TaIpFRJw1TLfx6m+x5jdA==}
     engines: {node: '>=8'}
     dev: false
-
-  /@sentry/types@7.108.0:
-    resolution: {integrity: sha512-bKtHITmBN3kqtqE5eVvL8mY8znM05vEodENwRpcm6TSrrBjC2RnwNWVwGstYDdHpNfFuKwC8mLY9bgMJcENo8g==}
-    engines: {node: '>=8'}
-    dev: true
 
   /@sentry/utils@7.102.1:
     resolution: {integrity: sha512-+8WcFjHVV/HROXSAwMuUzveElBFC43EiTG7SNEBNgOUeQzQVTmbUZXyTVgLrUmtoWqvnIxCacoLxtZo1o67kdg==}

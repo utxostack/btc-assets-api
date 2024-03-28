@@ -2,18 +2,11 @@ import fp from 'fastify-plugin';
 import * as Sentry from '@sentry/node';
 import TransactionManager from '../services/transaction';
 import cron from 'fastify-cron';
-import { MonitorConfig } from '@sentry/types';
 import { Env } from '../env';
 
 export default fp(async (fastify) => {
   try {
     const env: Env = fastify.container.resolve('env');
-    const cronMonitorConfig: MonitorConfig = {
-      schedule: {
-        type: 'crontab',
-        value: env.UNLOCKER_CRON_SCHEDULE,
-      },
-    };
 
     // processing rgb++ ckb transaction
     const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
@@ -45,7 +38,12 @@ export default fp(async (fastify) => {
                 monitorSlug,
                 status: 'in_progress',
               },
-              cronMonitorConfig,
+              {
+                schedule: {
+                  type: 'crontab',
+                  value: env.UNLOCKER_CRON_SCHEDULE,
+                },
+              },
             );
             try {
               await unlocker.unlockCells();
