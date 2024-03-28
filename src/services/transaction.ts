@@ -1,5 +1,5 @@
 import { bytes } from '@ckb-lumos/codec';
-import { opReturnScriptPubKeyToData, transactionToHex } from '@rgbpp-sdk/btc';
+import { opReturnScriptPubKeyToData, remove0x, transactionToHex } from '@rgbpp-sdk/btc';
 import {
   BTCTimeLock,
   BTC_JUMP_CONFIRMATION_BLOCKS,
@@ -149,7 +149,7 @@ export default class TransactionManager implements ITransactionManager {
         const unpack = RGBPPLock.unpack(lock.args);
         // https://github.com/ckb-cell/rgbpp-sdk/tree/main/examples/rgbpp#what-you-must-know-about-btc-transaction-id
         const btcTxid = bytes.hexify(bytes.bytify(unpack.btcTxid).reverse());
-        if (btcTxid !== append0x(txid)) {
+        if (remove0x(btcTxid) !== txid) {
           return output;
         }
         return {
@@ -159,7 +159,7 @@ export default class TransactionManager implements ITransactionManager {
       }
       if (this.isBtcTimeLock(lock)) {
         const btcTxid = btcTxIdFromBtcTimeLockArgs(lock.args);
-        if (btcTxid !== append0x(txid)) {
+        if (remove0x(btcTxid) !== txid) {
           return output;
         }
         const toLock = lockScriptFromBtcTimeLockArgs(lock.args);
@@ -255,18 +255,22 @@ export default class TransactionManager implements ITransactionManager {
     const needUpdateCkbTx = ckbRawTx.outputs.some((output) => {
       if (this.isRgbppLock(output.lock)) {
         const { btcTxid } = RGBPPLock.unpack(output.lock.args);
+        const txid = remove0x(btcTxid);
+        this.cradle.logger.debug(`[TransactionManager] RGBPP_LOCK args txid: ${btcTxid}`);
         return (
           output.lock.codeHash === this.rgbppLockScript.codeHash &&
           output.lock.hashType === this.rgbppLockScript.hashType &&
-          btcTxid === RGBPP_TX_ID_PLACEHOLDER
+          txid === RGBPP_TX_ID_PLACEHOLDER
         );
       }
       if (this.isBtcTimeLock(output.lock)) {
         const { btcTxid, after } = BTCTimeLock.unpack(output.lock.args);
+        const txid = remove0x(btcTxid);
+        this.cradle.logger.debug(`[TransactionManager] BTC_TIME_LOCK args txid: ${txid}`);
         return (
           output.lock.codeHash === this.btcTimeLockScript.codeHash &&
           output.lock.hashType === this.btcTimeLockScript.hashType &&
-          btcTxid === RGBPP_TX_ID_PLACEHOLDER &&
+          txid === RGBPP_TX_ID_PLACEHOLDER &&
           after === BTC_JUMP_CONFIRMATION_BLOCKS
         );
       }
