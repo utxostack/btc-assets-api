@@ -11,6 +11,7 @@ import {
   getBtcTimeLockScript,
 } from '@rgbpp-sdk/ckb';
 import { remove0x } from '@rgbpp-sdk/btc';
+import { CUSTOM_HEADERS } from '../../constants';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
@@ -61,36 +62,51 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
       const { btc_txid } = request.params;
       const isMainnet = process.env.NETWORK === 'mainnet';
       const transaction = await fastify.electrs.getTransaction(btc_txid);
+
       // query CKB transaction hash by RGBPP_LOCK cells
       for (let index = 0; index < transaction.vout.length; index++) {
         const args = buildRgbppLockArgs(index, btc_txid);
-        const collector = fastify.ckbIndexer
-          .collector({
-            lock: genRgbppLockScript(args, isMainnet),
-          })
-          .collect();
-        for await (const cell of collector) {
-          if (cell) {
-            return { txhash: cell.outPoint!.txHash };
-          }
+        const lock = genRgbppLockScript(args, isMainnet);
+
+        const txs = await fastify.ckbIndexer.getTransactions({
+          script: lock,
+          scriptType: 'lock',
+        });
+
+        if (txs.objects.length > 0) {
+          const [tx] = txs.objects;
+          reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
+          return { txhash: tx.txHash };
         }
       }
 
       // query CKB transaction hash by BTC_TIME_LOCK cells
       const btcTimeLockScript = getBtcTimeLockScript(isMainnet);
-      const timeLockCollector = fastify.ckbIndexer
-        .collector({
-          lock: {
-            codeHash: btcTimeLockScript.codeHash,
-            hashType: btcTimeLockScript.hashType,
-            args: '0x',
-          },
-        })
-        .collect();
-      for await (const cell of timeLockCollector) {
-        const btcTxid = btcTxIdFromBtcTimeLockArgs(cell.cellOutput.lock.args);
-        if (remove0x(btcTxid) === btc_txid) {
-          return { txhash: cell.outPoint!.txHash };
+      const txs = await fastify.ckbIndexer.getTransactions({
+        script: {
+          ...btcTimeLockScript,
+          args: '0x',
+        },
+        scriptType: 'lock',
+      });
+
+      if (txs.objects.length > 0) {
+        for (const { txHash } of txs.objects) {
+          const tx = await fastify.ckbRPC.getTransaction(txHash);
+          const isBtcTimeLockTx = tx.transaction.outputs.some((output) => {
+            if (
+              output.lock.codeHash !== btcTimeLockScript.codeHash ||
+              output.lock.hashType !== btcTimeLockScript.hashType
+            ) {
+              return false;
+            }
+            const btcTxid = btcTxIdFromBtcTimeLockArgs(output.lock.args);
+            return remove0x(btcTxid) === btc_txid;
+          });
+          if (isBtcTimeLockTx) {
+            reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
+            return { txhash: txHash };
+          }
         }
       }
 
