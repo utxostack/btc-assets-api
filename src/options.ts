@@ -19,7 +19,7 @@ const envToLogger = {
     level: 'debug',
   },
   production: {
-    level: 'info',
+    level: env.LOGGER_LEVEL ?? 'info',
   },
 };
 
