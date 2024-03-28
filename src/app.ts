@@ -24,7 +24,7 @@ import { ElectrsAPIError } from './services/electrs';
 import { BitcoinRPCError } from './services/bitcoind';
 import { AppErrorCode } from './error';
 
-if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
+if (env.SENTRY_DSN_URL) {
   Sentry.init({
     dsn: env.SENTRY_DSN_URL,
     tracesSampleRate: 1.0,
