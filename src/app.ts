@@ -37,6 +37,9 @@ const isTokenRoutesEnable = env.NODE_ENV === 'production' ? env.ADMIN_USERNAME &
 
 async function routes(fastify: FastifyInstance) {
   fastify.log.info(`Process env: ${JSON.stringify(getSafeEnvs(), null, 2)}`);
+  if (Sentry.isInitialized()) {
+    fastify.log.info('Sentry is initialized');
+  }
 
   await fastify.register(cors);
   fastify.register(sensible);
@@ -59,8 +62,6 @@ async function routes(fastify: FastifyInstance) {
   fastify.register(cronRoutes, { prefix: '/cron' });
 
   fastify.setErrorHandler((error, _, reply) => {
-    fastify.log.error(error);
-    Sentry.captureException(error);
     if (error instanceof ElectrsAPIError || error instanceof BitcoinRPCError) {
       reply
         .status(error.statusCode ?? HttpStatusCode.InternalServerError)
@@ -77,6 +78,8 @@ async function routes(fastify: FastifyInstance) {
       return;
     }
 
+    fastify.log.error(error);
+    Sentry.captureException(error);
     reply.status(error.statusCode ?? HttpStatusCode.InternalServerError).send({
       code: AppErrorCode.UnknownResponseError,
       message: error.message,

@@ -2,11 +2,18 @@ import fp from 'fastify-plugin';
 import * as Sentry from '@sentry/node';
 import TransactionManager from '../services/transaction';
 import cron from 'fastify-cron';
+import { MonitorConfig } from '@sentry/types';
 import { Env } from '../env';
 
 export default fp(async (fastify) => {
   try {
     const env: Env = fastify.container.resolve('env');
+    const cronMonitorConfig: MonitorConfig = {
+      schedule: {
+        type: 'crontab',
+        value: env.UNLOCKER_CRON_SCHEDULE,
+      },
+    };
 
     // processing rgb++ ckb transaction
     const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
@@ -26,15 +33,33 @@ export default fp(async (fastify) => {
 
     // processing unlock BTC_TIME_LOCK cells
     const unlocker = fastify.container.resolve('unlocker');
+    const monitorSlug = env.UNLOCKER_MONITOR_SLUG;
     fastify.register(cron, {
       jobs: [
         {
           name: 'unlock-btc-time-lock-cells',
           cronTime: env.UNLOCKER_CRON_SCHEDULE,
           onTick: async () => {
+            const checkInId = Sentry.captureCheckIn(
+              {
+                monitorSlug,
+                status: 'in_progress',
+              },
+              cronMonitorConfig,
+            );
             try {
               await unlocker.unlockCells();
+              Sentry.captureCheckIn({
+                checkInId,
+                monitorSlug,
+                status: 'ok',
+              });
             } catch (err) {
+              Sentry.captureCheckIn({
+                checkInId,
+                monitorSlug,
+                status: 'error',
+              });
               fastify.log.error(err);
               Sentry.captureException(err);
             }
