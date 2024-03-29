@@ -170,7 +170,7 @@ export default class Paymaster implements IPaymaster {
 
     const collector = this.cradle.ckbIndexer.collector({
       lock: this.lockScript,
-      type: "empty",
+      type: 'empty',
       outputCapacityRange: [BI.from(this.cellCapacity).toHexString(), BI.from(this.cellCapacity + 1).toHexString()],
     });
     const cells = collector.collect();
@@ -239,9 +239,15 @@ export default class Paymaster implements IPaymaster {
    * @param signedTx - the signed transaction to get the paymaster cell input to mark as spent
    */
   public async markPaymasterCellAsSpent(token: string, signedTx: CKBComponents.RawTransaction) {
-    const job = await this.getPaymasterCellJobByRawTx(signedTx);
-    if (job) {
-      await job.moveToCompleted(null, token, false);
+    try {
+      const job = await this.getPaymasterCellJobByRawTx(signedTx);
+      if (job) {
+        await job.moveToCompleted(null, token, false);
+      }
+    } catch (err) {
+      this.cradle.logger.error(`[Paymaster] Mark paymaster cell as spent failed: ${token}`);
+      Sentry.captureException(err);
+      // XXX: Don't throw the error to avoid the transaction marked as failed
     }
   }
 
@@ -251,9 +257,15 @@ export default class Paymaster implements IPaymaster {
    * @param signedTx - the signed transaction to get the paymaster cell input to mark as unspent
    */
   public async markPaymasterCellAsUnspent(token: string, signedTx: CKBComponents.RawTransaction) {
-    const job = await this.getPaymasterCellJobByRawTx(signedTx);
-    if (job) {
-      await job.moveToDelayed(Date.now(), token);
+    try {
+      const job = await this.getPaymasterCellJobByRawTx(signedTx);
+      if (job) {
+        await job.moveToDelayed(Date.now(), token);
+      }
+    } catch (err) {
+      this.cradle.logger.error(`[Paymaster] Mark paymaster cell as spent failed: ${token}`);
+      Sentry.captureException(err);
+      // XXX: Don't throw the error to avoid the transaction marked as failed
     }
   }
 }
