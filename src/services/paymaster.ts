@@ -71,7 +71,7 @@ export default class Paymaster implements IPaymaster {
 
   /**
    * Get the paymaster cell job by the raw transaction
-   * @param rawTx - the raw transaction to get the paymaster cell job
+   * @param rawTx - the raw transaction may contains an input using one paymaster cell
    */
   private getPaymasterCellJobByRawTx(rawTx: CKBComponents.RawTransaction) {
     for (const input of rawTx.inputs) {
