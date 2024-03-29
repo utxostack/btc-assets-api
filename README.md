@@ -55,11 +55,15 @@ PAYMASTER_CELL_PRESET_COUNT=500
 
 # BTCTimeLock cell unlock batch size
 UNLOCKER_CELL_BATCH_SIZE=100
+# BTCTimeLock cell unlock cron job schedule, default is every 5 minutes
+UNLOCKER_CRON_SCHEDULE='*/5 * * * *'
 
 # RGB++ CKB transaction Queue cron job delay in milliseconds
 # the /rgbpp/v1/transaction/ckb-tx endpoint is called, the transaction will be added to the queue
 TRANSACTION_QUEUE_JOB_DELAY=12000
 ```
+
+More configuration options can be found in the `src/env.ts` file.
 
 #### Docker
 
