@@ -170,6 +170,7 @@ export default class Paymaster implements IPaymaster {
 
     const collector = this.cradle.ckbIndexer.collector({
       lock: this.lockScript,
+      type: "empty",
       outputCapacityRange: [BI.from(this.cellCapacity).toHexString(), BI.from(this.cellCapacity + 1).toHexString()],
     });
     const cells = collector.collect();
