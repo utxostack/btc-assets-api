@@ -1,0 +1,24 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: ['Docker']
+    types:
+      - completed
+
+jobs:
+  deploy:
+    name: deploy image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install SSH
+        run: |
+          install -m 600 -D /dev/null ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
+      - name: Deploy
+        run: |
+          ssh ${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && echo ${{ secrets.PACKAGE_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin && bash ./update.sh && exit"
+      - name: cleanup
+        run: rm -rf ~/.ssh
