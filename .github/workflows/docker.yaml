@@ -1,10 +1,13 @@
-name: Docker
+name: Docker Publish
 
 on:
   workflow_dispatch:
   push:
-    branches: ["develop", "main"]
-    tags: ["release/*"]
+    branches:
+      - main
+      - develop
+    tags:
+      - release/*
 
 jobs:
   docker-build-push:

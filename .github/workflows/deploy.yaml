@@ -1,14 +1,17 @@
 name: Deploy
 
 on:
+  workflow_dispatch:
   workflow_run:
-    workflows: ['Docker']
+    workflows:
+      - Docker Publish
+    branches:
+      - develop
     types:
       - completed
 
 jobs:
   deploy:
-    name: deploy image
     runs-on: ubuntu-latest
 
     steps:
