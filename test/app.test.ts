@@ -32,9 +32,7 @@ test('`/docs/json` - 200', async () => {
     '/rgbpp/v1/assets/{btc_txid}',
     '/rgbpp/v1/assets/{btc_txid}/{vout}',
     '/rgbpp/v1/address/{btc_address}/assets',
-    '/rgbpp/v1/btc-spv/proof',
-    '/cron/process-transactions',
-    '/cron/unlock-cells',
+    '/rgbpp/v1/btc-spv/proof'
   ]);
 
   await fastify.close();
