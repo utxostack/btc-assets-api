@@ -1,6 +1,6 @@
 ## Bitcoin/RGB++ Assets API
 
-A service for obtaining BTC/RGB++ asset data and performing transactions related to these assets
+A service for Retrieving BTC/RGB++ information/assets and processing transactions with these assets
 
 ### Features
 - Retrieving Blockchain Information such as Bitcoin chain info, blocks, headers, transactions, addresses and RGB++ assets
