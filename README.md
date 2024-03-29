@@ -27,6 +27,14 @@ REDIS_URL=redis://redis:6379
 
 # Set /token/generate default domain param
 DOMAIN=localhost
+# Bitcoin network, testnet by default
+NETWORK=testnet
+
+# Rate limit per minute for the API, 100 by default
+RATE_LIMIT_PER_MINUTE=100
+
+# Sentry DSN URL for error tracking and cron monitoring
+SENTRY_DSN_URL=<sentry_dsn_url>
 
 # Required in production mode
 # In mainnet env, only the administrator could generate access tokens.
