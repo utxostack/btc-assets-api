@@ -167,13 +167,14 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     '/retry',
     {
       schema: {
-        description: 'Retry a failed transaction by BTC txid',
+        description: 'Retry a failed transaction by BTC txid, only failed transactions can be retried.',
         tags: ['RGB++'],
         body: z.object({
           btc_txid: z.string(),
         }),
         response: {
           200: z.object({
+            success: z.boolean().describe('Whether the transaction has been retried successfully'),
             state: z.string().describe('The state of the transaction'),
           }),
         },
@@ -190,9 +191,15 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
       if (state === 'failed') {
         await job.retry('failed');
         const newState = await job.getState();
-        return { state: newState };
+        return {
+          success: true,
+          state: newState,
+        };
       }
-      return { state };
+      return {
+        success: false,
+        state,
+      };
     },
   );
 
