@@ -5,43 +5,25 @@ import z from 'zod';
 
 const paymasterRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.get(
-    '/btc_address',
+    '/info',
     {
       schema: {
-        description: 'Get RGB++ paymaster btc address',
+        description: 'Get RGB++ paymaster information',
         tags: ['RGB++'],
         response: {
           200: z.object({
-            btc_address: z.string(),
+            btc_address: z.string().describe('Bitcoin address to send funds to'),
+            fee: z.coerce.number().describe('Container fee in satoshis'),
           }),
         },
       },
     },
     async () => {
-      const btcAddress = fastify.paymaster.btcAddress;
-      return { btc_address: btcAddress };
+      const btc_address = fastify.paymaster.btcAddress;
+      const fee = fastify.paymaster.containerFee;
+      return { btc_address, fee };
     },
   );
-
-  fastify.get(
-    '/container_fee',
-    {
-      schema: {
-        description: 'Get RGB++ paymaster container fee in sats',
-        tags: ['RGB++'],
-        response: {
-          200: z.object({
-            fee: z.coerce.number(),
-          }),
-        },
-      },
-    },
-    async () => {
-      const fee = fastify.paymaster.containerFee;
-      return { fee };
-    },
-  )
-
   done();
 };
 
