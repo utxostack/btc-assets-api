@@ -134,6 +134,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         response: {
           200: z.object({
             state: z.string().describe('The state of the transaction'),
+            attempts: z.number().describe('The number of attempts made to process the transaction'),
             failedReason: z.string().optional().describe('The reason why the transaction failed'),
           }),
         },
@@ -147,13 +148,58 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         return;
       }
       const state = await job.getState();
+      const attempts = job.attemptsMade;
       if (state === 'failed') {
         return {
           state,
+          attempts,
           failedReason: job.failedReason,
         };
       }
-      return { state };
+      return {
+        state,
+        attempts,
+      };
+    },
+  );
+
+  fastify.post(
+    '/retry',
+    {
+      schema: {
+        description: 'Retry a failed transaction by BTC txid, only failed transactions can be retried.',
+        tags: ['RGB++'],
+        body: z.object({
+          btc_txid: z.string(),
+        }),
+        response: {
+          200: z.object({
+            success: z.boolean().describe('Whether the transaction has been retried successfully'),
+            state: z.string().describe('The state of the transaction'),
+          }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const { btc_txid } = request.body;
+      const job = await fastify.transactionManager.getTransactionRequest(btc_txid);
+      if (!job) {
+        reply.status(404);
+        return;
+      }
+      const state = await job.getState();
+      if (state === 'failed') {
+        await job.retry('failed');
+        const newState = await job.getState();
+        return {
+          success: true,
+          state: newState,
+        };
+      }
+      return {
+        success: false,
+        state,
+      };
     },
   );
 

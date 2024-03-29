@@ -1,8 +1,6 @@
 import { bytes } from '@ckb-lumos/codec';
 import { opReturnScriptPubKeyToData, remove0x, transactionToHex } from '@rgbpp-sdk/btc';
 import {
-  BTCTimeLock,
-  BTC_JUMP_CONFIRMATION_BLOCKS,
   Collector,
   RGBPPLock,
   RGBPP_TX_ID_PLACEHOLDER,
@@ -86,14 +84,7 @@ export default class TransactionManager implements ITransactionManager {
     this.cradle = cradle;
     this.queue = new Queue(TRANSACTION_QUEUE_NAME, {
       connection: cradle.redis,
-      // retry failed jobs with a delay of 60 seconds, up to 3 time
-      defaultJobOptions: {
-        attempts: 3,
-        backoff: {
-          type: 'fixed',
-          delay: cradle.env.TRANSACTION_QUEUE_JOB_DELAY,
-        },
-      },
+      defaultJobOptions: this.defaultJobOptions,
     });
     this.worker = new Worker(TRANSACTION_QUEUE_NAME, this.process.bind(this), {
       connection: cradle.redis,
@@ -112,6 +103,16 @@ export default class TransactionManager implements ITransactionManager {
 
   private get btcTimeLockScript() {
     return getBtcTimeLockScript(this.isMainnet);
+  }
+
+  public get defaultJobOptions() {
+    return {
+      attempts: 5,
+      backoff: {
+        type: 'exponential',
+        delay: this.cradle.env.TRANSACTION_QUEUE_JOB_DELAY,
+      },
+    };
   }
 
   private isRgbppLock(lock: CKBComponents.Script) {
@@ -263,19 +264,18 @@ export default class TransactionManager implements ITransactionManager {
         );
       }
       if (this.isBtcTimeLock(output.lock)) {
-        const { btcTxid, after } = BTCTimeLock.unpack(output.lock.args);
-        const txid = remove0x(btcTxid);
+        const txid = btcTxIdFromBtcTimeLockArgs(output.lock.args);
         this.cradle.logger.debug(`[TransactionManager] BTC_TIME_LOCK args txid: ${txid}`);
         return (
           output.lock.codeHash === this.btcTimeLockScript.codeHash &&
           output.lock.hashType === this.btcTimeLockScript.hashType &&
-          txid === RGBPP_TX_ID_PLACEHOLDER &&
-          after === BTC_JUMP_CONFIRMATION_BLOCKS
+          txid === RGBPP_TX_ID_PLACEHOLDER
         );
       }
       return false;
     });
     if (needUpdateCkbTx) {
+      this.cradle.logger.info(`[TransactionManager] Update CKB Raw Transaction with real BTC txid: ${txid}`);
       ckbRawTx = updateCkbTxWithRealBtcTxId({ ckbRawTx, btcTxId: txid, isMainnet: this.isMainnet });
     }
     return ckbRawTx;
@@ -326,24 +326,30 @@ export default class TransactionManager implements ITransactionManager {
       }
       this.cradle.logger.debug(`[TransactionManager] Transaction signed: ${JSON.stringify(signedTx)}`);
 
-      const txHash = await sendCkbTx({
-        collector: new Collector({
-          ckbNodeUrl: this.cradle.env.CKB_RPC_URL,
-          ckbIndexerUrl: this.cradle.env.CKB_RPC_URL,
-        }),
-        signedTx,
-      });
-      job.returnvalue = txHash;
-      this.cradle.logger.info(`[TransactionManager] Transaction sent: ${txHash}`);
+      try {
+        const txHash = await sendCkbTx({
+          collector: new Collector({
+            ckbNodeUrl: this.cradle.env.CKB_RPC_URL,
+            ckbIndexerUrl: this.cradle.env.CKB_RPC_URL,
+          }),
+          signedTx,
+        });
+        job.returnvalue = txHash;
+        this.cradle.logger.info(`[TransactionManager] Transaction sent: ${txHash}`);
 
-      await this.waitForTranscationConfirmed(txHash);
-      this.cradle.logger.info(`[TransactionManager] Transaction confirmed: ${txHash}`);
-      // mark the paymaster cell as spent to avoid double spending
-      if (ckbVirtualResult.needPaymasterCell) {
-        this.cradle.logger.info(`[TransactionManager] Mark paymaster cell as spent: ${txHash}`);
-        await this.cradle.paymaster.markPaymasterCellAsSpent(txid, signedTx!);
+        await this.waitForTranscationConfirmed(txHash);
+        this.cradle.logger.info(`[TransactionManager] Transaction confirmed: ${txHash}`);
+        // mark the paymaster cell as spent to avoid double spending
+        if (ckbVirtualResult.needPaymasterCell) {
+          this.cradle.logger.info(`[TransactionManager] Mark paymaster cell as spent: ${txHash}`);
+          await this.cradle.paymaster.markPaymasterCellAsSpent(txid, signedTx!);
+        }
+        return txHash;
+      } catch (err) {
+        // mark the paymaster cell as unspent if the transaction failed
+        this.cradle.paymaster.markPaymasterCellAsUnspent(txid, signedTx!);
+        throw err;
       }
-      return txHash;
     } catch (err) {
       this.cradle.logger.debug(err);
       // move the job to delayed queue if the transaction data not found or not confirmed or spv proof not found yet
