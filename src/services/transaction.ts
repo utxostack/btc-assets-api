@@ -88,9 +88,9 @@ export default class TransactionManager implements ITransactionManager {
       connection: cradle.redis,
       // retry failed jobs with a delay of 60 seconds, up to 3 time
       defaultJobOptions: {
-        attempts: 3,
+        attempts: 5,
         backoff: {
-          type: 'fixed',
+          type: 'exponential',
           delay: cradle.env.TRANSACTION_QUEUE_JOB_DELAY,
         },
       },
