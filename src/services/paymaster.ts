@@ -1,6 +1,6 @@
 import { Cell, helpers } from '@ckb-lumos/lumos';
 import { Cradle } from '../container';
-import { Queue, Worker } from 'bullmq';
+import { DelayedError, Queue, Worker } from 'bullmq';
 import { AppendPaymasterCellAndSignTxParams, IndexerCell, appendPaymasterCellAndSignCkbTx } from '@rgbpp-sdk/ckb';
 import { hd, config, BI } from '@ckb-lumos/lumos';
 import * as Sentry from '@sentry/node';
@@ -157,16 +157,18 @@ export default class Paymaster implements IPaymaster {
 
     for await (const cell of cells) {
       const outPoint = cell.outPoint!;
-      this.cradle.logger.info(
-        `[Paymaster] Refill paymaster cell: ${outPoint.txHash}:${outPoint.index}, ${cell.cellOutput.capacity} CKB`,
-      );
-      await this.queue.add(PAYMASTER_CELL_QUEUE_NAME, cell, {
-        // use the outPoint as the jobId to avoid duplicate cells
-        jobId: `${outPoint.txHash}:${outPoint.index}`,
-      });
-      // count the filled cells, it maybe less than the cells we added
-      // because we may have duplicate cells, but it's work fine
+      const jobId = `${outPoint.txHash}:${outPoint.index}`;
+      this.cradle.logger.info(`[Paymaster] Refill paymaster cell: ${jobId}`);
+
+      // check if the cell is already in the queue
+      const job = await this.queue.getJob(jobId);
+      if (job) {
+        continue;
+      }
+      // add the cell to the queue
+      await this.queue.add(PAYMASTER_CELL_QUEUE_NAME, cell, { jobId });
       filled += 1;
+      // break if the filled cells are enough
       if (queueSize + filled >= this.presetCount) {
         break;
       }
@@ -183,23 +185,31 @@ export default class Paymaster implements IPaymaster {
     token: string,
     params: Pick<AppendPaymasterCellAndSignTxParams, 'ckbRawTx' | 'sumInputsCapacity'>,
   ) {
-    const { ckbRawTx, sumInputsCapacity } = params;
-    const paymasterCell = await this.getNextCell(token);
-    this.cradle.logger.info(`[Paymaster] Get paymaster cell: ${JSON.stringify(paymasterCell)}`);
+    try {
+      const { ckbRawTx, sumInputsCapacity } = params;
+      const paymasterCell = await this.getNextCell(token);
+      this.cradle.logger.info(`[Paymaster] Get paymaster cell: ${JSON.stringify(paymasterCell)}`);
 
-    if (!paymasterCell) {
-      throw new PaymasterCellNotEnoughError('No paymaster cell available');
+      if (!paymasterCell) {
+        throw new PaymasterCellNotEnoughError('No paymaster cell available');
+      }
+
+      const signedTx = await appendPaymasterCellAndSignCkbTx({
+        ckbRawTx,
+        sumInputsCapacity,
+        paymasterCell,
+        secp256k1PrivateKey: this.privateKey,
+        isMainnet: this.cradle.env.NETWORK === 'mainnet',
+      });
+      this.cradle.logger.info(`[Paymaster] Signed transaction: ${JSON.stringify(signedTx)}`);
+      return signedTx;
+    } catch (err) {
+      if (err instanceof PaymasterCellNotEnoughError) {
+        // delay the job to retry later if the paymaster cell is not enough
+        throw new DelayedError();
+      }
+      throw err;
     }
-
-    const signedTx = await appendPaymasterCellAndSignCkbTx({
-      ckbRawTx,
-      sumInputsCapacity,
-      paymasterCell,
-      secp256k1PrivateKey: this.privateKey,
-      isMainnet: this.cradle.env.NETWORK === 'mainnet',
-    });
-    this.cradle.logger.info(`[Paymaster] Signed transaction: ${JSON.stringify(signedTx)}`);
-    return signedTx;
   }
 
   /**
