@@ -148,16 +148,17 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         return;
       }
       const state = await job.getState();
+      const attempts = job.attemptsMade;
       if (state === 'failed') {
         return {
           state,
-          attempts: job.attemptsMade,
+          attempts,
           failedReason: job.failedReason,
         };
       }
       return {
         state,
-        attempts: job.attemptsMade,
+        attempts,
       };
     },
   );

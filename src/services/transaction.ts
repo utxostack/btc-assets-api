@@ -84,14 +84,7 @@ export default class TransactionManager implements ITransactionManager {
     this.cradle = cradle;
     this.queue = new Queue(TRANSACTION_QUEUE_NAME, {
       connection: cradle.redis,
-      // retry failed jobs with a delay of 60 seconds, up to 3 time
-      defaultJobOptions: {
-        attempts: 5,
-        backoff: {
-          type: 'exponential',
-          delay: cradle.env.TRANSACTION_QUEUE_JOB_DELAY,
-        },
-      },
+      defaultJobOptions: this.defaultJobOptions,
     });
     this.worker = new Worker(TRANSACTION_QUEUE_NAME, this.process.bind(this), {
       connection: cradle.redis,
@@ -110,6 +103,16 @@ export default class TransactionManager implements ITransactionManager {
 
   private get btcTimeLockScript() {
     return getBtcTimeLockScript(this.isMainnet);
+  }
+
+  public get defaultJobOptions() {
+    return {
+      attempts: 5,
+      backoff: {
+        type: 'exponential',
+        delay: this.cradle.env.TRANSACTION_QUEUE_JOB_DELAY,
+      },
+    };
   }
 
   private isRgbppLock(lock: CKBComponents.Script) {
