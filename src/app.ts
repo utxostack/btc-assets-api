@@ -23,6 +23,7 @@ import cronRoutes from './routes/cron';
 import { ElectrsAPIError } from './services/electrs';
 import { BitcoinRPCError } from './services/bitcoind';
 import { AppErrorCode } from './error';
+import { provider } from 'std-env';
 
 if (env.SENTRY_DSN_URL) {
   Sentry.init({
@@ -59,7 +60,9 @@ async function routes(fastify: FastifyInstance) {
   }
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
   fastify.register(rgbppRoutes, { prefix: '/rgbpp/v1' });
-  fastify.register(cronRoutes, { prefix: '/cron' });
+  if (provider === 'vercel') {
+    fastify.register(cronRoutes, { prefix: '/cron' });
+  }
 
   fastify.setErrorHandler((error, _, reply) => {
     if (error instanceof ElectrsAPIError || error instanceof BitcoinRPCError) {
