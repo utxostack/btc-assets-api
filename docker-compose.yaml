@@ -4,6 +4,8 @@ services:
   app:
     build:
       context: .
+    # Or use the image from the GitHub registry
+    # image: ghcr.io/ckb-cell/btc-assets-api:develop
     ports:
       - '3000:3000'
     environment:
