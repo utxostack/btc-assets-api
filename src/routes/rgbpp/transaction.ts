@@ -157,6 +157,39 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     },
   );
 
+  fastify.post(
+    '/:btc_txid/job-retry',
+    {
+      schema: {
+        description: 'Retry a failed transaction by BTC txid',
+        tags: ['RGB++'],
+        params: z.object({
+          btc_txid: z.string(),
+        }),
+        response: {
+          200: z.object({
+            state: z.string().describe('The state of the transaction'),
+          }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const { btc_txid } = request.params;
+      const job = await fastify.transactionManager.getTransactionRequest(btc_txid);
+      if (!job) {
+        reply.status(404);
+        return;
+      }
+      const state = await job.getState();
+      if (state === 'failed') {
+        await job.retry('failed');
+        const newState = await job.getState();
+        return { state: newState };
+      }
+      return { state };
+    },
+  );
+
   done();
 };
 

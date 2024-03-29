@@ -69,6 +69,25 @@ export default class Paymaster implements IPaymaster {
     return lockScript;
   }
 
+  /**
+   * Get the paymaster cell job by the raw transaction
+   * @param rawTx - the raw transaction to get the paymaster cell job
+   */
+  private getPaymasterCellJobByRawTx(rawTx: CKBComponents.RawTransaction) {
+    for (const input of rawTx.inputs) {
+      const outPoint = input.previousOutput;
+      if (!outPoint) {
+        continue;
+      }
+      const id = `${outPoint.txHash}:${outPoint.index}`;
+      const job = this.queue.getJob(id);
+      if (job) {
+        return job;
+      }
+    }
+    return null;
+  }
+
   public get privateKey() {
     return this.cradle.env.PAYMASTER_PRIVATE_KEY;
   }
@@ -158,15 +177,16 @@ export default class Paymaster implements IPaymaster {
     for await (const cell of cells) {
       const outPoint = cell.outPoint!;
       const jobId = `${outPoint.txHash}:${outPoint.index}`;
-      this.cradle.logger.info(`[Paymaster] Refill paymaster cell: ${jobId}`);
 
       // check if the cell is already in the queue
       const job = await this.queue.getJob(jobId);
       if (job) {
+        this.cradle.logger.info(`[Paymaster] Paymaster cell already in the queue: ${jobId}`);
         continue;
       }
       // add the cell to the queue
       await this.queue.add(PAYMASTER_CELL_QUEUE_NAME, cell, { jobId });
+      this.cradle.logger.info(`[Paymaster] Refill paymaster cell: ${jobId}`);
       filled += 1;
       // break if the filled cells are enough
       if (queueSize + filled >= this.presetCount) {
@@ -218,16 +238,21 @@ export default class Paymaster implements IPaymaster {
    * @param signedTx - the signed transaction to get the paymaster cell input to mark as spent
    */
   public async markPaymasterCellAsSpent(token: string, signedTx: CKBComponents.RawTransaction) {
-    for await (const input of signedTx.inputs) {
-      const outPoint = input.previousOutput;
-      if (!outPoint) {
-        continue;
-      }
-      const id = `${outPoint.txHash}:${outPoint.index}`;
-      const job = await this.queue.getJob(id);
-      if (job) {
-        await job.moveToCompleted(null, token, false);
-      }
+    const job = await this.getPaymasterCellJobByRawTx(signedTx);
+    if (job) {
+      await job.moveToCompleted(null, token, false);
+    }
+  }
+
+  /**
+   * Mark the paymaster cell as unspent after the transaction is failed
+   * @param token - the job token moved from the queue to the delayed
+   * @param signedTx - the signed transaction to get the paymaster cell input to mark as unspent
+   */
+  public async markPaymasterCellAsUnspent(token: string, signedTx: CKBComponents.RawTransaction) {
+    const job = await this.getPaymasterCellJobByRawTx(signedTx);
+    if (job) {
+      await job.moveToDelayed(Date.now(), token);
     }
   }
 }
