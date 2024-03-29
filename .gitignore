@@ -28,5 +28,6 @@ yarn.lock
 .vercel
 coverage
 data
+redis-data
 dump.rdb
 .envrc

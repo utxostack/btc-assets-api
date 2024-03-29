@@ -16,9 +16,11 @@ services:
       - redis
 
   redis:
-    image: redis:latest
+    # https://github.com/docker-library/redis/blob/b77450d/7.2/alpine/Dockerfile
+    image: redis:7-alpine
     networks:
       - redis-internal
+    # Redis' WORKDIR is /data
     volumes:
       - ./redis-data:/data
       - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
