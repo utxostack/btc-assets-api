@@ -5,7 +5,7 @@ import generateRoute from './generate';
 import { env } from '../../env';
 
 const tokenRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
-  if (env.NODE_ENV === 'production') {
+  if (env.NODE_ENV === 'production' && env.ADMIN_USERNAME && env.ADMIN_PASSWORD) {
     fastify.addHook('onRequest', async (request, reply) => {
       const { authorization } = request.headers;
       if (!authorization) {

@@ -34,8 +34,6 @@ if (env.SENTRY_DSN_URL) {
   });
 }
 
-const isTokenRoutesEnable = env.NODE_ENV === 'production' ? env.ADMIN_USERNAME && env.ADMIN_PASSWORD : true;
-
 async function routes(fastify: FastifyInstance) {
   fastify.log.info(`Process env: ${JSON.stringify(getSafeEnvs(), null, 2)}`);
   if (Sentry.isInitialized()) {
@@ -55,9 +53,7 @@ async function routes(fastify: FastifyInstance) {
   await container.resolve('bitcoind').checkNetwork(env.NETWORK as NetworkType);
   await container.resolve('electrs').checkNetwork(env.NETWORK as NetworkType);
 
-  if (isTokenRoutesEnable) {
-    fastify.register(tokenRoutes, { prefix: '/token' });
-  }
+  fastify.register(tokenRoutes, { prefix: '/token' });
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
   fastify.register(rgbppRoutes, { prefix: '/rgbpp/v1' });
   if (provider === 'vercel') {
