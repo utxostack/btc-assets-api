@@ -1,4 +1,4 @@
-import fastify from 'fastify';
+import fastify, { FastifyError } from 'fastify';
 import { FastifyInstance } from 'fastify';
 import { AxiosError, HttpStatusCode } from 'axios';
 import sensible from '@fastify/sensible';
@@ -93,8 +93,11 @@ async function routes(fastify: FastifyInstance) {
       return;
     }
 
-    fastify.log.error(error);
-    Sentry.captureException(error);
+    // captureException only for 5xx errors or unknown errors
+    if (!error.statusCode || error.statusCode >= HttpStatusCode.InternalServerError) {
+      fastify.log.error(error);
+      Sentry.captureException(error);
+    }
     reply.status(error.statusCode ?? HttpStatusCode.InternalServerError).send({
       code: AppErrorCode.UnknownResponseError,
       message: error.message,
