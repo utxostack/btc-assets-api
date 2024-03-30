@@ -68,12 +68,6 @@ async function routes(fastify: FastifyInstance) {
     Sentry.setTag('routePath', request.routerPath);
     Sentry.setContext('params', request.params ?? {});
     Sentry.setContext('query', request.query ?? {});
-
-    const jwt = (await request.jwtDecode()) as JwtPayload;
-    if (jwt) {
-      Sentry.setTag('token.app', jwt.sub);
-      Sentry.setTag('token.domain', jwt.aud);
-    }
   });
 
   fastify.setErrorHandler((error, _, reply) => {

@@ -3,6 +3,7 @@ import fp from 'fastify-plugin';
 import { env } from '../env';
 import jwt from '@fastify/jwt';
 import { JWT_IGNORE_URLS } from '../constants';
+import * as Sentry from '@sentry/node';
 
 export interface JwtPayload {
   sub: string;
@@ -23,6 +24,10 @@ export default fp(async (fastify) => {
     try {
       await request.jwtVerify();
       const jwt = (await request.jwtDecode()) as JwtPayload;
+      if (jwt) {
+        Sentry.setTag('token.app', jwt.sub);
+        Sentry.setTag('token.domain', jwt.aud);
+      }
       if (!jwt.aud) {
         reply.status(401).send('Invalid audience');
         return;
