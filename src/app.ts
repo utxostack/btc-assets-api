@@ -1,4 +1,4 @@
-import fastify from 'fastify';
+import fastify, { FastifyError } from 'fastify';
 import { FastifyInstance } from 'fastify';
 import { AxiosError, HttpStatusCode } from 'axios';
 import sensible from '@fastify/sensible';
@@ -8,7 +8,7 @@ import { ProfilingIntegration } from '@sentry/profiling-node';
 import bitcoinRoutes from './routes/bitcoin';
 import tokenRoutes from './routes/token';
 import swagger from './plugins/swagger';
-import jwt from './plugins/jwt';
+import jwt, { JwtPayload } from './plugins/jwt';
 import cache from './plugins/cache';
 import rateLimit from './plugins/rate-limit';
 import { env, getSafeEnvs } from './env';
@@ -64,6 +64,12 @@ async function routes(fastify: FastifyInstance) {
     fastify.register(cronRoutes, { prefix: '/cron' });
   }
 
+  fastify.addHook('onRequest', async (request) => {
+    Sentry.setTag('routePath', request.routerPath);
+    Sentry.setContext('params', request.params ?? {});
+    Sentry.setContext('query', request.query ?? {});
+  });
+
   fastify.setErrorHandler((error, _, reply) => {
     if (error instanceof ElectrsAPIError || error instanceof BitcoinRPCError) {
       reply
@@ -81,8 +87,11 @@ async function routes(fastify: FastifyInstance) {
       return;
     }
 
-    fastify.log.error(error);
-    Sentry.captureException(error);
+    // captureException only for 5xx errors or unknown errors
+    if (!error.statusCode || error.statusCode >= HttpStatusCode.InternalServerError) {
+      fastify.log.error(error);
+      Sentry.captureException(error);
+    }
     reply.status(error.statusCode ?? HttpStatusCode.InternalServerError).send({
       code: AppErrorCode.UnknownResponseError,
       message: error.message,
