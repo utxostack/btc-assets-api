@@ -12,15 +12,9 @@ const transactionRoutes: FastifyPluginCallback<Record<never, never>, Server, Zod
       schema: {
         description: 'Send a raw transaction to the Bitcoin network',
         tags: ['Bitcoin'],
-        body: z
-          .object({
-            txhex: z.string().describe('The raw transaction hex'),
-          })
-          .or(
-            z.object({
-              txHex: z.string().describe('Deprecated, use txhex instead'),
-            }),
-          ),
+        body: z.object({
+          txhex: z.string().describe('The raw transaction hex'),
+        }),
         response: {
           200: z.object({
             txid: z.string(),
@@ -29,7 +23,7 @@ const transactionRoutes: FastifyPluginCallback<Record<never, never>, Server, Zod
       },
     },
     async (request) => {
-      const txhex = 'txhex' in request.body ? request.body.txhex : request.body.txHex;
+      const { txhex } = request.body;
       const txid = await fastify.bitcoind.sendRawTransaction(txhex);
       return {
         txid,
