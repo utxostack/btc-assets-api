@@ -264,7 +264,8 @@ export default class TransactionManager implements ITransactionManager {
         );
       }
       if (this.isBtcTimeLock(output.lock)) {
-        const txid = btcTxIdFromBtcTimeLockArgs(output.lock.args);
+        const btcTxid = btcTxIdFromBtcTimeLockArgs(output.lock.args);
+        const txid = remove0x(btcTxid);
         this.cradle.logger.debug(`[TransactionManager] BTC_TIME_LOCK args txid: ${txid}`);
         return (
           output.lock.codeHash === this.btcTimeLockScript.codeHash &&
