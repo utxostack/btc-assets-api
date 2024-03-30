@@ -7,9 +7,6 @@ A service for Retrieving BTC/RGB++ information/assets and processing transaction
 - Transaction Handling by posting transactions to the /bitcoin/v1/transaction or /rgbpp/v1/transaction/ckb-tx endpoint
 - RGB++ CKB transaction Queue simplifies the RGB++ assets workflows by some cron jobs
 
-### Usgae
-testnet: `http://localhost:3000`
-
 ### Deployment
 
 #### Requirements
