@@ -48,14 +48,14 @@ dependencies:
     specifier: ^0.109.1
     version: 0.109.1
   '@rgbpp-sdk/btc':
-    specifier: 0.0.0-snap-20240330024436
-    version: 0.0.0-snap-20240330024436
+    specifier: 0.0.0-snap-20240330132119
+    version: 0.0.0-snap-20240330132119
   '@rgbpp-sdk/ckb':
-    specifier: 0.0.0-snap-20240330024436
-    version: 0.0.0-snap-20240330024436
+    specifier: 0.0.0-snap-20240330132119
+    version: 0.0.0-snap-20240330132119
   '@rgbpp-sdk/service':
-    specifier: 0.0.0-snap-20240330024436
-    version: 0.0.0-snap-20240330024436
+    specifier: 0.0.0-snap-20240330132119
+    version: 0.0.0-snap-20240330132119
   '@sentry/node':
     specifier: ^7.102.1
     version: 7.102.1
@@ -1364,15 +1364,15 @@ packages:
     resolution: {integrity: sha512-2LuNTFBIO0m7kKIQvvPHN6UE63VjpmL9rnEEaOOaiSPbZK+zUOYIzBAWcED+3XYzhYsd/0mD57VdxAEqqV52CQ==}
     dev: true
 
-  /@rgbpp-sdk/btc@0.0.0-snap-20240330024436:
-    resolution: {integrity: sha512-Ib0FZINPwuebldk4wSnP11cTo7LefUNinCV8LGJP/YMYo7KLussN974obxZ7R7KeOrJ4yw4UAa2A1FVWf9TJCg==}
+  /@rgbpp-sdk/btc@0.0.0-snap-20240330132119:
+    resolution: {integrity: sha512-8/AKov3rDvJouNQYkANE/+/6JdmkcESYUfgAXL0NgwTxBlcRnhBwbWmOmFk7oe3gJUWf/ghzjQ8uvp0uEJsvfg==}
     dependencies:
       '@bitcoinerlab/secp256k1': 1.1.1
       '@ckb-lumos/lumos': 0.22.0-next.5
       '@mempool/mempool.js': 2.3.0
       '@nervosnetwork/ckb-types': 0.109.1
-      '@rgbpp-sdk/ckb': 0.0.0-snap-20240330024436
-      '@rgbpp-sdk/service': 0.0.0-snap-20240330024436
+      '@rgbpp-sdk/ckb': 0.0.0-snap-20240330132119
+      '@rgbpp-sdk/service': 0.0.0-snap-20240330132119
       bip32: 4.0.0
       bitcoinjs-lib: 6.1.5
       ecpair: 2.1.0
@@ -1384,15 +1384,15 @@ packages:
       - utf-8-validate
     dev: false
 
-  /@rgbpp-sdk/ckb@0.0.0-snap-20240330024436:
-    resolution: {integrity: sha512-igCMAtH4AdNCcthGXdZ0c8yiNKnQDrmJ/piV47eJvN3CNeZ2ilveTwt+zHeJrN66QPsrCW2S1I3AFewlrkFVaA==}
+  /@rgbpp-sdk/ckb@0.0.0-snap-20240330132119:
+    resolution: {integrity: sha512-THFKzQOgaYafXR97vEF8spAaZBmXhCNaHgjEpvAyF4+1NkpbSra+2Wtw1KxdpST0tRkWMP5vapD7h+xMKvvJ9g==}
     dependencies:
       '@ckb-lumos/base': 0.21.1
       '@ckb-lumos/codec': 0.22.0-next.5
       '@nervosnetwork/ckb-sdk-core': 0.109.1
       '@nervosnetwork/ckb-sdk-utils': 0.109.1
       '@nervosnetwork/ckb-types': 0.109.1
-      '@rgbpp-sdk/service': 0.0.0-snap-20240330024436
+      '@rgbpp-sdk/service': 0.0.0-snap-20240330132119
       axios: 1.6.8
       camelcase-keys: 7.0.2
       js-sha256: 0.11.0
@@ -1401,8 +1401,8 @@ packages:
       - encoding
     dev: false
 
-  /@rgbpp-sdk/service@0.0.0-snap-20240330024436:
-    resolution: {integrity: sha512-L0FfkTsEAo3kx2/DNtG9/nVpgAwiIkaSHRdWBClO/bQIrcbXyES6Z5cctLXSaX1A/OI2Q1/GBe0cBXkfpnfPnA==}
+  /@rgbpp-sdk/service@0.0.0-snap-20240330132119:
+    resolution: {integrity: sha512-xALA1OAtX+dtLZh/qTxwtB3e7zqUVounZhRYvuCaelN3XmwOLYDHfjhWZ9W9kGLLH+ivnFYKpnZadk1avHyDeQ==}
     dependencies:
       '@ckb-lumos/lumos': 0.22.0-next.5
       '@nervosnetwork/ckb-types': 0.109.1

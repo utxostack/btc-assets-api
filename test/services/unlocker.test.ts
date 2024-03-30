@@ -26,6 +26,12 @@ describe('Unlocker', () => {
     vi.clearAllMocks();
   });
 
+  const xudtTypeScript = {
+    codeHash: '0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb',
+    hashType: 'type',
+    args: '0x',
+  };
+
   function mockBtcTimeLockCell() {
     vi.spyOn(BTCTimeLock, 'unpack').mockReturnValue({
       after: 6,
@@ -46,6 +52,7 @@ describe('Unlocker', () => {
         },
         cellOutput: {
           lock: genBtcTimeLockScript(toLock, false),
+          type: xudtTypeScript,
           capacity: '0x123',
         },
         data: '0x',
@@ -58,6 +65,7 @@ describe('Unlocker', () => {
         },
         cellOutput: {
           lock: genBtcTimeLockScript(toLock, false),
+          type: xudtTypeScript,
           capacity: '0x456',
         },
         data: '0x',

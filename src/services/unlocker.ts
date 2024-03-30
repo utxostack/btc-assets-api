@@ -6,6 +6,7 @@ import {
   IndexerCell,
   buildBtcTimeCellsSpentTx,
   getBtcTimeLockScript,
+  isTypeAssetSupported,
   remove0x,
   sendCkbTx,
   signBtcTimeCellSpentTx,
@@ -54,6 +55,11 @@ export default class Unlocker implements IUnlocker {
 
     const { blocks } = await this.cradle.bitcoind.getBlockchainInfo();
     for await (const cell of collect) {
+      // allow supported asset types only
+      if (!cell.cellOutput.type || !isTypeAssetSupported(cell.cellOutput.type, this.isMainnet)) {
+        continue;
+      }
+
       const btcTxid = remove0x(btcTxIdFromBtcTimeLockArgs(cell.cellOutput.lock.args));
       const { after } = BTCTimeLock.unpack(cell.cellOutput.lock.args);
       const btcTx = await this.cradle.electrs.getTransaction(btcTxid);
