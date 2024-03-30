@@ -360,10 +360,7 @@ export default class TransactionManager implements ITransactionManager {
         await this.moveJobToDelayed(job, token);
         return;
       }
-      if (err instanceof InvalidTransactionError) {
-        // capture invalid transaction request to Sentry
-        Sentry.setContext('transaction', err.data);
-      }
+      Sentry.setContext('job', job.data);
       this.cradle.logger.error(err);
       Sentry.captureException(err);
       throw err;
