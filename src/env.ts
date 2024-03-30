@@ -66,3 +66,5 @@ export const env = envSchema.parse(process.env);
 
 export const getSafeEnvs = () =>
   omit(env, ['ADMIN_PASSWORD', 'JWT_SECRET', 'BITCOIN_JSON_RPC_PASSWORD', 'PAYMASTER_PRIVATE_KEY']);
+
+export const isGenerateTokenPrivate = env.NODE_ENV === 'production' && env.ADMIN_USERNAME && env.ADMIN_PASSWORD;
