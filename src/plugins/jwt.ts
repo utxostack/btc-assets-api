@@ -4,6 +4,11 @@ import { env } from '../env';
 import jwt from '@fastify/jwt';
 import { JWT_IGNORE_URLS } from '../constants';
 
+export interface JwtPayload {
+  sub: string;
+  aud: string;
+}
+
 export default fp(async (fastify) => {
   fastify.register(jwt, {
     secret: env.JWT_SECRET,
@@ -17,7 +22,7 @@ export default fp(async (fastify) => {
     }
     try {
       await request.jwtVerify();
-      const jwt = (await request.jwtDecode()) as { aud: string };
+      const jwt = (await request.jwtDecode()) as JwtPayload;
       if (!jwt.aud) {
         reply.status(401).send('Invalid audience');
         return;

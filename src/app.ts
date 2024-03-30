@@ -8,7 +8,7 @@ import { ProfilingIntegration } from '@sentry/profiling-node';
 import bitcoinRoutes from './routes/bitcoin';
 import tokenRoutes from './routes/token';
 import swagger from './plugins/swagger';
-import jwt from './plugins/jwt';
+import jwt, { JwtPayload } from './plugins/jwt';
 import cache from './plugins/cache';
 import rateLimit from './plugins/rate-limit';
 import { env, getSafeEnvs } from './env';
@@ -63,6 +63,18 @@ async function routes(fastify: FastifyInstance) {
   if (provider === 'vercel') {
     fastify.register(cronRoutes, { prefix: '/cron' });
   }
+
+  fastify.addHook('onRequest', async (request) => {
+    Sentry.setTag('routePath', request.routerPath);
+    Sentry.setContext('params', request.params ?? {});
+    Sentry.setContext('query', request.query ?? {});
+
+    const jwt = (await request.jwtDecode()) as JwtPayload;
+    if (jwt) {
+      Sentry.setTag('token.app', jwt.sub);
+      Sentry.setTag('token.domain', jwt.aud);
+    }
+  });
 
   fastify.setErrorHandler((error, _, reply) => {
     if (error instanceof ElectrsAPIError || error instanceof BitcoinRPCError) {
