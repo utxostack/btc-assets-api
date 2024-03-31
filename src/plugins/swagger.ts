@@ -4,6 +4,7 @@ import swaggerUI from '@fastify/swagger-ui';
 import { jsonSchemaTransform } from 'fastify-type-provider-zod';
 import { env } from '../env';
 import { SWAGGER_PROD_IGNORE_URLS } from '../constants';
+import pkg from '../../package.json';
 
 export const DOCS_ROUTE_PREFIX = '/docs';
 
@@ -12,7 +13,7 @@ export default fp(async (fastify) => {
     swagger: {
       info: {
         title: 'Bitcoin Assets API',
-        version: '0.0.1',
+        version: pkg.version,
       },
       consumes: ['application/json'],
       produces: ['application/json'],
