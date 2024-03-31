@@ -43,6 +43,10 @@ export default fp(async (fastify) => {
                   type: 'crontab',
                   value: env.UNLOCKER_CRON_SCHEDULE,
                 },
+                // create a new issue when 3 times missed or error check-ins are processed
+                failure_issue_threshold: 3,
+                // close the issue when 3 times ok check-ins are processed
+                recovery_threshold: 3,
               },
             );
             try {
