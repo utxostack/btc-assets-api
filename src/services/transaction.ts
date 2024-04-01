@@ -352,6 +352,7 @@ export default class TransactionManager implements ITransactionManager {
         throw err;
       }
     } catch (err) {
+      const { ckbVirtualResult, txid } = job.data;
       this.cradle.logger.debug(err);
       // move the job to delayed queue if the transaction data not found or not confirmed or spv proof not found yet
       const transactionDataNotFound = err instanceof AxiosError && err.response?.status === 404;
@@ -361,7 +362,14 @@ export default class TransactionManager implements ITransactionManager {
         await this.moveJobToDelayed(job, token);
         return;
       }
-      Sentry.setContext('job', job.data);
+      Sentry.setContext('job', {
+        txid,
+        ckbVirtualResult: {
+          ...ckbVirtualResult,
+          // serialize the ckbRawTx to string, otherwise it will be [object]
+          ckbRawTx: JSON.stringify(ckbVirtualResult.ckbRawTx),
+        },
+      });
       this.cradle.logger.error(err);
       Sentry.captureException(err);
       throw err;
