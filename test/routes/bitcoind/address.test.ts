@@ -157,7 +157,7 @@ describe('/bitcoin/v1/address', () => {
 
     const response = await fastify.inject({
       method: 'GET',
-      url: '/bitcoin/v1/address/tb1qm4eyx777203zmajlawz958wn27z08envm2jelm/unspent?only_confirmed=0',
+      url: '/bitcoin/v1/address/tb1qm4eyx777203zmajlawz958wn27z08envm2jelm/unspent?only_confirmed=false',
       headers: {
         Authorization: `Bearer ${token}`,
         Origin: 'https://test.com',
