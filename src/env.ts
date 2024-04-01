@@ -50,7 +50,11 @@ const envSchema = z.object({
    * Paymaster private key, used to sign the transaction with paymaster cell.
    */
   PAYMASTER_PRIVATE_KEY: z.string(),
-  PAYMASTER_CELL_CAPACITY: z.coerce.number().default(220),
+  /**
+   * Paymaster cell capacity in shannons
+  * (254 CKB for RGB++ capacity + 61 CKB for change cell capacity + 1 CKB for fee cell)
+   */
+  PAYMASTER_CELL_CAPACITY: z.coerce.number().default(316 * 10 ** 8),
   PAYMASTER_CELL_PRESET_COUNT: z.coerce.number().default(500),
   PAYMASTER_CELL_REFILL_THRESHOLD: z.coerce.number().default(0.3),
 
