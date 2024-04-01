@@ -1,0 +1,28 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Docker Publish
+    branches:
+      - develop
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.SSH_WORK_DIR }}
+            echo ${{ secrets.PACKAGE_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            bash ./update.sh

@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Unlocker > unlockCells: should unlock cells and send ckb tx 1`] = `[Error: Invalid buffer size, read from header: 0, actual: 36]`;

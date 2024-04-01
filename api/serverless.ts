@@ -1,5 +1,9 @@
 import { buildFastify } from '../src/app';
 
+export const config = {
+  maxDuration: 300,
+};
+
 const app = buildFastify();
 
 export default async (req: Request, res: Response) => {

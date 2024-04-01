@@ -1,6 +1,6 @@
-import fastify from 'fastify';
+import fastify, { FastifyError } from 'fastify';
 import { FastifyInstance } from 'fastify';
-import { AxiosError } from 'axios';
+import { AxiosError, HttpStatusCode } from 'axios';
 import sensible from '@fastify/sensible';
 import compress from '@fastify/compress';
 import * as Sentry from '@sentry/node';
@@ -8,7 +8,7 @@ import { ProfilingIntegration } from '@sentry/profiling-node';
 import bitcoinRoutes from './routes/bitcoin';
 import tokenRoutes from './routes/token';
 import swagger from './plugins/swagger';
-import jwt from './plugins/jwt';
+import jwt, { JwtPayload } from './plugins/jwt';
 import cache from './plugins/cache';
 import rateLimit from './plugins/rate-limit';
 import { env, getSafeEnvs } from './env';
@@ -18,8 +18,14 @@ import options from './options';
 import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import cors from './plugins/cors';
 import { NetworkType } from './constants';
+import rgbppRoutes from './routes/rgbpp';
+import cronRoutes from './routes/cron';
+import { ElectrsAPIError } from './services/electrs';
+import { BitcoinRPCError } from './services/bitcoind';
+import { AppErrorCode } from './error';
+import { provider } from 'std-env';
 
-if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
+if (env.SENTRY_DSN_URL) {
   Sentry.init({
     dsn: env.SENTRY_DSN_URL,
     tracesSampleRate: 1.0,
@@ -28,13 +34,11 @@ if (env.SENTRY_DSN_URL && env.NODE_ENV !== 'development') {
   });
 }
 
-const isTokenRoutesEnable = env.NODE_ENV === 'production' ? env.ADMIN_USERNAME && env.ADMIN_PASSWORD : true;
-
 async function routes(fastify: FastifyInstance) {
   fastify.log.info(`Process env: ${JSON.stringify(getSafeEnvs(), null, 2)}`);
-
-  container.register({ logger: asValue(fastify.log) });
-  fastify.decorate('container', container);
+  if (Sentry.isInitialized()) {
+    fastify.log.info('Sentry is initialized');
+  }
 
   await fastify.register(cors);
   fastify.register(sensible);
@@ -49,20 +53,45 @@ async function routes(fastify: FastifyInstance) {
   await container.resolve('bitcoind').checkNetwork(env.NETWORK as NetworkType);
   await container.resolve('electrs').checkNetwork(env.NETWORK as NetworkType);
 
-  if (isTokenRoutesEnable) {
-    fastify.register(tokenRoutes, { prefix: '/token' });
-  }
+  fastify.register(tokenRoutes, { prefix: '/token' });
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
+  fastify.register(rgbppRoutes, { prefix: '/rgbpp/v1' });
+  if (provider === 'vercel') {
+    fastify.register(cronRoutes, { prefix: '/cron' });
+  }
+
+  fastify.addHook('onRequest', async (request) => {
+    Sentry.setTag('routePath', request.routerPath);
+    Sentry.setContext('params', request.params ?? {});
+    Sentry.setContext('query', request.query ?? {});
+  });
 
   fastify.setErrorHandler((error, _, reply) => {
-    fastify.log.error(error);
-    Sentry.captureException(error);
-    if (error instanceof AxiosError) {
-      const { response } = error;
-      reply.status(response?.status ?? 500).send({ ok: false, error: response?.data ?? error.message });
+    if (error instanceof ElectrsAPIError || error instanceof BitcoinRPCError) {
+      reply
+        .status(error.statusCode ?? HttpStatusCode.InternalServerError)
+        .send({ code: error.errorCode, message: error.message });
       return;
     }
-    reply.status(error.statusCode ?? 500).send({ ok: false, statusCode: error.statusCode, message: error.message });
+
+    if (error instanceof AxiosError) {
+      const { response } = error;
+      reply.status(response?.status ?? HttpStatusCode.InternalServerError).send({
+        code: AppErrorCode.UnknownResponseError,
+        message: response?.data ?? error.message,
+      });
+      return;
+    }
+
+    // captureException only for 5xx errors or unknown errors
+    if (!error.statusCode || error.statusCode >= HttpStatusCode.InternalServerError) {
+      fastify.log.error(error);
+      Sentry.captureException(error);
+    }
+    reply.status(error.statusCode ?? HttpStatusCode.InternalServerError).send({
+      code: AppErrorCode.UnknownResponseError,
+      message: error.message,
+    });
   });
 }
 
@@ -70,6 +99,10 @@ export function buildFastify() {
   const app = fastify(options).withTypeProvider<ZodTypeProvider>();
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+
+  container.register({ logger: asValue(app.log) });
+  app.decorate('container', container);
+
   app.register(routes);
   return app;
 }

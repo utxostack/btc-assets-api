@@ -1,0 +1,7 @@
+{
+  "packages": [
+    "nodejs@latest",
+    "nodePackages.pnpm@latest",
+    "redis@latest"
+  ]
+}

@@ -1,11 +1,11 @@
-import { beforeAll, expect, test } from 'vitest';
+import { beforeEach, expect, test } from 'vitest';
 import { buildFastify } from '../../../src/app';
 import { describe } from 'node:test';
 
 let token: string;
 
 describe('/bitcoin/v1/transaction', () => {
-  beforeAll(async () => {
+  beforeEach(async () => {
     const fastify = buildFastify();
     await fastify.ready();
 
@@ -55,14 +55,15 @@ describe('/bitcoin/v1/transaction', () => {
         Origin: 'https://test.com',
       },
       body: {
-        txHex:
+        txhex:
           '02000000000101fe7b9cd0f75741e2ec1e3a6142eab945e64fab0ef15de4a66c635c0a789e986f0100000000ffffffff02e803000000000000160014dbf4360c0791098b0b14679e5e78015df3f2caad6a88000000000000160014dbf4360c0791098b0b14679e5e78015df3f2caad02473044022065829878f51581488f44c37064b46f552ea7354196fae5536906797b76b370bf02201c459081578dc4e1098fbe3ab68d7d56a99e8e9810bf2806d10053d6b36ffa4d0121037dff8ff2e0bd222690d785f9277e0c4800fc88b0fad522f1442f21a8226253ce00000000',
       },
     });
     const data = response.json();
 
     expect(response.statusCode).toBe(500);
-    expect(data.error.error.message).toBe('bad-txns-inputs-missingorspent');
+    expect(data.code).toBe(-25);
+    expect(data.message).toBe('bad-txns-inputs-missingorspent');
 
     await fastify.close();
   });

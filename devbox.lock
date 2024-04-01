@@ -1,0 +1,66 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "nodePackages.pnpm@latest": {
+      "last_modified": "2024-03-08T13:51:52Z",
+      "resolved": "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b#nodePackages.pnpm",
+      "source": "devbox-search",
+      "version": "8.15.3",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/m9p6q42njy1k33fdzf2axqyhy8vh4vn5-pnpm-8.15.3"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/war7jm6ka7afc2v8a78hlq8v9m4pg38m-pnpm-8.15.3"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/3w3bs2cdqx7sivcldcf6drwrhilv511m-pnpm-8.15.3"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/hcq09j80njlfghy65qmwhn5nq20nk8kl-pnpm-8.15.3"
+        }
+      }
+    },
+    "nodejs@latest": {
+      "last_modified": "2024-03-09T07:11:56Z",
+      "resolved": "github:NixOS/nixpkgs/0e7f98a5f30166cbed344569426850b21e4091d4#nodejs_21",
+      "source": "devbox-search",
+      "version": "21.7.1",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/mh1db6rni4mlcr473sh3fy6jg2m38jvg-nodejs-21.7.1"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/ziyb3ny5f9hcwp0lsb9gwdv1pqsn03x1-nodejs-21.7.1"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/0zaa3aarbsj38g62ihv94gz2hgvgh6bc-nodejs-21.7.1"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/4arhczh30ychpx6h2wpj5nhx39wm0nla-nodejs-21.7.1"
+        }
+      }
+    },
+    "redis@latest": {
+      "last_modified": "2024-03-08T13:51:52Z",
+      "plugin_version": "0.0.2",
+      "resolved": "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b#redis",
+      "source": "devbox-search",
+      "version": "7.2.4",
+      "systems": {
+        "aarch64-darwin": {
+          "store_path": "/nix/store/700kyznxcmlkqqabhwa64vmyg4aj6igj-redis-7.2.4"
+        },
+        "aarch64-linux": {
+          "store_path": "/nix/store/xlc976dh4nb2aa0gzs0jfgld4cc3x8si-redis-7.2.4"
+        },
+        "x86_64-darwin": {
+          "store_path": "/nix/store/5v58fadclljqa2fmwq281bx5wma9cslb-redis-7.2.4"
+        },
+        "x86_64-linux": {
+          "store_path": "/nix/store/zp1lapdicjxnjhiz8l6j2j4nn6sa9fg5-redis-7.2.4"
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Get block by hash 1`] = `
+exports[`/bitcoin/v1/block > Get block by hash 1`] = `
 {
   "bits": 422051352,
   "difficulty": 107392535.89663602,
@@ -18,13 +18,13 @@ exports[`Get block by hash 1`] = `
 }
 `;
 
-exports[`Get block hash by height 1`] = `
+exports[`/bitcoin/v1/block > Get block hash by height 1`] = `
 {
   "hash": "000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943",
 }
 `;
 
-exports[`Get block header by hash 1`] = `
+exports[`/bitcoin/v1/block > Get block header by hash 1`] = `
 {
   "header": "0000202000af62594f79b6390c6ee3de56aad6658d35a9481cd8bb0ce047523800000000652cad111d076bf8aa3417670781154fd79533fb91fe782d70d300e9e95b4c5b6d60dd6518fe27190343494f",
 }

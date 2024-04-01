@@ -4,8 +4,8 @@ import { Server } from 'http';
 import { env } from './env';
 
 const envToLogger = {
-  development:
-    provider !== 'vercel'
+  development: {
+    ...(provider !== 'vercel'
       ? {
           transport: {
             target: 'pino-pretty',
@@ -15,8 +15,12 @@ const envToLogger = {
             },
           },
         }
-      : true,
-  production: true,
+      : {}),
+    level: 'debug',
+  },
+  production: {
+    level: env.LOGGER_LEVEL ?? 'info',
+  },
 };
 
 const options: FastifyHttpOptions<Server, FastifyBaseLogger> = {

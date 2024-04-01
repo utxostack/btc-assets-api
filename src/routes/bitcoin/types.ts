@@ -78,8 +78,8 @@ export const Transaction = z.object({
   status: Status,
 });
 
-export type ChainInfoType = z.infer<typeof ChainInfo>;
-export type BlockType = z.infer<typeof Block>;
-export type BalanceType = z.infer<typeof Balance>;
-export type UTXOType = z.infer<typeof UTXO>;
-export type TransactionType = z.infer<typeof Transaction>;
+export type ChainInfo = z.infer<typeof ChainInfo>;
+export type Block = z.infer<typeof Block>;
+export type Balance = z.infer<typeof Balance>;
+export type UTXO = z.infer<typeof UTXO>;
+export type Transaction = z.infer<typeof Transaction>;

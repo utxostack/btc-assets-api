@@ -28,4 +28,6 @@ yarn.lock
 .vercel
 coverage
 data
-redis.conf
+redis-data
+dump.rdb
+.envrc

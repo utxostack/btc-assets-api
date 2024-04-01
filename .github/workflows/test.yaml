@@ -2,6 +2,11 @@
 name: Unit Tests
 
 on:
+  workflow_dispatch:
+  push:
+    branches: 
+      - main
+      - develop
   pull_request:
     branches:
       - main
@@ -10,6 +15,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
 
     steps:
       - name: Checkout Code
@@ -36,4 +52,10 @@ jobs:
           BITCOIN_JSON_RPC_USERNAME: ${{ secrets.BITCOIN_JSON_RPC_USERNAME }}
           BITCOIN_JSON_RPC_PASSWORD: ${{ secrets.BITCOIN_JSON_RPC_PASSWORD }}
           BITCOIN_ELECTRS_API_URL: ${{ secrets.BITCOIN_ELECTRS_API_URL }}
+          BITCOIN_SPV_SERVICE_URL: ${{ secrets.BITCOIN_SPV_SERVICE_URL }}
+          CKB_RPC_URL: ${{ secrets.CKB_RPC_URL }}
+          CKB_INDEXER_URL: ${{ secrets.CKB_INDEXER_URL }}
+          PAYMASTER_PRIVATE_KEY: ${{ secrets.PAYMASTER_PRIVATE_KEY }}
+          REDIS_URL: redis://localhost:6379
+          CI_REDIS_URL: redis://localhost:6379
         run: pnpm test

@@ -13,7 +13,7 @@ const transactionRoutes: FastifyPluginCallback<Record<never, never>, Server, Zod
         description: 'Send a raw transaction to the Bitcoin network',
         tags: ['Bitcoin'],
         body: z.object({
-          txHex: z.string().describe('The raw transaction hex'),
+          txhex: z.string().describe('The raw transaction hex'),
         }),
         response: {
           200: z.object({
@@ -23,8 +23,8 @@ const transactionRoutes: FastifyPluginCallback<Record<never, never>, Server, Zod
       },
     },
     async (request) => {
-      const { txHex } = request.body;
-      const txid = await fastify.bitcoind.sendRawTransaction(txHex);
+      const { txhex } = request.body;
+      const txid = await fastify.bitcoind.sendRawTransaction(txhex);
       return {
         txid,
       };

@@ -1,11 +1,10 @@
-import { beforeAll, expect, test } from 'vitest';
+import { describe, beforeEach, expect, test } from 'vitest';
 import { buildFastify } from '../../../src/app';
-import { describe } from 'node:test';
-
-let token: string;
 
 describe('/bitcoin/v1/block', () => {
-  beforeAll(async () => {
+  let token: string;
+
+  beforeEach(async () => {
     const fastify = buildFastify();
     await fastify.ready();
 
