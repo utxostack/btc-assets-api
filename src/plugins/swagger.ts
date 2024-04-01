@@ -12,7 +12,7 @@ export default fp(async (fastify) => {
   fastify.register(swagger, {
     swagger: {
       info: {
-        title: 'Bitcoin Assets API',
+        title: 'Bitcoin/RGB++ Assets API',
         version: pkg.version,
       },
       consumes: ['application/json'],
