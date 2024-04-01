@@ -69,7 +69,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           address: z.string().describe('The Bitcoin address'),
         }),
         querystring: z.object({
-          only_confirmed: z.boolean().optional().default(true).describe('Only return confirmed UTXOs'),
+          only_confirmed: z.coerce.number().optional().default(1).describe('Only return confirmed UTXOs'),
           min_satoshi: z.coerce.number().optional().describe('The minimum value of the UTXO in satoshi'),
         }),
         response: {
