@@ -1,6 +1,7 @@
 {
   "name": "btc-assets-api",
   "version": "1.0.0",
+  "title": "Bitcoin/RGB++ Assets API",
   "description": "",
   "main": "index.js",
   "scripts": {
