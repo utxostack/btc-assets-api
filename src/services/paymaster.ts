@@ -88,6 +88,16 @@ export default class Paymaster implements IPaymaster {
     return null;
   }
 
+  private async getContext() {
+    const remaining = await this.queue.getWaitingCount();
+    return {
+      address: this.address,
+      remaining: remaining,
+      preset: this.presetCount,
+      threshold: this.refillThreshold,
+    };
+  }
+
   public get privateKey() {
     return this.cradle.env.PAYMASTER_PRIVATE_KEY;
   }
@@ -124,6 +134,8 @@ export default class Paymaster implements IPaymaster {
           // XXX: consider to send an alert email or other notifications
           this.cradle.logger.warn('Filled paymaster cells less than the preset count');
           const error = new PaymasterCellNotEnoughError('Filled paymaster cells less than the preset count');
+          const context = await this.getContext();
+          Sentry.setContext('paymaster', context);
           Sentry.captureException(error);
         }
         this.refilling = false;
@@ -212,7 +224,11 @@ export default class Paymaster implements IPaymaster {
       this.cradle.logger.info(`[Paymaster] Get paymaster cell: ${JSON.stringify(paymasterCell)}`);
 
       if (!paymasterCell) {
-        throw new PaymasterCellNotEnoughError('No paymaster cell available');
+        const error = new PaymasterCellNotEnoughError('No paymaster cell available');
+        const context = await this.getContext();
+        Sentry.setContext('paymaster', context);
+        Sentry.captureException(error);
+        throw error;
       }
 
       const signedTx = await appendPaymasterCellAndSignCkbTx({
