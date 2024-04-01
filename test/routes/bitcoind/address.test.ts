@@ -1,6 +1,7 @@
-import { describe, expect, test, beforeEach } from 'vitest';
+import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { buildFastify } from '../../../src/app';
-import { ElectrsAPIErrorCode } from '../../../src/services/electrs';
+import { ElectrsAPIError, ElectrsAPIErrorCode, ElectrsErrorMessage } from '../../../src/services/electrs';
+import { afterEach } from 'node:test';
 
 let token: string;
 
@@ -21,6 +22,10 @@ describe('/bitcoin/v1/address', () => {
     token = data.token;
 
     await fastify.close();
+  });
+
+  afterEach(() => {
+    vi.resetAllMocks();
   });
 
   test('Get address balance', async () => {
@@ -87,6 +92,27 @@ describe('/bitcoin/v1/address', () => {
     const fastify = buildFastify();
     await fastify.ready();
 
+    const electrs = fastify.container.resolve('electrs');
+    const originalGetUtxoByAddress = electrs.getUtxoByAddress;
+    vi.spyOn(electrs, 'getUtxoByAddress').mockResolvedValue([
+      {
+        txid: '9706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
+        vout: 0,
+        status: {
+          confirmed: true,
+        },
+        value: 100000,
+      },
+      {
+        txid: '1706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
+        vout: 0,
+        status: {
+          confirmed: false,
+        },
+        value: 100000,
+      },
+    ]);
+
     const response = await fastify.inject({
       method: 'GET',
       url: '/bitcoin/v1/address/tb1qm4eyx777203zmajlawz958wn27z08envm2jelm/unspent',
@@ -96,14 +122,52 @@ describe('/bitcoin/v1/address', () => {
       },
     });
     const data = response.json();
-    const txids = data.map((tx: { txid: string }) => tx.txid).sort();
+    electrs.getUtxoByAddress = originalGetUtxoByAddress;
 
     expect(response.statusCode).toBe(200);
-    expect(txids).toEqual(
-      [
-        '9706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
-      ].sort(),
-    );
+    expect(data.length).toBe(1);
+
+    await fastify.close();
+  });
+
+  test('Get address unspent transaction outputs with unconfirmed', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
+
+    const electrs = fastify.container.resolve('electrs');
+    const originalGetUtxoByAddress = electrs.getUtxoByAddress;
+    vi.spyOn(electrs, 'getUtxoByAddress').mockResolvedValue([
+      {
+        txid: '9706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
+        vout: 0,
+        status: {
+          confirmed: true,
+        },
+        value: 100000,
+      },
+      {
+        txid: '1706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
+        vout: 0,
+        status: {
+          confirmed: false,
+        },
+        value: 100000,
+      },
+    ]);
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/bitcoin/v1/address/tb1qm4eyx777203zmajlawz958wn27z08envm2jelm/unspent?only_confirmed=false',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
+      },
+    });
+    const data = response.json();
+    electrs.getUtxoByAddress = originalGetUtxoByAddress;
+
+    expect(response.statusCode).toBe(200);
+    expect(data.length).toBe(2);
 
     await fastify.close();
   });
