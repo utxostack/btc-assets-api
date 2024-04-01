@@ -13,7 +13,7 @@ const envSchema = z.object({
 
   SENTRY_DSN_URL: z.string().optional(),
   REDIS_URL: z.string(),
-  RATE_LIMIT_PER_MINUTE: z.number().default(100),
+  RATE_LIMIT_PER_MINUTE: z.coerce.number().default(100),
   LOGGER_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
   ADMIN_USERNAME: z.string().optional(),
