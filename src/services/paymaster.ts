@@ -124,6 +124,12 @@ export default class Paymaster implements IPaymaster {
           // XXX: consider to send an alert email or other notifications
           this.cradle.logger.warn('Filled paymaster cells less than the preset count');
           const error = new PaymasterCellNotEnoughError('Filled paymaster cells less than the preset count');
+          Sentry.setContext('paymaster', {
+            address: this.address,
+            remaining: filled + count,
+            preset: this.presetCount,
+            threshold: this.refillThreshold,
+          });
           Sentry.captureException(error);
         }
         this.refilling = false;
