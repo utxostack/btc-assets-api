@@ -319,11 +319,15 @@ export default class TransactionManager implements ITransactionManager {
 
       // append paymaster cell and sign the transaction if needed
       if (ckbVirtualResult.needPaymasterCell) {
-        // make sure the paymaster received a UTXO as container fee
-        const hasPaymasterUTXO = this.cradle.paymaster.hasPaymasterReceivedBtcUTXO(btcTx);
-        if (!hasPaymasterUTXO) {
-          this.cradle.logger.info(`[TransactionManager] Paymaster UTXO not found: ${txid}`);
-          throw new InvalidTransactionError('Paymaster UTXO not found', job.data);
+        if (this.cradle.paymaster.enablePaymasterReceivesUTXOCheck) {
+          // make sure the paymaster received a UTXO as container fee
+          const hasPaymasterUTXO = this.cradle.paymaster.hasPaymasterReceivedBtcUTXO(btcTx);
+          if (!hasPaymasterUTXO) {
+            this.cradle.logger.info(`[TransactionManager] Paymaster receives UTXO not found: ${txid}`);
+            throw new InvalidTransactionError('Paymaster receives UTXO not found', job.data);
+          }
+        } else {
+          this.cradle.logger.warn(`[TransactionManager] Paymaster receives UTXO check disabled`);
         }
 
         const tx = await this.cradle.paymaster.appendCellAndSignTx(txid, {
