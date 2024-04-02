@@ -51,7 +51,7 @@ export const TRANSACTION_QUEUE_NAME = 'rgbpp-ckb-transaction-queue';
 class InvalidTransactionError extends Error {
   public data: ITransactionRequest;
 
-  constructor(message: string,data: ITransactionRequest) {
+  constructor(message: string, data: ITransactionRequest) {
     super(message);
     this.name = this.constructor.name;
     this.data = data;
