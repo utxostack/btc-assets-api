@@ -4,6 +4,7 @@ import { DelayedError, Queue, Worker } from 'bullmq';
 import { AppendPaymasterCellAndSignTxParams, IndexerCell, appendPaymasterCellAndSignCkbTx } from '@rgbpp-sdk/ckb';
 import { hd, config, BI } from '@ckb-lumos/lumos';
 import * as Sentry from '@sentry/node';
+import { Transaction } from '../routes/bitcoin/types';
 
 interface IPaymaster {
   getNextCell(token: string): Promise<IndexerCell | null>;
@@ -57,7 +58,7 @@ export default class Paymaster implements IPaymaster {
   }
 
   private get lockScript() {
-    const args = hd.key.privateKeyToBlake160(this.privateKey);
+    const args = hd.key.privateKeyToBlake160(this.ckbPrivateKey);
     const scripts =
       this.cradle.env.NETWORK === 'mainnet' ? config.predefined.LINA.SCRIPTS : config.predefined.AGGRON4.SCRIPTS;
     const template = scripts['SECP256K1_BLAKE160']!;
@@ -91,21 +92,34 @@ export default class Paymaster implements IPaymaster {
   private async getContext() {
     const remaining = await this.queue.getWaitingCount();
     return {
-      address: this.address,
+      address: this.ckbAddress,
       remaining: remaining,
       preset: this.presetCount,
       threshold: this.refillThreshold,
     };
   }
 
-  public get privateKey() {
+  /*
+   * Get the private key of the paymaster ckb address, used to sign the transaction.
+   */
+  public get ckbPrivateKey() {
     return this.cradle.env.PAYMASTER_PRIVATE_KEY;
   }
 
-  public get address() {
+  /**
+   * is the paymaster receives UTXO check enabled
+   */
+  public get enablePaymasterReceivesUTXOCheck() {
+    return !!this.cradle.env.PAYMASTER_RECEIVE_BTC_ADDRESS;
+  }
+
+  /**
+   * The paymaster CKB address to pay the time cells spent tx fee
+   */
+  public get ckbAddress() {
     const isMainnet = this.cradle.env.NETWORK === 'mainnet';
     const lumosConfig = isMainnet ? config.predefined.LINA : config.predefined.AGGRON4;
-    const args = hd.key.privateKeyToBlake160(this.privateKey);
+    const args = hd.key.privateKeyToBlake160(this.ckbPrivateKey);
     const template = lumosConfig.SCRIPTS['SECP256K1_BLAKE160'];
     const lockScript = {
       codeHash: template.CODE_HASH,
@@ -115,6 +129,33 @@ export default class Paymaster implements IPaymaster {
     return helpers.encodeToAddress(lockScript, {
       config: lumosConfig,
     });
+  }
+
+  /**
+   * The paymaster BTC address to receive the BTC UTXO
+   */
+  public get btcAddress() {
+    return this.cradle.env.PAYMASTER_RECEIVE_BTC_ADDRESS;
+  }
+
+  /**
+   * The paymaster container fee in sats
+   * Paymaster received utxo should be greater than or equal to the container fee
+   */
+  public get containerFee() {
+    // XXX: fixed fee for now, may change in the future
+    return this.cradle.env.PAYMASTER_BTC_CONTAINER_FEE_SATS;
+  }
+
+  /**
+   * Check if the paymaster has received the BTC UTXO
+   * @param btcTx - the BTC transaction
+   */
+  public hasPaymasterReceivedBtcUTXO(btcTx: Transaction) {
+    const hasVaildOutput = btcTx.vout.some((output) => {
+      return output.scriptpubkey_address === this.btcAddress && output.value >= this.containerFee;
+    });
+    return hasVaildOutput;
   }
 
   /**
@@ -235,7 +276,7 @@ export default class Paymaster implements IPaymaster {
         ckbRawTx,
         sumInputsCapacity,
         paymasterCell,
-        secp256k1PrivateKey: this.privateKey,
+        secp256k1PrivateKey: this.ckbPrivateKey,
         isMainnet: this.cradle.env.NETWORK === 'mainnet',
       });
       this.cradle.logger.info(`[Paymaster] Signed transaction: ${JSON.stringify(signedTx)}`);
