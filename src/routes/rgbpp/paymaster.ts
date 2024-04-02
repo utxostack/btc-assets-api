@@ -1,3 +1,4 @@
+import { HttpStatusCode } from 'axios';
 import { FastifyPluginCallback } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Server } from 'http';
@@ -18,8 +19,13 @@ const paymasterRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTy
         },
       },
     },
-    async () => {
+    async (_, reply) => {
       const btc_address = fastify.paymaster.btcAddress;
+      if (!btc_address) {
+        reply.status(HttpStatusCode.NotFound);
+        return;
+      }
+
       const fee = fastify.paymaster.containerFee;
       return { btc_address, fee };
     },
