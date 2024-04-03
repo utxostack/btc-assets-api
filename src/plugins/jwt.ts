@@ -4,6 +4,7 @@ import { env } from '../env';
 import jwt from '@fastify/jwt';
 import { JWT_IGNORE_URLS } from '../constants';
 import * as Sentry from '@sentry/node';
+import { HttpStatusCode } from 'axios';
 
 export interface JwtPayload {
   sub: string;
@@ -21,9 +22,11 @@ export default fp(async (fastify) => {
       }
       // denylist check, if token or sub or jti is in denylist, return false
       const denylist = env.JWT_DENYLIST;
+      const token = fastify.jwt.sign(decodedToken);
       if (
-        denylist.includes(decodedToken.jti) ||
+        denylist.includes(token) ||
         denylist.includes(decodedToken.sub) ||
+        denylist.includes(decodedToken.aud) ||
         denylist.includes(decodedToken.jti)
       ) {
         return false;
@@ -47,7 +50,7 @@ export default fp(async (fastify) => {
         Sentry.setTag('token.domain', jwt.aud);
       }
       if (!jwt.aud) {
-        reply.status(401).send('Invalid audience');
+        reply.status(HttpStatusCode.Unauthorized).send('Invalid audience');
         return;
       }
 
@@ -59,10 +62,10 @@ export default fp(async (fastify) => {
         domain = new URL(referer).hostname;
       }
       if (!domain || domain !== jwt.aud) {
-        reply.status(401).send('Invalid request origin or referer');
+        reply.status(HttpStatusCode.Unauthorized).send('Invalid request origin or referer');
       }
     } catch (err) {
-      reply.status(401).send(err);
+      reply.status(HttpStatusCode.Unauthorized).send(err);
     }
   });
 });

@@ -23,6 +23,7 @@ const generateRoute: FastifyPluginCallback<Record<never, never>, Server, ZodType
         }),
         response: {
           200: z.object({
+            id: z.string().describe('The unique identifier of the JWT token'),
             token: z
               .string()
               .describe(
@@ -36,7 +37,7 @@ const generateRoute: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { app, domain } = request.body;
       const uuid = randomUUID();
       const token = fastify.jwt.sign({ sub: app, aud: domain, jti: uuid });
-      return { token };
+      return { id: uuid, token };
     },
   );
   done();
