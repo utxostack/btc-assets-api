@@ -42,6 +42,7 @@ export default fp(async (fastify) => {
       await request.jwtVerify();
       const jwt = (await request.jwtDecode()) as JwtPayload;
       if (jwt) {
+        Sentry.setTag('token.id', jwt.jti);
         Sentry.setTag('token.app', jwt.sub);
         Sentry.setTag('token.domain', jwt.aud);
       }

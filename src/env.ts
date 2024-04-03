@@ -13,7 +13,20 @@ const envSchema = z.object({
 
   SENTRY_DSN_URL: z.string().optional(),
   REDIS_URL: z.string(),
+
+  /**
+   * The rate limit per minute for each IP address.
+   */
   RATE_LIMIT_PER_MINUTE: z.coerce.number().default(100),
+  /**
+   * The blocklist of IP addresses that are denied access to the API.
+   */
+  IP_BLOCKLIST: z
+    .string()
+    .default('')
+    .transform((value) => value.split(','))
+    .pipe(z.string().array()),
+
   LOGGER_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
   ADMIN_USERNAME: z.string().optional(),
@@ -29,6 +42,7 @@ const envSchema = z.object({
    */
   JWT_DENYLIST: z
     .string()
+    .default('')
     .transform((value) => value.split(','))
     .pipe(z.string().array()),
   /**
