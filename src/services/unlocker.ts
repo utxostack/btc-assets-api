@@ -1,4 +1,4 @@
-import { CellCollector } from '@ckb-lumos/lumos';
+import { BI, CellCollector } from '@ckb-lumos/lumos';
 import {
   BTCTimeLock,
   BTC_JUMP_CONFIRMATION_BLOCKS,
@@ -118,10 +118,16 @@ export default class Unlocker implements IUnlocker {
       btcAssetsApi,
       isMainnet: this.isMainnet,
     });
+
+    const outputCapacityRange = [
+      BI.from(1).toHexString(),
+      BI.from(this.cradle.env.PAYMASTER_CELL_CAPACITY).toHexString(),
+    ];
     const signedTx = await signBtcTimeCellSpentTx({
-      secp256k1PrivateKey: this.cradle.paymaster.privateKey,
-      masterCkbAddress: this.cradle.paymaster.address,
+      secp256k1PrivateKey: this.cradle.paymaster.ckbPrivateKey,
+      masterCkbAddress: this.cradle.paymaster.ckbAddress,
       collector,
+      outputCapacityRange,
       ckbRawTx,
       isMainnet: this.isMainnet,
     });

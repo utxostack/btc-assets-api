@@ -51,9 +51,9 @@ export const TRANSACTION_QUEUE_NAME = 'rgbpp-ckb-transaction-queue';
 class InvalidTransactionError extends Error {
   public data: ITransactionRequest;
 
-  constructor(data: ITransactionRequest) {
-    super('Invalid transaction');
-    this.name = 'InvalidTransactionError';
+  constructor(message: string, data: ITransactionRequest) {
+    super(message);
+    this.name = this.constructor.name;
     this.data = data;
   }
 }
@@ -61,7 +61,7 @@ class InvalidTransactionError extends Error {
 class OpReturnNotFoundError extends Error {
   constructor(txid: string) {
     super(`OP_RETURN output not found: ${txid}`);
-    this.name = 'OpReturnNotFoundError';
+    this.name = this.constructor.name;
   }
 }
 
@@ -299,7 +299,7 @@ export default class TransactionManager implements ITransactionManager {
       const btcTx = await this.cradle.electrs.getTransaction(txid);
       const isVerified = await this.verifyTransaction({ ckbVirtualResult, txid }, btcTx);
       if (!isVerified) {
-        throw new InvalidTransactionError(job.data);
+        throw new InvalidTransactionError('Invalid transaction', job.data);
       }
 
       const ckbRawTx = this.getCkbRawTxWithRealBtcTxid(ckbVirtualResult, txid);
@@ -319,6 +319,17 @@ export default class TransactionManager implements ITransactionManager {
 
       // append paymaster cell and sign the transaction if needed
       if (ckbVirtualResult.needPaymasterCell) {
+        if (this.cradle.paymaster.enablePaymasterReceivesUTXOCheck) {
+          // make sure the paymaster received a UTXO as container fee
+          const hasPaymasterUTXO = this.cradle.paymaster.hasPaymasterReceivedBtcUTXO(btcTx);
+          if (!hasPaymasterUTXO) {
+            this.cradle.logger.info(`[TransactionManager] Paymaster receives UTXO not found: ${txid}`);
+            throw new InvalidTransactionError('Paymaster receives UTXO not found', job.data);
+          }
+        } else {
+          this.cradle.logger.warn(`[TransactionManager] Paymaster receives UTXO check disabled`);
+        }
+
         const tx = await this.cradle.paymaster.appendCellAndSignTx(txid, {
           ...ckbVirtualResult,
           ckbRawTx: signedTx!,
