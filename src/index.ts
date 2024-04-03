@@ -15,7 +15,7 @@ app.listen({ port, host }, (err, address) => {
     process.exit(1);
   }
 
-  app.cron.startAllJobs();
+  // app.cron.startAllJobs();
   // eslint-disable-next-line no-console
   console.log(`Server listening at ${address}`);
 });

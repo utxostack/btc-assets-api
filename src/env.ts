@@ -24,6 +24,14 @@ const envSchema = z.object({
    */
   JWT_SECRET: z.string(),
   /**
+   * JWT_DENYLIST is used to store the denylisted JWT tokens.
+   * support multiple tokens separated by comma, use token or jti to denylist.
+   */
+  JWT_DENYLIST: z
+    .string()
+    .transform((value) => value.split(','))
+    .pipe(z.string().array()),
+  /**
    * The URL/USERNAME/PASSWORD of the Bitcoin JSON-RPC server.
    * The JSON-RPC server is used to query the Bitcoin blockchain.
    */
@@ -52,7 +60,7 @@ const envSchema = z.object({
   PAYMASTER_PRIVATE_KEY: z.string(),
   /**
    * Paymaster cell capacity in shannons
-  * (254 CKB for RGB++ capacity + 61 CKB for change cell capacity + 1 CKB for fee cell)
+   * (254 CKB for RGB++ capacity + 61 CKB for change cell capacity + 1 CKB for fee cell)
    */
   PAYMASTER_CELL_CAPACITY: z.coerce.number().default(316 * 10 ** 8),
   PAYMASTER_CELL_PRESET_COUNT: z.coerce.number().default(500),

@@ -8,11 +8,28 @@ import * as Sentry from '@sentry/node';
 export interface JwtPayload {
   sub: string;
   aud: string;
+  jti: string;
 }
 
 export default fp(async (fastify) => {
   fastify.register(jwt, {
     secret: env.JWT_SECRET,
+    trusted: (_, decodedToken) => {
+      // forwards capability, skip token validation if jti is not present
+      if (decodedToken.jti === undefined) {
+        return true;
+      }
+      // denylist check, if token or sub or jti is in denylist, return false
+      const denylist = env.JWT_DENYLIST;
+      if (
+        denylist.includes(decodedToken.jti) ||
+        denylist.includes(decodedToken.sub) ||
+        denylist.includes(decodedToken.jti)
+      ) {
+        return false;
+      }
+      return true;
+    },
   });
   fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
     if (
