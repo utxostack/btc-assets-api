@@ -9,7 +9,9 @@ const envSchema = z.object({
   ADDRESS: z.string().optional(),
   NETWORK: z.enum(['mainnet', 'testnet']).default('testnet'),
   /**
-   * The IP address of the reverse proxy server.
+   * Fastify `trustProxy` option
+   * - only supports true/false: Trust all proxies (true) or do not trust any proxies (false).
+   *
    * https://fastify.dev/docs/latest/Reference/Server/#trustproxy
    */
   TRUST_PROXY: z
