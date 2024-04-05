@@ -25,6 +25,7 @@ const envToLogger = {
 
 const options: FastifyHttpOptions<Server, FastifyBaseLogger> = {
   logger: envToLogger[env.NODE_ENV as keyof typeof envToLogger],
+  trustProxy: env.TRUST_PROXY,
 };
 
 export default options;

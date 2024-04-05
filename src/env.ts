@@ -8,6 +8,14 @@ const envSchema = z.object({
   PORT: z.string().optional(),
   ADDRESS: z.string().optional(),
   NETWORK: z.enum(['mainnet', 'testnet']).default('testnet'),
+  /**
+   * The IP address of the reverse proxy server.
+   * https://fastify.dev/docs/latest/Reference/Server/#trustproxy
+   */
+  TRUST_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 
   DOMAIN: z.string().optional(),
 
