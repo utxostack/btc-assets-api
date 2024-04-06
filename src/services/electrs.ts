@@ -45,6 +45,13 @@ export class ElectrsAPIError extends Error {
   }
 }
 
+export class ElectrsAPINotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
 export default class ElectrsAPI {
   private request: AxiosInstance;
 
@@ -61,11 +68,17 @@ export default class ElectrsAPI {
         const response = await this.request.get(path);
         return response;
       } catch (err) {
-        if (err instanceof AxiosError && err.response?.data && typeof err.response.data === 'string') {
-          const { data } = err.response;
-          const message = Object.values(ElectrsErrorMessage).find((message) => data.startsWith(message));
-          if (message) {
-            throw new ElectrsAPIError(message);
+        if (err instanceof AxiosError) {
+          if (err.status === 404) {
+            throw new ElectrsAPINotFoundError(err.message);
+          }
+
+          if (err.response?.data && typeof err.response.data === 'string') {
+            const { data } = err.response;
+            const message = Object.values(ElectrsErrorMessage).find((message) => data.startsWith(message));
+            if (message) {
+              throw new ElectrsAPIError(message);
+            }
           }
         }
         throw err;

@@ -19,13 +19,13 @@ import {
   lockScriptFromBtcTimeLockArgs,
 } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import * as Sentry from '@sentry/node';
-import { AxiosError } from 'axios';
 import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
 import { DelayedError, Job, Queue, Worker } from 'bullmq';
 import { Cradle } from '../container';
 import { Transaction } from '../routes/bitcoin/types';
 import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
 import { BitcoinSPVError } from './spv';
+import { ElectrsAPINotFoundError } from './electrs';
 
 export interface ITransactionRequest {
   txid: string;
@@ -55,6 +55,13 @@ class InvalidTransactionError extends Error {
     super(message);
     this.name = this.constructor.name;
     this.data = data;
+  }
+}
+
+class TransactionNotConfirmedError extends Error {
+  constructor(txid: string) {
+    super(`Transaction not confirmed: ${txid}`);
+    this.name = this.constructor.name;
   }
 }
 
@@ -206,7 +213,7 @@ export default class TransactionManager implements ITransactionManager {
     if (!btcTx.status.confirmed) {
       // https://docs.bullmq.io/patterns/process-step-jobs#delaying
       this.cradle.logger.info(`[TransactionManager] Bitcoin Transaction Not Confirmed: ${txid}`);
-      throw new DelayedError();
+      throw new TransactionNotConfirmedError(txid);
     }
 
     this.cradle.logger.info(`[TransactionManager] Transaction Verified: ${txid}`);
@@ -365,11 +372,20 @@ export default class TransactionManager implements ITransactionManager {
     } catch (err) {
       const { ckbVirtualResult, txid } = job.data;
       this.cradle.logger.debug(err);
-      // move the job to delayed queue if the transaction data not found or not confirmed or spv proof not found yet
-      const transactionDataNotFound = err instanceof AxiosError && err.response?.status === 404;
-      const transactionNotConfirmed = err instanceof DelayedError;
-      const spvProofNotFound = err instanceof BitcoinSPVError;
-      if (transactionDataNotFound || transactionNotConfirmed || spvProofNotFound) {
+      if (err instanceof ElectrsAPINotFoundError) {
+        // move the job to delayed queue if the transaction is not found yet
+        // only delay the job when the job is created less than 1 hour to make sure the transaction is existed
+        // let the job failed if the transaction is not found after 1 hour
+        if (Date.now() - job.timestamp < 1000 * 60 * 60) {
+          await this.moveJobToDelayed(job, token);
+          return;
+        }
+      }
+
+      // move the job to delayed queue if the transaction not confirmed or spv proof not found yet
+      const transactionNotConfirmed = err instanceof TransactionNotConfirmedError;
+      const spvProofNotReady = err instanceof BitcoinSPVError;
+      if (transactionNotConfirmed || spvProofNotReady) {
         await this.moveJobToDelayed(job, token);
         return;
       }
@@ -439,6 +455,5 @@ export default class TransactionManager implements ITransactionManager {
    */
   public async closeProcess(): Promise<void> {
     await this.worker.close();
-    await this.queue.close();
   }
 }
