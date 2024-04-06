@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { FastifyPluginCallback } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Server } from 'http';
@@ -22,6 +23,7 @@ const generateRoute: FastifyPluginCallback<Record<never, never>, Server, ZodType
         }),
         response: {
           200: z.object({
+            id: z.string().describe('The unique identifier of the JWT token'),
             token: z
               .string()
               .describe(
@@ -33,8 +35,9 @@ const generateRoute: FastifyPluginCallback<Record<never, never>, Server, ZodType
     },
     async (request) => {
       const { app, domain } = request.body;
-      const token = fastify.jwt.sign({ sub: app, aud: domain });
-      return { token };
+      const uuid = randomUUID();
+      const token = fastify.jwt.sign({ sub: app, aud: domain, jti: uuid });
+      return { id: uuid, token };
     },
   );
   done();
