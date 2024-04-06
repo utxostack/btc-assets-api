@@ -1,3 +1,3 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`transactionManager > verifyTransaction: should throw DelayedError for unconfirmed transaction 1`] = `[DelayedError]`;
+exports[`transactionManager > verifyTransaction: should throw TransactionNotConfirmedError for unconfirmed transaction 1`] = `[TransactionNotConfirmedError: Transaction not confirmed: bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f]`;
