@@ -21,7 +21,16 @@ const envSchema = z.object({
 
   DOMAIN: z.string().optional(),
 
+  /**
+   * Sentry Configuration
+   */
   SENTRY_DSN_URL: z.string().optional(),
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().default(0.5),
+  SENTRY_PROFILES_SAMPLE_RATE: z.coerce.number().default(0.5),
+
+  /**
+    * Redis URL, used for caching and rate limiting.
+    */
   REDIS_URL: z.string(),
 
   /**

@@ -29,9 +29,9 @@ import ipBlock from './plugins/ip-block';
 if (env.SENTRY_DSN_URL) {
   Sentry.init({
     dsn: env.SENTRY_DSN_URL,
-    tracesSampleRate: 1.0,
-    profilesSampleRate: 1.0,
-    integrations: [new ProfilingIntegration()],
+    tracesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE,
+    profilesSampleRate: env.SENTRY_PROFILES_SAMPLE_RATE,
+    integrations: [...(env.SENTRY_PROFILES_SAMPLE_RATE > 0 ? [new ProfilingIntegration()] : [])],
   });
 }
 
