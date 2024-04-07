@@ -27,9 +27,6 @@ const spvRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvi
       try {
         const { btc_txid, confirmations } = request.query;
         const proof = await fastify.bitcoinSPV.getTxProof(btc_txid, confirmations);
-        if (proof) {
-          reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
-        }
         return proof;
       } catch (err) {
         if (err instanceof BitcoinSPVError) {
