@@ -8,28 +8,22 @@ import { DOCS_ROUTE_PREFIX } from './swagger';
 const getCacheKey = (request: FastifyRequest) => env.NODE_ENV + '@' + request.url;
 const MAX_AGE_FOREVER = 60 * 60 * 24 * 365 * 5;
 
-function setDefaultCacheControlHeaders(reply: FastifyReply) {
+function setCacheControlHeaders(reply: FastifyReply) {
   reply.cacheControl('public');
-  reply.cacheControl('max-age', 10);
-}
 
-function setForeverCacheControlHeaders(reply: FastifyReply) {
-  reply.cacheControl('public');
+  const maxAge = reply.getHeader(CUSTOM_HEADERS.ResponseCacheMaxAge) as number | undefined;
+  if (maxAge) {
+    reply.removeHeader(CUSTOM_HEADERS.ResponseCacheMaxAge);
+    reply.cacheControl('max-age', maxAge);
+    return;
+  }
+
   reply.cacheControl('max-age', MAX_AGE_FOREVER);
 }
 
 export default fp(async (fastify) => {
   try {
     const redis = fastify.container.resolve('redis');
-    // if redis is not available, don't cache anything, just set the default cache control headers
-    if (!redis) {
-      fastify.addHook('onSend', (_, reply, __, next) => {
-        setDefaultCacheControlHeaders(reply);
-        next();
-      });
-      return;
-    }
-
     await fastify.register(import('@fastify/redis'), { client: redis });
 
     fastify.addHook('onRequest', (request, reply, done) => {
@@ -41,11 +35,15 @@ export default fp(async (fastify) => {
       // if the request cache is exist, return it
       const key = getCacheKey(request);
       Sentry.startSpan({ op: 'cache/get', name: key }, () => {
-        fastify.redis.get(key, (err, result) => {
+        fastify.redis.get(key, async (err, result) => {
           if (!err && result) {
             const response = JSON.parse(result);
             reply.header('Content-Type', 'application/json');
+
+            const ttl = await fastify.redis.ttl(key);
             reply.header(CUSTOM_HEADERS.ApiCache, ApiCacheStatus.Hit);
+            reply.header(CUSTOM_HEADERS.ResponseCacheMaxAge, ttl);
+
             reply.send(response);
             return;
           }
@@ -68,7 +66,7 @@ export default fp(async (fastify) => {
 
       // if the response is already cached, don't cache it again
       if (reply.getHeader(CUSTOM_HEADERS.ApiCache) === ApiCacheStatus.Hit) {
-        setForeverCacheControlHeaders(reply);
+        setCacheControlHeaders(reply);
         next();
         return;
       }
@@ -82,21 +80,24 @@ export default fp(async (fastify) => {
         }
         const key = getCacheKey(request);
         const value = JSON.stringify(payload);
+        const maxAge = reply.getHeader(CUSTOM_HEADERS.ResponseCacheMaxAge) as number | undefined;
         Sentry.startSpan({ op: 'cache/set', name: key }, () => {
-          fastify.redis.set(key, value, (err) => {
+          fastify.redis.set(key, value, 'EX', maxAge ?? MAX_AGE_FOREVER, (err) => {
             if (err) {
               fastify.log.error(err);
               Sentry.captureException(err);
             }
             reply.removeHeader(CUSTOM_HEADERS.ResponseCacheable);
-            setForeverCacheControlHeaders(reply);
+            setCacheControlHeaders(reply);
             next();
           });
         });
         return;
       }
 
-      setDefaultCacheControlHeaders(reply);
+      // if the response is not cacheable, set default cache control headers
+      reply.cacheControl('public');
+      reply.cacheControl('max-age', 10);
       next();
     });
   } catch (err) {
