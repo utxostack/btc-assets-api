@@ -148,6 +148,13 @@ export default class Paymaster implements IPaymaster {
   }
 
   /**
+   * Get the paymaster cell count in the queue
+   */
+  public getPaymasterCellCount() {
+    return this.queue.getWaitingCount();
+  }
+
+  /**
    * Check if the paymaster has received the BTC UTXO
    * @param btcTx - the BTC transaction
    */

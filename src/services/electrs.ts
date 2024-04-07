@@ -155,4 +155,10 @@ export default class ElectrsAPI {
     const response = await this.get<string[]>(`/block/${hash}/txids`);
     return response.data;
   }
+
+  // https://github.com/blockstream/esplora/blob/master/API.md#get-blockstipheight
+  public async getTip() {
+    const response = await this.get<number>('/blocks/tip/height');
+    return response.data;
+  }
 }
