@@ -88,7 +88,7 @@ describe('transactionManager', () => {
     expect(isValid).toBe(false);
   });
 
-  test('verifyTransaction: should throw DelayedError for unconfirmed transaction', async () => {
+  test('verifyTransaction: should throw TransactionNotConfirmedError for unconfirmed transaction', async () => {
     vi.spyOn(
       transactionManager as unknown as {
         getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;

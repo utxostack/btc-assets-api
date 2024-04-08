@@ -8,6 +8,7 @@ export enum NetworkType {
 export const CUSTOM_HEADERS = {
   ApiCache: 'x-api-cache',
   ResponseCacheable: 'x-response-cacheable',
+  ResponseCacheMaxAge: 'x-response-cache-max-age',
 };
 
 export enum ApiCacheStatus {

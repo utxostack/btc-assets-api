@@ -8,12 +8,44 @@ const envSchema = z.object({
   PORT: z.string().optional(),
   ADDRESS: z.string().optional(),
   NETWORK: z.enum(['mainnet', 'testnet']).default('testnet'),
+  /**
+   * Fastify `trustProxy` option
+   * - only supports true/false: Trust all proxies (true) or do not trust any proxies (false).
+   *
+   * https://fastify.dev/docs/latest/Reference/Server/#trustproxy
+   */
+  TRUST_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 
   DOMAIN: z.string().optional(),
 
+  /**
+   * Sentry Configuration
+   */
   SENTRY_DSN_URL: z.string().optional(),
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().default(0.5),
+  SENTRY_PROFILES_SAMPLE_RATE: z.coerce.number().default(0.5),
+
+  /**
+    * Redis URL, used for caching and rate limiting.
+    */
   REDIS_URL: z.string(),
+
+  /**
+   * The rate limit per minute for each IP address.
+   */
   RATE_LIMIT_PER_MINUTE: z.coerce.number().default(100),
+  /**
+   * The blocklist of IP addresses that are denied access to the API.
+   */
+  IP_BLOCKLIST: z
+    .string()
+    .default('')
+    .transform((value) => value.split(','))
+    .pipe(z.string().array()),
+
   LOGGER_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
   ADMIN_USERNAME: z.string().optional(),
@@ -23,6 +55,15 @@ const envSchema = z.object({
    * JWT_SECRET is used to sign the JWT token for authentication.
    */
   JWT_SECRET: z.string(),
+  /**
+   * JWT_DENYLIST is used to store the denylisted JWT tokens.
+   * support multiple tokens separated by comma, use token or jti to denylist.
+   */
+  JWT_DENYLIST: z
+    .string()
+    .default('')
+    .transform((value) => value.split(','))
+    .pipe(z.string().array()),
   /**
    * The URL/USERNAME/PASSWORD of the Bitcoin JSON-RPC server.
    * The JSON-RPC server is used to query the Bitcoin blockchain.
@@ -52,7 +93,7 @@ const envSchema = z.object({
   PAYMASTER_PRIVATE_KEY: z.string(),
   /**
    * Paymaster cell capacity in shannons
-  * (254 CKB for RGB++ capacity + 61 CKB for change cell capacity + 1 CKB for fee cell)
+   * (254 CKB for RGB++ capacity + 61 CKB for change cell capacity + 1 CKB for fee cell)
    */
   PAYMASTER_CELL_CAPACITY: z.coerce.number().default(316 * 10 ** 8),
   PAYMASTER_CELL_PRESET_COUNT: z.coerce.number().default(500),

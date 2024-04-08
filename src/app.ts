@@ -1,4 +1,4 @@
-import fastify, { FastifyError } from 'fastify';
+import fastify from 'fastify';
 import { FastifyInstance } from 'fastify';
 import { AxiosError, HttpStatusCode } from 'axios';
 import sensible from '@fastify/sensible';
@@ -8,7 +8,7 @@ import { ProfilingIntegration } from '@sentry/profiling-node';
 import bitcoinRoutes from './routes/bitcoin';
 import tokenRoutes from './routes/token';
 import swagger from './plugins/swagger';
-import jwt, { JwtPayload } from './plugins/jwt';
+import jwt from './plugins/jwt';
 import cache from './plugins/cache';
 import rateLimit from './plugins/rate-limit';
 import { env, getSafeEnvs } from './env';
@@ -24,13 +24,14 @@ import { ElectrsAPIError } from './services/electrs';
 import { BitcoinRPCError } from './services/bitcoind';
 import { AppErrorCode } from './error';
 import { provider } from 'std-env';
+import ipBlock from './plugins/ip-block';
 
 if (env.SENTRY_DSN_URL) {
   Sentry.init({
     dsn: env.SENTRY_DSN_URL,
-    tracesSampleRate: 1.0,
-    profilesSampleRate: 1.0,
-    integrations: [new ProfilingIntegration()],
+    tracesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE,
+    profilesSampleRate: env.SENTRY_PROFILES_SAMPLE_RATE,
+    integrations: [...(env.SENTRY_PROFILES_SAMPLE_RATE > 0 ? [new ProfilingIntegration()] : [])],
   });
 }
 
@@ -45,6 +46,7 @@ async function routes(fastify: FastifyInstance) {
   fastify.register(compress);
   fastify.register(swagger);
   fastify.register(jwt);
+  fastify.register(ipBlock);
   fastify.register(cache);
   fastify.register(rateLimit);
 
