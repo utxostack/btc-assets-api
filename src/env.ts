@@ -8,6 +8,13 @@ const envSchema = z.object({
   PORT: z.string().optional(),
   ADDRESS: z.string().optional(),
   NETWORK: z.enum(['mainnet', 'testnet']).default('testnet'),
+  LOGGER_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+
+  /**
+   * Set /token/generate default domain param
+   */
+  DOMAIN: z.string().optional(),
+
   /**
    * Fastify `trustProxy` option
    * - only supports true/false: Trust all proxies (true) or do not trust any proxies (false).
@@ -19,7 +26,10 @@ const envSchema = z.object({
     .default('false')
     .transform((value) => value === 'true'),
 
-  DOMAIN: z.string().optional(),
+  /**
+   * Redis URL, used for caching and rate limiting.
+   */
+  REDIS_URL: z.string(),
 
   /**
    * Sentry Configuration
@@ -27,11 +37,6 @@ const envSchema = z.object({
   SENTRY_DSN_URL: z.string().optional(),
   SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().default(0.5),
   SENTRY_PROFILES_SAMPLE_RATE: z.coerce.number().default(0.5),
-
-  /**
-    * Redis URL, used for caching and rate limiting.
-    */
-  REDIS_URL: z.string(),
 
   /**
    * The rate limit per minute for each IP address.
@@ -45,8 +50,6 @@ const envSchema = z.object({
     .default('')
     .transform((value) => value.split(','))
     .pipe(z.string().array()),
-
-  LOGGER_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
   ADMIN_USERNAME: z.string().optional(),
   ADMIN_PASSWORD: z.string().optional(),
@@ -96,15 +99,41 @@ const envSchema = z.object({
    * (254 CKB for RGB++ capacity + 61 CKB for change cell capacity + 1 CKB for fee cell)
    */
   PAYMASTER_CELL_CAPACITY: z.coerce.number().default(316 * 10 ** 8),
+  /**
+   * Paymaster cell queue preset count, used to refill paymaster cell.
+   */
   PAYMASTER_CELL_PRESET_COUNT: z.coerce.number().default(500),
+  /**
+   * Paymaster cell refill threshold, refill paymaster cell when the balance is less than this threshold.
+   */
   PAYMASTER_CELL_REFILL_THRESHOLD: z.coerce.number().default(0.3),
+  /**
+   * Paymaster bitcoin address, used to receive BTC from users.
+   * enable paymaster BTC UTXO check if set.
+   */
   PAYMASTER_RECEIVE_BTC_ADDRESS: z.string().optional(),
+  /**
+   * Paymaster receives BTC UTXO size in sats
+   */
   PAYMASTER_BTC_CONTAINER_FEE_SATS: z.coerce.number().default(7000),
 
+  /**
+   * BTCTimeLock cell unlock batch size
+   */
   UNLOCKER_CRON_SCHEDULE: z.string().default('*/5 * * * *'),
+  /**
+   * BTCTimeLock cell unlock cron job schedule, default is every 5 minutes
+   */
   UNLOCKER_CELL_BATCH_SIZE: z.coerce.number().default(100),
+  /**
+   * BTCTimeLock cell unlocker monitor slug, used for monitoring unlocker status on sentry
+   */
   UNLOCKER_MONITOR_SLUG: z.string().default('btctimelock-cells-unlock'),
 
+  /**
+   * RGB++ CKB transaction Queue cron job delay in milliseconds
+   * the /rgbpp/v1/transaction/ckb-tx endpoint is called, the transaction will be added to the queue
+   */
   TRANSACTION_QUEUE_JOB_DELAY: z.coerce.number().default(120 * 1000),
 });
 
