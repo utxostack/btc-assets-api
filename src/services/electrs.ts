@@ -46,6 +46,8 @@ export class ElectrsAPIError extends Error {
 }
 
 export class ElectrsAPINotFoundError extends Error {
+  public errorCode = 404;
+
   constructor(message: string) {
     super(message);
     this.name = this.constructor.name;
