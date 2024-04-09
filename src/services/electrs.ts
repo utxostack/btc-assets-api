@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosResponse, HttpStatusCode } from 'axios';
 import { Block, Transaction, UTXO } from '../routes/bitcoin/types';
 import * as Sentry from '@sentry/node';
 import { Cradle } from '../container';
@@ -46,7 +46,8 @@ export class ElectrsAPIError extends Error {
 }
 
 export class ElectrsAPINotFoundError extends Error {
-  public errorCode = 404;
+  public errorCode = HttpStatusCode.NotFound;
+  public statusCode = HttpStatusCode.NotFound;
 
   constructor(message: string) {
     super(message);
