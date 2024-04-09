@@ -9,13 +9,14 @@
     "start": "node ./dist/src/index.js",
     "build": "tsc -p tsconfig.json",
     "test": "vitest",
-    "coverage": "vitest run --coverage"
+    "coverage": "vitest run --coverage",
+    "postinstall": "npx simple-git-hooks"
   },
   "keywords": [],
   "author": "Yuexun Jiang <yuexunjiang@cryptape.com>",
   "license": "ISC",
   "simple-git-hooks": {
-    "pre-commit": "npx lint-staged"
+    "pre-commit": "npx lint-staged && sh ./scripts/protect-branches.sh"
   },
   "lint-staged": {
     "*.ts": [
