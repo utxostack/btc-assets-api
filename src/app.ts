@@ -20,7 +20,7 @@ import cors from './plugins/cors';
 import { NetworkType } from './constants';
 import rgbppRoutes from './routes/rgbpp';
 import cronRoutes from './routes/cron';
-import { ElectrsAPIError } from './services/electrs';
+import { ElectrsAPIError, ElectrsAPINotFoundError } from './services/electrs';
 import { BitcoinRPCError } from './services/bitcoind';
 import { AppErrorCode } from './error';
 import { provider } from 'std-env';
@@ -63,13 +63,17 @@ async function routes(fastify: FastifyInstance) {
   }
 
   fastify.addHook('onRequest', async (request) => {
-    Sentry.setTag('routePath', request.routerPath);
+    Sentry.setTag('url', request.url);
     Sentry.setContext('params', request.params ?? {});
     Sentry.setContext('query', request.query ?? {});
   });
 
   fastify.setErrorHandler((error, _, reply) => {
-    if (error instanceof ElectrsAPIError || error instanceof BitcoinRPCError) {
+    if (
+      error instanceof ElectrsAPIError ||
+      error instanceof ElectrsAPINotFoundError ||
+      error instanceof BitcoinRPCError
+    ) {
       reply
         .status(error.statusCode ?? HttpStatusCode.InternalServerError)
         .send({ code: error.errorCode, message: error.message });
