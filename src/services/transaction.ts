@@ -389,6 +389,7 @@ export default class TransactionManager implements ITransactionManager {
         await this.moveJobToDelayed(job, token);
         return;
       }
+      Sentry.setTag('txid', txid);
       Sentry.setContext('job', {
         txid,
         ckbVirtualResult: {

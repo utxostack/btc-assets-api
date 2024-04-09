@@ -69,7 +69,7 @@ export default class ElectrsAPI {
         return response;
       } catch (err) {
         if (err instanceof AxiosError) {
-          if (err.status === 404) {
+          if (err.status === 404 || err.response?.status === 404) {
             throw new ElectrsAPINotFoundError(err.message);
           }
 

@@ -63,7 +63,7 @@ async function routes(fastify: FastifyInstance) {
   }
 
   fastify.addHook('onRequest', async (request) => {
-    Sentry.setTag('routePath', request.routerPath);
+    Sentry.setTag('url', request.url);
     Sentry.setContext('params', request.params ?? {});
     Sentry.setContext('query', request.query ?? {});
   });
