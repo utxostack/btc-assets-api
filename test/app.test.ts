@@ -14,7 +14,6 @@ test('`/docs/json` - 200', async () => {
   expect(response.statusCode).toBe(200);
   expect(data.swagger).toBe('2.0');
   expect(Object.keys(data.paths)).toStrictEqual([
-    '/healthcheck',
     '/token/generate',
     '/bitcoin/v1/info',
     '/bitcoin/v1/block/{hash}',
