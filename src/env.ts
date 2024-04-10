@@ -135,6 +135,11 @@ const envSchema = z.object({
    * the /rgbpp/v1/transaction/ckb-tx endpoint is called, the transaction will be added to the queue
    */
   TRANSACTION_QUEUE_JOB_DELAY: z.coerce.number().default(120 * 1000),
+  /**
+   * RGB++ CKB transaction Queue cron job attempts
+   * used to retry the transaction queue job when failed
+   */
+  TRANSACTION_QUEUE_JOB_ATTEMPTS: z.coerce.number().default(6),
 });
 
 export type Env = z.infer<typeof envSchema>;

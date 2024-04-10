@@ -114,7 +114,7 @@ export default class TransactionManager implements ITransactionManager {
 
   public get defaultJobOptions() {
     return {
-      attempts: 5,
+      attempts: this.cradle.env.TRANSACTION_QUEUE_JOB_ATTEMPTS,
       backoff: {
         type: 'exponential',
         delay: this.cradle.env.TRANSACTION_QUEUE_JOB_DELAY,
@@ -376,7 +376,10 @@ export default class TransactionManager implements ITransactionManager {
         // move the job to delayed queue if the transaction is not found yet
         // only delay the job when the job is created less than 1 hour to make sure the transaction is existed
         // let the job failed if the transaction is not found after 1 hour
-        if (Date.now() - job.timestamp < 1000 * 60 * 60) {
+        const { TRANSACTION_QUEUE_JOB_DELAY, TRANSACTION_QUEUE_JOB_ATTEMPTS } = this.cradle.env;
+        // for example, if the delay is 120s and the attempts is 6, the not found tolerance time is 120 * (2 ** 6) ~= 2 hours
+        const notFoundToleranceTime = TRANSACTION_QUEUE_JOB_DELAY * 2 ** TRANSACTION_QUEUE_JOB_ATTEMPTS;
+        if (Date.now() - job.timestamp < notFoundToleranceTime) {
           await this.moveJobToDelayed(job, token);
           return;
         }
