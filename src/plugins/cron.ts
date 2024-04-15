@@ -59,12 +59,13 @@ export default fp(async (fastify) => {
     fastify.addHook('onClose', async () => {
       transactionManager.closeProcess();
     });
-    const RETRY_MISSING_TRANSACTION_SCHEDULE = '*/5 * * * *';
-    fastify.cron.createJob({
+
+    const retryMissingTransactionsJob = {
       name: 'retry-missing-transacitons',
-      cronTime: RETRY_MISSING_TRANSACTION_SCHEDULE,
+      cronTime: '*/5 * * * *',
       onTick: async () => {
-        const checkIn = getSentryCheckIn('retry-missing-transactions', RETRY_MISSING_TRANSACTION_SCHEDULE);
+        const { name, cronTime } = retryMissingTransactionsJob;
+        const checkIn = getSentryCheckIn(name, cronTime);
         try {
           await transactionManager.retryMissingTransactions();
           checkIn.ok();
@@ -74,16 +75,18 @@ export default fp(async (fastify) => {
           Sentry.captureException(err);
         }
       },
-    });
+    };
+    fastify.cron.createJob(retryMissingTransactionsJob);
 
     // processing unlock BTC_TIME_LOCK cells
     const unlocker = fastify.container.resolve('unlocker');
     const monitorSlug = env.UNLOCKER_MONITOR_SLUG;
-    fastify.cron.createJob({
-      name: 'unlock-btc-time-lock-cells',
+    const unlockBTCTimeLockCellsJob = {
+      name: monitorSlug,
       cronTime: env.UNLOCKER_CRON_SCHEDULE,
       onTick: async () => {
-        const checkIn = getSentryCheckIn(monitorSlug, env.UNLOCKER_CRON_SCHEDULE);
+        const { name, cronTime } = unlockBTCTimeLockCellsJob;
+        const checkIn = getSentryCheckIn(name, cronTime);
         try {
           await unlocker.unlockCells();
           checkIn.ok();
@@ -93,7 +96,8 @@ export default fp(async (fastify) => {
           Sentry.captureException(err);
         }
       },
-    });
+    };
+    fastify.cron.createJob(unlockBTCTimeLockCellsJob);
   } catch (err) {
     fastify.log.error(err);
     Sentry.captureException(err);
