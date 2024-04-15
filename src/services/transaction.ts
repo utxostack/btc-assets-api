@@ -417,7 +417,9 @@ export default class TransactionManager implements ITransactionManager {
   public async retryMissingTransactions() {
     const blockchainInfo = await this.cradle.bitcoind.getBlockchainInfo();
     const currentHeight = blockchainInfo.blocks;
-    const previousHeight = BI.from((await this.cradle.redis.get('missing-transactions-height')) ?? '0x0').toNumber();
+    const previousHeight = BI.from(
+      (await this.cradle.redis.get('missing-transactions-height')) ?? currentHeight - 1,
+    ).toNumber();
     if (previousHeight === 0 || currentHeight > previousHeight) {
       this.cradle.logger.info(`[TransactionManager] Missing transactions handling started`);
       // get all the txids from previousHeight to currentHeight
