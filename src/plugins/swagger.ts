@@ -10,7 +10,6 @@ export const DOCS_ROUTE_PREFIX = '/docs';
 
 export default fp(async (fastify) => {
   fastify.register(swagger, {
-    hiddenTag: 'Internal',
     swagger: {
       info: {
         title: 'Bitcoin/RGB++ Assets API',

@@ -10,9 +10,8 @@ const jobRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProv
     {
       schema: {
         description: 'Retry all failed transactions.',
-        tags: ['Internal'],
         body: z.object({
-          max_attempts: z.coerce.number().optional().default(env.TRANSACTION_QUEUE_MAX_ATTEMPTS),
+          max_attempts: z.coerce.number().optional().default(env.TRANSACTION_QUEUE_JOB_ATTEMPTS),
         }),
         response: {
           200: z.array(
