@@ -144,6 +144,12 @@ export default class ElectrsAPI {
     return response.data;
   }
 
+  // https://github.com/blockstream/esplora/blob/master/API.md#get-block-heightheight
+  public async getBlockHashByHeight(height: number) {
+    const response = await this.get<string>(`/block-height/${height}/hash`);
+    return response.data;
+  }
+
   // https://github.com/blockstream/esplora/blob/master/API.md#get-blockhashheader
   public async getBlockHeaderByHash(hash: string) {
     const response = await this.get<string>(`/block/${hash}/header`);

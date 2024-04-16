@@ -26,6 +26,8 @@ import { Transaction } from '../routes/bitcoin/types';
 import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
 import { BitcoinSPVError } from './spv';
 import { ElectrsAPINotFoundError } from './electrs';
+import { BloomFilter } from 'bloom-filters';
+import { BI } from '@ckb-lumos/lumos';
 
 export interface ITransactionRequest {
   txid: string;
@@ -405,6 +407,45 @@ export default class TransactionManager implements ITransactionManager {
       this.cradle.logger.error(err);
       Sentry.captureException(err);
       throw err;
+    }
+  }
+
+  /**
+   * Retry missing transactions
+   * retry the mempool missing transactions when the blockchain block is confirmed
+   */
+  public async retryMissingTransactions() {
+    const blockchainInfo = await this.cradle.bitcoind.getBlockchainInfo();
+    const currentHeight = blockchainInfo.blocks;
+    const previousHeight = BI.from(
+      (await this.cradle.redis.get('missing-transactions-height')) ?? currentHeight - 1,
+    ).toNumber();
+    if (currentHeight > previousHeight) {
+      this.cradle.logger.info(`[TransactionManager] Missing transactions handling started`);
+      // get all the txids from previousHeight to currentHeight
+      const heights = Array.from({ length: currentHeight - previousHeight }, (_, i) => previousHeight + i + 1);
+      const txidsGroups = await Promise.all(
+        heights.map(async (height) => {
+          const blockHash = await this.cradle.electrs.getBlockHashByHeight(height);
+          return this.cradle.electrs.getBlockTxIdsByHash(blockHash);
+        }),
+      );
+      const txids = txidsGroups.flat();
+      // create a bloom filter to test if the txid is in the filter
+      const filter = BloomFilter.create(txids.length, 0.01);
+      txids.forEach((txid) => filter.add(txid));
+      // get all failed jobs from the queue and retry the transactions that are missing
+      const jobs = await this.queue.getJobs(['failed']);
+      await Promise.all(
+        jobs.map(async (job) => {
+          const txid = job.id as string;
+          if (filter.has(txid)) {
+            this.cradle.logger.info(`[TransactionManager] Retry missing transaction: ${txid}`);
+            await job.retry();
+          }
+        }),
+      );
+      await this.cradle.redis.set('missing-transactions-height', BI.from(currentHeight).toHexString());
     }
   }
 

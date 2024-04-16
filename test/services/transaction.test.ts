@@ -2,8 +2,9 @@ import { describe, beforeEach, expect, test, vi } from 'vitest';
 import TransactionManager, { ITransactionRequest } from '../../src/services/transaction';
 import container from '../../src/container';
 import { CKBVirtualResult, InputCell, OutputCell } from '../../src/routes/rgbpp/types';
-import { Transaction } from '../../src/routes/bitcoin/types';
+import { ChainInfo, Transaction } from '../../src/routes/bitcoin/types';
 import { calculateCommitment } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+import { Job } from 'bullmq';
 
 const commitment = calculateCommitment({
   inputs: [] as InputCell[],
@@ -132,5 +133,47 @@ describe('transactionManager', () => {
     const job = await transactionManager['queue'].getJob(transactionRequest.txid);
     expect(count.delayed).toBe(1);
     expect(job?.delay).toBe(cradle.env.TRANSACTION_QUEUE_JOB_DELAY);
+  });
+
+  test('retryMissingTransactions: should be retry transaction job when missing', async () => {
+    vi.spyOn(cradle.bitcoind, 'getBlockchainInfo').mockResolvedValue({
+      blocks: 123456,
+    } as unknown as ChainInfo);
+    vi.spyOn(cradle.electrs, 'getBlockHashByHeight').mockResolvedValue('00000000abcdefghijklmnopqrstuvwxyz');
+    vi.spyOn(cradle.electrs, 'getBlockTxIdsByHash').mockResolvedValue([
+      'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
+      '8ea0fbb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a056',
+      '8eb22b379c0ef491dea2d819e721d5df296bebc67a056a0fbb8c92f11920824d',
+    ]);
+    const retry = vi.fn();
+    vi.spyOn(transactionManager['queue'], 'getJobs').mockResolvedValue([{
+      id: 'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
+      retry,
+    } as unknown as Job])
+
+    await transactionManager.retryMissingTransactions();
+
+    expect(retry).toHaveBeenCalled();
+  });
+
+  test('retryMissingTransactions: should not retry transaction job when not match', async () => {
+    vi.spyOn(cradle.bitcoind, 'getBlockchainInfo').mockResolvedValue({
+      blocks: 123456,
+    } as unknown as ChainInfo);
+    vi.spyOn(cradle.electrs, 'getBlockHashByHeight').mockResolvedValue('00000000abcdefghijklmnopqrstuvwxyz');
+    vi.spyOn(cradle.electrs, 'getBlockTxIdsByHash').mockResolvedValue([
+      'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
+      '8ea0fbb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a056',
+      '8eb22b379c0ef491dea2d819e721d5df296bebc67a056a0fbb8c92f11920824d',
+    ]);
+    const retry = vi.fn();
+    vi.spyOn(transactionManager['queue'], 'getJobs').mockResolvedValue([{
+      id: 'bb8c92f119208248ea0fdb22b379c0ef491dea2d819e721d5df296bebc67a056',
+      retry,
+    } as unknown as Job])
+
+    await transactionManager.retryMissingTransactions();
+
+    expect(retry).not.toHaveBeenCalled();
   });
 });
