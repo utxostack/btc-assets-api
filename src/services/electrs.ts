@@ -29,7 +29,7 @@ const ElectrsAPIErrorMap = {
   [ElectrsErrorMessage.TooManyUtxos]: ElectrsAPIErrorCode.TooManyUtxos,
   [ElectrsErrorMessage.TooManyTxs]: ElectrsAPIErrorCode.TooManyTxs,
   [ElectrsErrorMessage.ElectrumClient]: ElectrsAPIErrorCode.ElectrumClient,
-}
+};
 
 export class ElectrsAPIError extends Error {
   public errorCode: number;
@@ -146,7 +146,7 @@ export default class ElectrsAPI {
 
   // https://github.com/blockstream/esplora/blob/master/API.md#get-block-heightheight
   public async getBlockHashByHeight(height: number) {
-    const response = await this.get<string>(`/block-height/${height}/hash`);
+    const response = await this.get<string>(`/block-height/${height}`);
     return response.data;
   }
 
