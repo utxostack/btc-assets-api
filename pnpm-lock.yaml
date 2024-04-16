@@ -80,6 +80,9 @@ dependencies:
   fastify-cron:
     specifier: ^1.3.1
     version: 1.3.1(fastify@4.26.0)
+  fastify-custom-healthcheck:
+    specifier: ^3.1.0
+    version: 3.1.0
   fastify-plugin:
     specifier: ^4.5.1
     version: 4.5.1
@@ -3482,6 +3485,13 @@ packages:
       cron: 2.4.4
       fastify: 4.26.0
       fastify-plugin: 3.0.1
+    dev: false
+
+  /fastify-custom-healthcheck@3.1.0:
+    resolution: {integrity: sha512-BC/TcV1G6CQiLbwl1dCqJW5jVN8fl2Gsfxip5GeeB5SQe6fjKfRMxkOcPIEyj7u0kL0+oQYW1V5pOBzviMiCFQ==}
+    dependencies:
+      fast-deep-equal: 3.1.3
+      fastify-plugin: 4.5.1
     dev: false
 
   /fastify-plugin@3.0.1:

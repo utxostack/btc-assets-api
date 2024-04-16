@@ -16,7 +16,7 @@ export enum ApiCacheStatus {
   Miss = 'MISS',
 }
 
-export const JWT_IGNORE_URLS = ['/token', '/docs', '/cron', '/internal'];
+export const JWT_IGNORE_URLS = ['/token', '/docs', '/cron', '/internal', '/healthcheck'];
 export const SWAGGER_PROD_IGNORE_URLS = isAdminMode ? ['/token', '/cron'] : ['/cron'];
 
 export const VERCEL_MAX_DURATION = 300;

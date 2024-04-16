@@ -409,6 +409,21 @@ export default class TransactionManager implements ITransactionManager {
   }
 
   /**
+   * Get the queue job counts
+   */
+  public async getQueueJobCounts() {
+    const counts = await this.queue.getJobCounts();
+    return counts;
+  }
+
+  /**
+   * Check if the worker is running
+   */
+  public async isWorkerRunning() {
+    return this.worker.isRunning();
+  }
+
+  /**
    * Enqueue a transaction request to the Queue, waiting for processing
    * @param request - the transaction request
    */
