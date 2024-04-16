@@ -41,6 +41,7 @@ export interface IProcessCallbacks {
 interface ITransactionManager {
   enqueueTransaction(request: ITransactionRequest): Promise<Job<ITransactionRequest>>;
   getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined>;
+  retryAllFailedJobs(): Promise<{ txid: string; state: string }[]>;
   startProcess(callbacks?: IProcessCallbacks): Promise<void>;
   pauseProcess(): Promise<void>;
   closeProcess(): Promise<void>;
@@ -426,6 +427,21 @@ export default class TransactionManager implements ITransactionManager {
   public async getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined> {
     const job = await this.queue.getJob(txid);
     return job;
+  }
+
+  public async retryAllFailedJobs(): Promise<{ txid: string; state: string }[]>{
+    const jobs = await this.queue.getJobs(['failed']);
+    console.log(jobs);
+    const results = await Promise.all(jobs.map(async (job) => {
+      this.cradle.logger.info(`[TransactionManager] Retry failed job: ${job.id}`);
+      await job.retry();
+      const state = await job.getState();
+      return {
+        txid: job.id!,
+        state,
+      };
+    }));
+    return results;
   }
 
   /**

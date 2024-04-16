@@ -12,6 +12,7 @@ import {
 } from '@rgbpp-sdk/ckb';
 import { remove0x } from '@rgbpp-sdk/btc';
 import { CUSTOM_HEADERS } from '../../constants';
+import { env } from '../../env';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
@@ -60,7 +61,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     },
     async (request, reply) => {
       const { btc_txid } = request.params;
-      const isMainnet = process.env.NETWORK === 'mainnet';
+      const isMainnet = env.NETWORK === 'mainnet';
       const transaction = await fastify.electrs.getTransaction(btc_txid);
 
       // query CKB transaction hash by RGBPP_LOCK cells
