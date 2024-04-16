@@ -42,7 +42,6 @@ function getSentryCheckIn(monitorSlug: string, crontab: string) {
 export default fp(async (fastify) => {
   try {
     const env: Env = fastify.container.resolve('env');
-    fastify.register(cron);
 
     // processing rgb++ ckb transaction
     const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
@@ -76,7 +75,6 @@ export default fp(async (fastify) => {
         }
       },
     };
-    fastify.cron.createJob(retryMissingTransactionsJob);
 
     // processing unlock BTC_TIME_LOCK cells
     const unlocker = fastify.container.resolve('unlocker');
@@ -97,7 +95,10 @@ export default fp(async (fastify) => {
         }
       },
     };
-    fastify.cron.createJob(unlockBTCTimeLockCellsJob);
+
+    fastify.register(cron, {
+      jobs: [retryMissingTransactionsJob, unlockBTCTimeLockCellsJob],
+    });
   } catch (err) {
     fastify.log.error(err);
     Sentry.captureException(err);
