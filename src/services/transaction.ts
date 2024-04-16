@@ -420,7 +420,7 @@ export default class TransactionManager implements ITransactionManager {
     const previousHeight = BI.from(
       (await this.cradle.redis.get('missing-transactions-height')) ?? currentHeight - 1,
     ).toNumber();
-    if (previousHeight === 0 || currentHeight > previousHeight) {
+    if (currentHeight > previousHeight) {
       this.cradle.logger.info(`[TransactionManager] Missing transactions handling started`);
       // get all the txids from previousHeight to currentHeight
       const heights = Array.from({ length: currentHeight - previousHeight }, (_, i) => previousHeight + i + 1);
