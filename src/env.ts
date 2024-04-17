@@ -107,6 +107,14 @@ const envSchema = z.object({
    * Paymaster cell refill threshold, refill paymaster cell when the balance is less than this threshold.
    */
   PAYMASTER_CELL_REFILL_THRESHOLD: z.coerce.number().default(0.3),
+
+  /**
+   * Paymaster receive UTXO check flag, used to check the paymaster BTC UTXO when processing rgb++ ckb transaction.
+   */
+  PAYMASTER_RECEIVE_UTXO_CHECK: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
   /**
    * Paymaster bitcoin address, used to receive BTC from users.
    * enable paymaster BTC UTXO check if set.

@@ -110,7 +110,7 @@ export default class Paymaster implements IPaymaster {
    * is the paymaster receives UTXO check enabled
    */
   public get enablePaymasterReceivesUTXOCheck() {
-    return !!this.cradle.env.PAYMASTER_RECEIVE_BTC_ADDRESS;
+    return this.cradle.env.PAYMASTER_RECEIVE_UTXO_CHECK && !!this.cradle.env.PAYMASTER_RECEIVE_BTC_ADDRESS;
   }
 
   /**
