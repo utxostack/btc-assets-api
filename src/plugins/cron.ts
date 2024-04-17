@@ -60,7 +60,7 @@ export default fp(async (fastify) => {
     });
 
     const retryMissingTransactionsJob = {
-      name: 'retry-missing-transacitons',
+      name: `retry-missing-transacitons-${env.NETWORK}`,
       cronTime: '*/5 * * * *',
       onTick: async () => {
         const { name, cronTime } = retryMissingTransactionsJob;
