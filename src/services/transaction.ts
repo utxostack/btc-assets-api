@@ -26,6 +26,8 @@ import { Transaction } from '../routes/bitcoin/types';
 import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
 import { BitcoinSPVError } from './spv';
 import { ElectrsAPINotFoundError } from './electrs';
+import { BloomFilter } from 'bloom-filters';
+import { BI } from '@ckb-lumos/lumos';
 
 export interface ITransactionRequest {
   txid: string;
@@ -41,6 +43,7 @@ export interface IProcessCallbacks {
 interface ITransactionManager {
   enqueueTransaction(request: ITransactionRequest): Promise<Job<ITransactionRequest>>;
   getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined>;
+  retryAllFailedJobs(): Promise<{ txid: string; state: string }[]>;
   startProcess(callbacks?: IProcessCallbacks): Promise<void>;
   pauseProcess(): Promise<void>;
   closeProcess(): Promise<void>;
@@ -114,7 +117,7 @@ export default class TransactionManager implements ITransactionManager {
 
   public get defaultJobOptions() {
     return {
-      attempts: 5,
+      attempts: this.cradle.env.TRANSACTION_QUEUE_JOB_ATTEMPTS,
       backoff: {
         type: 'exponential',
         delay: this.cradle.env.TRANSACTION_QUEUE_JOB_DELAY,
@@ -376,7 +379,10 @@ export default class TransactionManager implements ITransactionManager {
         // move the job to delayed queue if the transaction is not found yet
         // only delay the job when the job is created less than 1 hour to make sure the transaction is existed
         // let the job failed if the transaction is not found after 1 hour
-        if (Date.now() - job.timestamp < 1000 * 60 * 60) {
+        const { TRANSACTION_QUEUE_JOB_DELAY, TRANSACTION_QUEUE_JOB_ATTEMPTS } = this.cradle.env;
+        // for example, if the delay is 120s and the attempts is 6, the not found tolerance time is 120 * (2 ** 6) ~= 2 hours
+        const notFoundToleranceTime = TRANSACTION_QUEUE_JOB_DELAY * 2 ** TRANSACTION_QUEUE_JOB_ATTEMPTS;
+        if (Date.now() - job.timestamp < notFoundToleranceTime) {
           await this.moveJobToDelayed(job, token);
           return;
         }
@@ -405,6 +411,60 @@ export default class TransactionManager implements ITransactionManager {
   }
 
   /**
+   * Retry missing transactions
+   * retry the mempool missing transactions when the blockchain block is confirmed
+   */
+  public async retryMissingTransactions() {
+    const blockchainInfo = await this.cradle.bitcoind.getBlockchainInfo();
+    const currentHeight = blockchainInfo.blocks;
+    const previousHeight = BI.from(
+      (await this.cradle.redis.get('missing-transactions-height')) ?? currentHeight - 1,
+    ).toNumber();
+    if (currentHeight > previousHeight) {
+      this.cradle.logger.info(`[TransactionManager] Missing transactions handling started`);
+      // get all the txids from previousHeight to currentHeight
+      const heights = Array.from({ length: currentHeight - previousHeight }, (_, i) => previousHeight + i + 1);
+      const txidsGroups = await Promise.all(
+        heights.map(async (height) => {
+          const blockHash = await this.cradle.electrs.getBlockHashByHeight(height);
+          return this.cradle.electrs.getBlockTxIdsByHash(blockHash);
+        }),
+      );
+      const txids = txidsGroups.flat();
+      // create a bloom filter to test if the txid is in the filter
+      const filter = BloomFilter.create(txids.length, 0.01);
+      txids.forEach((txid) => filter.add(txid));
+      // get all failed jobs from the queue and retry the transactions that are missing
+      const jobs = await this.queue.getJobs(['failed']);
+      await Promise.all(
+        jobs.map(async (job) => {
+          const txid = job.id as string;
+          if (filter.has(txid)) {
+            this.cradle.logger.info(`[TransactionManager] Retry missing transaction: ${txid}`);
+            await job.retry();
+          }
+        }),
+      );
+      await this.cradle.redis.set('missing-transactions-height', BI.from(currentHeight).toHexString());
+    }
+  }
+
+  /**
+   * Get the queue job counts
+   */
+  public async getQueueJobCounts() {
+    const counts = await this.queue.getJobCounts();
+    return counts;
+  }
+
+  /**
+   * Check if the worker is running
+   */
+  public async isWorkerRunning() {
+    return this.worker.isRunning();
+  }
+
+  /**
    * Enqueue a transaction request to the Queue, waiting for processing
    * @param request - the transaction request
    */
@@ -423,6 +483,21 @@ export default class TransactionManager implements ITransactionManager {
   public async getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined> {
     const job = await this.queue.getJob(txid);
     return job;
+  }
+
+  public async retryAllFailedJobs(): Promise<{ txid: string; state: string }[]>{
+    const jobs = await this.queue.getJobs(['failed']);
+    console.log(jobs);
+    const results = await Promise.all(jobs.map(async (job) => {
+      this.cradle.logger.info(`[TransactionManager] Retry failed job: ${job.id}`);
+      await job.retry();
+      const state = await job.getState();
+      return {
+        txid: job.id!,
+        state,
+      };
+    }));
+    return results;
   }
 
   /**

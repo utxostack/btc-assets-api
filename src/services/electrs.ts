@@ -29,7 +29,7 @@ const ElectrsAPIErrorMap = {
   [ElectrsErrorMessage.TooManyUtxos]: ElectrsAPIErrorCode.TooManyUtxos,
   [ElectrsErrorMessage.TooManyTxs]: ElectrsAPIErrorCode.TooManyTxs,
   [ElectrsErrorMessage.ElectrumClient]: ElectrsAPIErrorCode.ElectrumClient,
-}
+};
 
 export class ElectrsAPIError extends Error {
   public errorCode: number;
@@ -144,6 +144,12 @@ export default class ElectrsAPI {
     return response.data;
   }
 
+  // https://github.com/blockstream/esplora/blob/master/API.md#get-block-heightheight
+  public async getBlockHashByHeight(height: number) {
+    const response = await this.get<string>(`/block-height/${height}`);
+    return response.data;
+  }
+
   // https://github.com/blockstream/esplora/blob/master/API.md#get-blockhashheader
   public async getBlockHeaderByHash(hash: string) {
     const response = await this.get<string>(`/block/${hash}/header`);
@@ -153,6 +159,12 @@ export default class ElectrsAPI {
   // https://github.com/Blockstream/esplora/blob/master/API.md#get-blockhashtxids
   public async getBlockTxIdsByHash(hash: string) {
     const response = await this.get<string[]>(`/block/${hash}/txids`);
+    return response.data;
+  }
+
+  // https://github.com/blockstream/esplora/blob/master/API.md#get-blockstipheight
+  public async getTip() {
+    const response = await this.get<number>('/blocks/tip/height');
     return response.data;
   }
 }

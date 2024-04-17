@@ -110,7 +110,7 @@ export default class Paymaster implements IPaymaster {
    * is the paymaster receives UTXO check enabled
    */
   public get enablePaymasterReceivesUTXOCheck() {
-    return !!this.cradle.env.PAYMASTER_RECEIVE_BTC_ADDRESS;
+    return this.cradle.env.PAYMASTER_RECEIVE_UTXO_CHECK && !!this.cradle.env.PAYMASTER_RECEIVE_BTC_ADDRESS;
   }
 
   /**
@@ -145,6 +145,13 @@ export default class Paymaster implements IPaymaster {
   public get containerFee() {
     // XXX: fixed fee for now, may change in the future
     return this.cradle.env.PAYMASTER_BTC_CONTAINER_FEE_SATS;
+  }
+
+  /**
+   * Get the paymaster cell count in the queue
+   */
+  public getPaymasterCellCount() {
+    return this.queue.getWaitingCount();
   }
 
   /**

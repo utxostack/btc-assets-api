@@ -12,6 +12,7 @@ import {
 } from '@rgbpp-sdk/ckb';
 import { remove0x } from '@rgbpp-sdk/btc';
 import { CUSTOM_HEADERS } from '../../constants';
+import { env } from '../../env';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
@@ -60,7 +61,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     },
     async (request, reply) => {
       const { btc_txid } = request.params;
-      const isMainnet = process.env.NETWORK === 'mainnet';
+      const isMainnet = env.NETWORK === 'mainnet';
       const transaction = await fastify.electrs.getTransaction(btc_txid);
 
       // query CKB transaction hash by RGBPP_LOCK cells
@@ -114,13 +115,27 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     },
   );
 
+  const jobInfoSchema = z.object({
+    state: z.string().describe('The state of the transaction'),
+    attempts: z.number().describe('The number of attempts made to process the transaction'),
+    failedReason: z.string().optional().describe('The reason why the transaction failed'),
+    data: z
+      .object({
+        txid: z.string(),
+        ckbVirtualResult: CKBVirtualResult,
+      })
+      .describe('The data of the transaction')
+      .optional(),
+  });
+
   fastify.get(
     '/:btc_txid/job',
     {
       schema: {
         description: `
-          Get the job state of a transaction by BTC txid.
+          Get the job info of a transaction by BTC txid.
 
+          The state of the transaction can be one of the following:
           * completed: The CKB transaction has been sent and confirmed.
           * failed: Something went wrong during the process, and it has failed.
           * delayed: The transaction has not been confirmed yet and is waiting for confirmation.
@@ -131,17 +146,17 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         params: z.object({
           btc_txid: z.string(),
         }),
+        querystring: z.object({
+          with_data: z.enum(['true', 'false']).default('false'),
+        }),
         response: {
-          200: z.object({
-            state: z.string().describe('The state of the transaction'),
-            attempts: z.number().describe('The number of attempts made to process the transaction'),
-            failedReason: z.string().optional().describe('The reason why the transaction failed'),
-          }),
+          200: jobInfoSchema,
         },
       },
     },
     async (request, reply) => {
       const { btc_txid } = request.params;
+      const { with_data } = request.query;
       const job = await fastify.transactionManager.getTransactionRequest(btc_txid);
       if (!job) {
         reply.status(404);
@@ -149,17 +164,20 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
       }
       const state = await job.getState();
       const attempts = job.attemptsMade;
-      if (state === 'failed') {
-        return {
-          state,
-          attempts,
-          failedReason: job.failedReason,
-        };
-      }
-      return {
+
+      const jobInfo: z.infer<typeof jobInfoSchema> = {
         state,
         attempts,
       };
+
+      if (with_data === 'true') {
+        jobInfo.data = job.data;
+      }
+
+      if (state === 'failed') {
+        jobInfo.failedReason = job.failedReason;
+      }
+      return jobInfo;
     },
   );
 

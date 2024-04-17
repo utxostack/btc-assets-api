@@ -25,6 +25,8 @@ import { BitcoinRPCError } from './services/bitcoind';
 import { AppErrorCode } from './error';
 import { provider } from 'std-env';
 import ipBlock from './plugins/ip-block';
+import internalRoutes from './routes/internal';
+import healthcheck from './plugins/healthcheck';
 
 if (env.SENTRY_DSN_URL) {
   Sentry.init({
@@ -49,12 +51,14 @@ async function routes(fastify: FastifyInstance) {
   fastify.register(ipBlock);
   fastify.register(cache);
   fastify.register(rateLimit);
+  fastify.register(healthcheck);
 
   // Check if the Electrs API and Bitcoin JSON-RPC server are running on the correct network
   const env = container.resolve('env');
   await container.resolve('bitcoind').checkNetwork(env.NETWORK as NetworkType);
   await container.resolve('electrs').checkNetwork(env.NETWORK as NetworkType);
 
+  fastify.register(internalRoutes, { prefix: '/internal' });
   fastify.register(tokenRoutes, { prefix: '/token' });
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
   fastify.register(rgbppRoutes, { prefix: '/rgbpp/v1' });
