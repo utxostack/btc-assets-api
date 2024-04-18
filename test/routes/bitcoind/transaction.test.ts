@@ -43,6 +43,29 @@ describe('/bitcoin/v1/transaction', () => {
     await fastify.close();
   });
 
+  test('Get not exists transaction', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/bitcoin/v1/transaction/9706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babf1',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
+      },
+    });
+    const data = await response.json();
+
+    expect(response.statusCode).toBe(404);
+    expect(data).toEqual({
+      code: 404,
+      message: 'Request failed with status code 404',
+    });
+
+    await fastify.close();
+  });
+
   test('Send exists raw transaction', async () => {
     const fastify = buildFastify();
     await fastify.ready();
