@@ -5,7 +5,7 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Cell, Script } from './types';
 import { buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
-import { blockchain } from '@ckb-lumos/base'
+import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
@@ -27,7 +27,17 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           btc_address: z.string(),
         }),
         querystring: z.object({
-          type_script: Script.or(z.string()).optional(),
+          type_script: Script.or(z.string())
+            .optional()
+            .describe(
+              `
+              type script to filter cells
+
+              two ways to provide:
+              - as a object: 'encodeURIComponent(JSON.stringify({"codeHash":"0x...", "args":"0x...", "hashType":"type"}))'
+              - as a hex string: '0x...' (You can pack by @ckb-lumos/codec blockchain.Script.pack({ "codeHash": "0x...", ... }))
+            `,
+            ),
         }),
         response: {
           200: z.array(Cell),
