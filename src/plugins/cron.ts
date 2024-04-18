@@ -2,6 +2,7 @@ import fp from 'fastify-plugin';
 import TransactionManager from '../services/transaction';
 import cron from 'fastify-cron';
 import { Env } from '../env';
+import Unlocker from '../services/unlocker';
 
 export default fp(async (fastify) => {
   try {
@@ -76,7 +77,7 @@ export default fp(async (fastify) => {
     };
 
     // processing unlock BTC_TIME_LOCK cells
-    const unlocker = fastify.container.resolve('unlocker');
+    const unlocker: Unlocker = fastify.container.resolve('unlocker');
     const monitorSlug = env.UNLOCKER_MONITOR_SLUG;
     const unlockBTCTimeLockCellsJob = {
       name: monitorSlug,

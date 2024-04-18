@@ -6,7 +6,7 @@ import { env } from '../env';
 
 export default fp(async (fastify) => {
   // @ts-expect-error - fastify-sentry types are not up to date
-  fastify.register(fastifySentry, {
+  await fastify.register(fastifySentry, {
     dsn: env.SENTRY_DSN_URL,
     tracesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE,
     profilesSampleRate: env.SENTRY_PROFILES_SAMPLE_RATE,

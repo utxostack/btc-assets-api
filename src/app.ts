@@ -26,14 +26,15 @@ import ipBlock from './plugins/ip-block';
 import internalRoutes from './routes/internal';
 import healthcheck from './plugins/healthcheck';
 import sentry from './plugins/sentry';
+import cron from './plugins/cron';
 
 async function routes(fastify: FastifyInstance) {
   fastify.log.info(`Process env: ${JSON.stringify(getSafeEnvs(), null, 2)}`);
 
   await fastify.register(cors);
+  await fastify.register(sentry);
   fastify.register(sensible);
   fastify.register(compress);
-  fastify.register(sentry);
   fastify.register(swagger);
   fastify.register(jwt);
   fastify.register(ipBlock);
@@ -50,8 +51,17 @@ async function routes(fastify: FastifyInstance) {
   fastify.register(tokenRoutes, { prefix: '/token' });
   fastify.register(bitcoinRoutes, { prefix: '/bitcoin/v1' });
   fastify.register(rgbppRoutes, { prefix: '/rgbpp/v1' });
+
+  // register cron routes only on Vercel
   if (provider === 'vercel') {
+    fastify.log.info('Cron routes is registered');
     fastify.register(cronRoutes, { prefix: '/cron' });
+  } else {
+    fastify.log.info('Cron plugin is registered');
+    await fastify.register(cron);
+    fastify.addHook('onReady', () => {
+      fastify.cron.startAllJobs();
+    });
   }
 
   fastify.setErrorHandler((error, _, reply) => {
