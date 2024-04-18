@@ -383,7 +383,11 @@ export default class TransactionManager implements ITransactionManager {
         return txHash;
       } catch (err) {
         // fix the pool rejected transaction by increasing the fee rate
-        if (err instanceof CKBRpcError && err.code === CKBRPCErrorCodes.PoolRejectedTransactionByMinFeeRate) {
+        if (
+          err instanceof CKBRpcError &&
+          err.code === CKBRPCErrorCodes.PoolRejectedTransactionByMinFeeRate &&
+          this.cradle.env.TRANSACTION_PAY_FOR_MIN_FEE_RATE_REJECT
+        ) {
           await this.fixPoolRejectedTransactionByMinFeeRate(job);
           return;
         }
