@@ -86,11 +86,13 @@ describe('Paymaster', () => {
 
   test('getNextCell: should return the next job when queue has sufficient jobs', async () => {
     container.register(
-      'ckbRpc',
+      'ckb',
       asValue({
-        getLiveCell: vi.fn().mockResolvedValue({
-          status: 'live',
-        }),
+        rpc: {
+          getLiveCell: vi.fn().mockResolvedValue({
+            status: 'live',
+          }),
+        },
       }),
     );
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(10);
@@ -107,11 +109,13 @@ describe('Paymaster', () => {
 
   test('getNextCell: should trigger refill when queue has fewer jobs than threshold', async () => {
     container.register(
-      'ckbRpc',
+      'ckb',
       asValue({
-        getLiveCell: vi.fn().mockResolvedValue({
-          status: 'live',
-        }),
+        rpc: {
+          getLiveCell: vi.fn().mockResolvedValue({
+            status: 'live',
+          }),
+        },
       }),
     );
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(2);
@@ -176,7 +180,7 @@ describe('Paymaster', () => {
         yield* mockCells;
       },
     };
-    vi.spyOn(paymaster['cradle'].ckbIndexer, 'collector').mockReturnValue(mockCollector);
+    vi.spyOn(paymaster['cradle'].ckb.indexer, 'collector').mockReturnValue(mockCollector);
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(9);
     vi.spyOn(paymaster['queue'], 'add');
 
@@ -191,7 +195,7 @@ describe('Paymaster', () => {
         // No cells yielded
       },
     };
-    vi.spyOn(paymaster['cradle'].ckbIndexer, 'collector').mockReturnValue(mockCollector);
+    vi.spyOn(paymaster['cradle'].ckb.indexer, 'collector').mockReturnValue(mockCollector);
     vi.spyOn(paymaster['queue'], 'add');
 
     const filled = await paymaster.refillCellQueue();

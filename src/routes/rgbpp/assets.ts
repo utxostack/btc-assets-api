@@ -30,7 +30,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
         const query: CKBIndexerQueryOptions = {
           lock: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
         };
-        const collector = fastify.ckbIndexer.collector(query).collect();
+        const collector = fastify.ckb.indexer.collector(query).collect();
         for await (const cell of collector) {
           cells.push(cell);
         }
@@ -38,7 +38,6 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
       return cells;
     },
   );
-
 
   fastify.get(
     '/:btc_txid/:vout',
@@ -60,7 +59,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
       const args = buildRgbppLockArgs(vout, btc_txid);
       const lockScript = genRgbppLockScript(args, process.env.NETWORK === 'mainnet');
 
-      const collector = fastify.ckbIndexer.collector({
+      const collector = fastify.ckb.indexer.collector({
         lock: lockScript,
       });
 

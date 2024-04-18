@@ -198,7 +198,7 @@ export default class Paymaster implements IPaymaster {
       }
 
       const data = job.data;
-      const liveCell = await this.cradle.ckbRpc.getLiveCell(data.outPoint!, false);
+      const liveCell = await this.cradle.ckb.rpc.getLiveCell(data.outPoint!, false);
       if (!liveCell || liveCell.status !== 'live') {
         job.moveToFailed(new Error('The paymaster cell is not live'), token);
         continue;
@@ -228,7 +228,7 @@ export default class Paymaster implements IPaymaster {
       return filled;
     }
 
-    const collector = this.cradle.ckbIndexer.collector({
+    const collector = this.cradle.ckb.indexer.collector({
       lock: this.lockScript,
       type: 'empty',
       outputCapacityRange: [BI.from(this.cellCapacity).toHexString(), BI.from(this.cellCapacity + 1).toHexString()],
