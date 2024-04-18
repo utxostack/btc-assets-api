@@ -293,6 +293,15 @@ export default class TransactionManager implements ITransactionManager {
   }
 
   /**
+   * Fix the pool rejected transaction by increasing the fee rate
+   * set the needPaymasterCell to true to append the paymaster cell to pay the rest of the fee
+   */
+  private async fixPoolRejectedTransactionByMinFeeRate(job: Job) {
+    job.data.needPaymasterCell = true;
+    await this.moveJobToDelayed(job);
+  }
+
+  /**
    * Process the transaction request, called by the worker
    * - get the Bitcoin transaction
    * - verify the transaction request
@@ -368,6 +377,11 @@ export default class TransactionManager implements ITransactionManager {
         }
         return txHash;
       } catch (err) {
+        // fix the pool rejected transaction by increasing the fee rate
+        if (err instanceof Error && err.message.includes('PoolRejectedTransactionByMinFeeRate')) {
+          await this.fixPoolRejectedTransactionByMinFeeRate(job);
+          return;
+        }
         // mark the paymaster cell as unspent if the transaction failed
         this.cradle.paymaster.markPaymasterCellAsUnspent(txid, signedTx!);
         throw err;
