@@ -23,8 +23,9 @@ const jobRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProv
         },
       },
     },
-    async () => {
-      const results = await fastify.transactionManager.retryAllFailedJobs();
+    async (request) => {
+      const { max_attempts } = request.body;
+      const results = await fastify.transactionManager.retryAllFailedJobs(max_attempts);
       return results;
     },
   );
