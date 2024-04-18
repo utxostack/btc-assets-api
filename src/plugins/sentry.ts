@@ -13,5 +13,7 @@ export default fp(async (fastify) => {
     integrations: [...(env.SENTRY_PROFILES_SAMPLE_RATE > 0 ? [new ProfilingIntegration()] : [])],
     environment: env.NODE_ENV,
     release: pkg.version,
+    // use custom error handler instead of the default one
+    setErrorHandler: false,
   });
 });
