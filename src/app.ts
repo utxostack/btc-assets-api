@@ -3,15 +3,13 @@ import { FastifyInstance } from 'fastify';
 import { AxiosError, HttpStatusCode } from 'axios';
 import sensible from '@fastify/sensible';
 import compress from '@fastify/compress';
-import * as Sentry from '@sentry/node';
-import { ProfilingIntegration } from '@sentry/profiling-node';
 import bitcoinRoutes from './routes/bitcoin';
 import tokenRoutes from './routes/token';
 import swagger from './plugins/swagger';
 import jwt from './plugins/jwt';
 import cache from './plugins/cache';
 import rateLimit from './plugins/rate-limit';
-import { env, getSafeEnvs } from './env';
+import { getSafeEnvs } from './env';
 import container from './container';
 import { asValue } from 'awilix';
 import options from './options';
@@ -27,25 +25,15 @@ import { provider } from 'std-env';
 import ipBlock from './plugins/ip-block';
 import internalRoutes from './routes/internal';
 import healthcheck from './plugins/healthcheck';
-
-if (env.SENTRY_DSN_URL) {
-  Sentry.init({
-    dsn: env.SENTRY_DSN_URL,
-    tracesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE,
-    profilesSampleRate: env.SENTRY_PROFILES_SAMPLE_RATE,
-    integrations: [...(env.SENTRY_PROFILES_SAMPLE_RATE > 0 ? [new ProfilingIntegration()] : [])],
-  });
-}
+import sentry from './plugins/sentry';
 
 async function routes(fastify: FastifyInstance) {
   fastify.log.info(`Process env: ${JSON.stringify(getSafeEnvs(), null, 2)}`);
-  if (Sentry.isInitialized()) {
-    fastify.log.info('Sentry is initialized');
-  }
 
   await fastify.register(cors);
   fastify.register(sensible);
   fastify.register(compress);
+  fastify.register(sentry);
   fastify.register(swagger);
   fastify.register(jwt);
   fastify.register(ipBlock);
@@ -65,12 +53,6 @@ async function routes(fastify: FastifyInstance) {
   if (provider === 'vercel') {
     fastify.register(cronRoutes, { prefix: '/cron' });
   }
-
-  fastify.addHook('onRequest', async (request) => {
-    Sentry.setTag('url', request.url);
-    Sentry.setContext('params', request.params ?? {});
-    Sentry.setContext('query', request.query ?? {});
-  });
 
   fastify.setErrorHandler((error, _, reply) => {
     if (
@@ -96,7 +78,7 @@ async function routes(fastify: FastifyInstance) {
     // captureException only for 5xx errors or unknown errors
     if (!error.statusCode || error.statusCode >= HttpStatusCode.InternalServerError) {
       fastify.log.error(error);
-      Sentry.captureException(error);
+      fastify.Sentry.captureException(error);
     }
     reply.status(error.statusCode ?? HttpStatusCode.InternalServerError).send({
       code: AppErrorCode.UnknownResponseError,

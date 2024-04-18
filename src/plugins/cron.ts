@@ -1,47 +1,46 @@
 import fp from 'fastify-plugin';
-import * as Sentry from '@sentry/node';
 import TransactionManager from '../services/transaction';
 import cron from 'fastify-cron';
 import { Env } from '../env';
 
-function getSentryCheckIn(monitorSlug: string, crontab: string) {
-  const checkInId = Sentry.captureCheckIn(
-    {
-      monitorSlug,
-      status: 'in_progress',
-    },
-    {
-      schedule: {
-        type: 'crontab',
-        value: crontab,
-      },
-      // create a new issue when 3 times missed or error check-ins are processed
-      failure_issue_threshold: 3,
-      // close the issue when 3 times ok check-ins are processed
-      recovery_threshold: 3,
-    },
-  );
-  return {
-    ok: () => {
-      Sentry.captureCheckIn({
-        checkInId,
-        monitorSlug,
-        status: 'ok',
-      });
-    },
-    error: () => {
-      Sentry.captureCheckIn({
-        checkInId,
-        monitorSlug,
-        status: 'error',
-      });
-    },
-  };
-}
-
 export default fp(async (fastify) => {
   try {
     const env: Env = fastify.container.resolve('env');
+
+    const getSentryCheckIn = (monitorSlug: string, crontab: string) => {
+      const checkInId = fastify.Sentry.captureCheckIn(
+        {
+          monitorSlug,
+          status: 'in_progress',
+        },
+        {
+          schedule: {
+            type: 'crontab',
+            value: crontab,
+          },
+          // create a new issue when 3 times missed or error check-ins are processed
+          failure_issue_threshold: 3,
+          // close the issue when 3 times ok check-ins are processed
+          recovery_threshold: 3,
+        },
+      );
+      return {
+        ok: () => {
+          fastify.Sentry.captureCheckIn({
+            checkInId,
+            monitorSlug,
+            status: 'ok',
+          });
+        },
+        error: () => {
+          fastify.Sentry.captureCheckIn({
+            checkInId,
+            monitorSlug,
+            status: 'error',
+          });
+        },
+      };
+    };
 
     // processing rgb++ ckb transaction
     const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
@@ -71,7 +70,7 @@ export default fp(async (fastify) => {
         } catch (err) {
           checkIn.error();
           fastify.log.error(err);
-          Sentry.captureException(err);
+          fastify.Sentry.captureException(err);
         }
       },
     };
@@ -91,7 +90,7 @@ export default fp(async (fastify) => {
         } catch (err) {
           checkIn.error();
           fastify.log.error(err);
-          Sentry.captureException(err);
+          fastify.Sentry.captureException(err);
         }
       },
     };
@@ -101,6 +100,6 @@ export default fp(async (fastify) => {
     });
   } catch (err) {
     fastify.log.error(err);
-    Sentry.captureException(err);
+    fastify.Sentry.captureException(err);
   }
 });
