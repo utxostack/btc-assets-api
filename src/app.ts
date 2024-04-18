@@ -53,7 +53,7 @@ async function routes(fastify: FastifyInstance) {
   fastify.register(rgbppRoutes, { prefix: '/rgbpp/v1' });
 
   // register cron routes only on Vercel
-  if (provider === 'vercel') {
+  if (provider === 'vercel' || env.NODE_ENV === 'test') {
     fastify.log.info('Cron routes is registered');
     fastify.register(cronRoutes, { prefix: '/cron' });
   } else {
