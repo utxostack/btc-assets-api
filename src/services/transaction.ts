@@ -272,6 +272,11 @@ export default class TransactionManager implements ITransactionManager {
     return ckbRawTx;
   }
 
+  /**
+   * Append the transaction witnesses to the CKB transaction using SPV proof
+   * @param txid - the transaction id
+   * @param ckbRawTx - the CKB Raw Transaction
+   */
   private async appendTxWitnesses(txid: string, ckbRawTx: CKBRawTransaction) {
     // bitcoin JSON-RPC gettransaction is wallet only
     // we need to use electrs to get the transaction hex and index in block
@@ -289,6 +294,12 @@ export default class TransactionManager implements ITransactionManager {
     return signedTx;
   }
 
+  /**
+   * Append the paymaster cell and sign the transaction if needed
+   * @param btcTx - the Bitcoin transaction
+   * @param ckbVirtualResult - the CKB virtual result
+   * @param signedTx - the signed CKB transaction
+   */
   private async appendPaymasterCellAndSignTx(
     btcTx: Transaction,
     ckbVirtualResult: CKBVirtualResult,
