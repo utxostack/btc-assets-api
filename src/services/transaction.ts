@@ -416,14 +416,17 @@ export default class TransactionManager implements ITransactionManager {
    */
   public async retryMissingTransactions() {
     const blockchainInfo = await this.cradle.bitcoind.getBlockchainInfo();
-    const currentHeight = blockchainInfo.blocks;
-    const previousHeight = BI.from(
-      (await this.cradle.redis.get('missing-transactions-height')) ?? currentHeight - 1,
-    ).toNumber();
-    if (currentHeight > previousHeight) {
+    // get the block height that has latest one confirmation
+    // make sure the electrs and spv service is synced with the bitcoind
+    const targetHeight = blockchainInfo.blocks - 1;
+
+    const previousHeight = await this.cradle.redis.get('missing-transactions-height');
+    const startHeight = BI.from(previousHeight ?? targetHeight - 1).toNumber();
+
+    if (targetHeight > startHeight) {
       this.cradle.logger.info(`[TransactionManager] Missing transactions handling started`);
       // get all the txids from previousHeight to currentHeight
-      const heights = Array.from({ length: currentHeight - previousHeight }, (_, i) => previousHeight + i + 1);
+      const heights = Array.from({ length: targetHeight - startHeight }, (_, i) => startHeight + i + 1);
       const txidsGroups = await Promise.all(
         heights.map(async (height) => {
           const blockHash = await this.cradle.electrs.getBlockHashByHeight(height);
@@ -445,7 +448,7 @@ export default class TransactionManager implements ITransactionManager {
           }
         }),
       );
-      await this.cradle.redis.set('missing-transactions-height', BI.from(currentHeight).toHexString());
+      await this.cradle.redis.set('missing-transactions-height', BI.from(targetHeight).toHexString());
     }
   }
 
@@ -485,18 +488,26 @@ export default class TransactionManager implements ITransactionManager {
     return job;
   }
 
-  public async retryAllFailedJobs(): Promise<{ txid: string; state: string }[]>{
-    const jobs = await this.queue.getJobs(['failed']);
-    console.log(jobs);
-    const results = await Promise.all(jobs.map(async (job) => {
-      this.cradle.logger.info(`[TransactionManager] Retry failed job: ${job.id}`);
-      await job.retry();
-      const state = await job.getState();
-      return {
-        txid: job.id!,
-        state,
-      };
-    }));
+  /**
+   * Retry all failed jobs in the queue
+   * @param maxAttempts - the max attempts to retry
+   */
+  public async retryAllFailedJobs(maxAttempts?: number): Promise<{ txid: string; state: string }[]> {
+    let jobs = await this.queue.getJobs(['failed']);
+    if (maxAttempts !== undefined) {
+      jobs = jobs.filter((job) => job.attemptsMade <= maxAttempts);
+    }
+    const results = await Promise.all(
+      jobs.map(async (job) => {
+        this.cradle.logger.info(`[TransactionManager] Retry failed job: ${job.id}`);
+        await job.retry();
+        const state = await job.getState();
+        return {
+          txid: job.id!,
+          state,
+        };
+      }),
+    );
     return results;
   }
 
