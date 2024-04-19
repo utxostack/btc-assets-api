@@ -1,13 +1,11 @@
 import { bytes } from '@ckb-lumos/codec';
 import { opReturnScriptPubKeyToData, remove0x, transactionToHex } from '@rgbpp-sdk/btc';
 import {
-  Collector,
   RGBPPLock,
   RGBPP_TX_ID_PLACEHOLDER,
   appendCkbTxWitnesses,
   getBtcTimeLockScript,
   getRgbppLockScript,
-  sendCkbTx,
   updateCkbTxWithRealBtcTxId,
 } from '@rgbpp-sdk/ckb';
 import {
@@ -28,6 +26,7 @@ import { BitcoinSPVError } from './spv';
 import { ElectrsAPINotFoundError } from './electrs';
 import { BloomFilter } from 'bloom-filters';
 import { BI } from '@ckb-lumos/lumos';
+import { CKBRpcError, CKBRPCErrorCodes } from './ckb';
 
 export interface ITransactionRequest {
   txid: string;
@@ -237,25 +236,6 @@ export default class TransactionManager implements ITransactionManager {
   }
 
   /**
-   * Wait for the ckb transaction to be confirmed
-   * @param txHash - the ckb transaction hash
-   */
-  private waitForTranscationConfirmed(txHash: string) {
-    // eslint-disable-next-line no-async-promise-executor
-    return new Promise(async (resolve) => {
-      const transaction = await this.cradle.ckbRpc.getTransaction(txHash);
-      const { status } = transaction.txStatus;
-      if (status === 'committed') {
-        resolve(txHash);
-      } else {
-        setTimeout(() => {
-          resolve(this.waitForTranscationConfirmed(txHash));
-        }, 1000);
-      }
-    });
-  }
-
-  /**
    * Get the CKB Raw Transaction with the real BTC transaction id
    * @param ckbVirtualResult - the CKB Virtual Transaction
    * @param txid - the real BTC transaction id
@@ -293,6 +273,79 @@ export default class TransactionManager implements ITransactionManager {
   }
 
   /**
+   * Append the transaction witnesses to the CKB transaction using SPV proof
+   * @param txid - the transaction id
+   * @param ckbRawTx - the CKB Raw Transaction
+   */
+  private async appendTxWitnesses(txid: string, ckbRawTx: CKBRawTransaction) {
+    // bitcoin JSON-RPC gettransaction is wallet only
+    // we need to use electrs to get the transaction hex and index in block
+    const [hex, rgbppApiSpvProof] = await Promise.all([
+      this.cradle.electrs.getTransactionHex(txid),
+      this.cradle.bitcoinSPV.getTxProof(txid),
+    ]);
+    // using for spv proof, we need to remove the witness data from the transaction
+    const hexWithoutWitness = transactionToHex(BitcoinTransaction.fromHex(hex), false);
+    const signedTx = await appendCkbTxWitnesses({
+      ckbRawTx,
+      btcTxBytes: hexWithoutWitness,
+      rgbppApiSpvProof,
+    })!;
+    return signedTx;
+  }
+
+  /**
+   * Append the paymaster cell and sign the transaction if needed
+   * @param btcTx - the Bitcoin transaction
+   * @param ckbVirtualResult - the CKB virtual result
+   * @param signedTx - the signed CKB transaction
+   */
+  private async appendPaymasterCellAndSignTx(
+    btcTx: Transaction,
+    ckbVirtualResult: CKBVirtualResult,
+    signedTx: CKBRawTransaction | undefined,
+  ) {
+    if (this.cradle.paymaster.enablePaymasterReceivesUTXOCheck) {
+      // make sure the paymaster received a UTXO as container fee
+      const hasPaymasterUTXO = this.cradle.paymaster.hasPaymasterReceivedBtcUTXO(btcTx);
+      if (!hasPaymasterUTXO) {
+        this.cradle.logger.info(`[TransactionManager] Paymaster receives UTXO not found: ${btcTx.txid}`);
+        throw new InvalidTransactionError('Paymaster receives UTXO not found', {
+          txid: btcTx.txid,
+          ckbVirtualResult,
+        });
+      }
+    } else {
+      this.cradle.logger.warn(`[TransactionManager] Paymaster receives UTXO check disabled`);
+    }
+
+    const tx = await this.cradle.paymaster.appendCellAndSignTx(btcTx.txid, {
+      ...ckbVirtualResult,
+      ckbRawTx: signedTx!,
+    });
+    return tx;
+  }
+
+  /**
+   * Fix the pool rejected transaction by increasing the fee rate
+   * set the needPaymasterCell to true to append the paymaster cell to pay the rest of the fee
+   */
+  private async fixPoolRejectedTransactionByMinFeeRate(job: Job) {
+    this.cradle.logger.debug(
+      `[TransactionManager] Fix pool rejected transaction by increasing the fee rate: ${job.data.txid}`,
+    );
+    // update the job data to append the paymaster cell next time
+    job.updateData({
+      ...job.data,
+      ckbVirtualResult: {
+        ...job.data.ckbVirtualResult,
+        needPaymasterCell: true,
+      },
+    });
+    await this.moveJobToDelayed(job);
+  }
+
+  /**
    * Process the transaction request, called by the worker
    * - get the Bitcoin transaction
    * - verify the transaction request
@@ -313,53 +366,20 @@ export default class TransactionManager implements ITransactionManager {
       }
 
       const ckbRawTx = this.getCkbRawTxWithRealBtcTxid(ckbVirtualResult, txid);
-      // bitcoin JSON-RPC gettransaction is wallet only
-      // we need to use electrs to get the transaction hex and index in block
-      const [hex, rgbppApiSpvProof] = await Promise.all([
-        this.cradle.electrs.getTransactionHex(txid),
-        this.cradle.bitcoinSPV.getTxProof(txid),
-      ]);
-      // using for spv proof, we need to remove the witness data from the transaction
-      const hexWithoutWitness = transactionToHex(BitcoinTransaction.fromHex(hex), false);
-      let signedTx = await appendCkbTxWitnesses({
-        ckbRawTx,
-        btcTxBytes: hexWithoutWitness,
-        rgbppApiSpvProof,
-      })!;
+      let signedTx = await this.appendTxWitnesses(txid, ckbRawTx);
 
       // append paymaster cell and sign the transaction if needed
       if (ckbVirtualResult.needPaymasterCell) {
-        if (this.cradle.paymaster.enablePaymasterReceivesUTXOCheck) {
-          // make sure the paymaster received a UTXO as container fee
-          const hasPaymasterUTXO = this.cradle.paymaster.hasPaymasterReceivedBtcUTXO(btcTx);
-          if (!hasPaymasterUTXO) {
-            this.cradle.logger.info(`[TransactionManager] Paymaster receives UTXO not found: ${txid}`);
-            throw new InvalidTransactionError('Paymaster receives UTXO not found', job.data);
-          }
-        } else {
-          this.cradle.logger.warn(`[TransactionManager] Paymaster receives UTXO check disabled`);
-        }
-
-        const tx = await this.cradle.paymaster.appendCellAndSignTx(txid, {
-          ...ckbVirtualResult,
-          ckbRawTx: signedTx!,
-        });
-        signedTx = tx as CKBRawTransaction;
+        signedTx = await this.appendPaymasterCellAndSignTx(btcTx, ckbVirtualResult, signedTx);
       }
       this.cradle.logger.debug(`[TransactionManager] Transaction signed: ${JSON.stringify(signedTx)}`);
 
       try {
-        const txHash = await sendCkbTx({
-          collector: new Collector({
-            ckbNodeUrl: this.cradle.env.CKB_RPC_URL,
-            ckbIndexerUrl: this.cradle.env.CKB_RPC_URL,
-          }),
-          signedTx,
-        });
+        const txHash = await this.cradle.ckb.sendTransaction(signedTx);
         job.returnvalue = txHash;
         this.cradle.logger.info(`[TransactionManager] Transaction sent: ${txHash}`);
 
-        await this.waitForTranscationConfirmed(txHash);
+        await this.cradle.ckb.waitForTranscationConfirmed(txHash);
         this.cradle.logger.info(`[TransactionManager] Transaction confirmed: ${txHash}`);
         // mark the paymaster cell as spent to avoid double spending
         if (ckbVirtualResult.needPaymasterCell) {
@@ -368,6 +388,15 @@ export default class TransactionManager implements ITransactionManager {
         }
         return txHash;
       } catch (err) {
+        // fix the pool rejected transaction by increasing the fee rate
+        if (
+          err instanceof CKBRpcError &&
+          err.code === CKBRPCErrorCodes.PoolRejectedTransactionByMinFeeRate &&
+          this.cradle.env.TRANSACTION_PAY_FOR_MIN_FEE_RATE_REJECT
+        ) {
+          await this.fixPoolRejectedTransactionByMinFeeRate(job);
+          return;
+        }
         // mark the paymaster cell as unspent if the transaction failed
         this.cradle.paymaster.markPaymasterCellAsUnspent(txid, signedTx!);
         throw err;

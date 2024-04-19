@@ -148,6 +148,16 @@ const envSchema = z.object({
    * used to retry the transaction queue job when failed
    */
   TRANSACTION_QUEUE_JOB_ATTEMPTS: z.coerce.number().default(6),
+  /**
+   * Pay fee for transaction with pool reject by min fee rate, false by default
+   * (If set to true, the transaction will be paid for the minimum fee rate and resent
+   * when the transaction throw PoolRejectedTransactionByMinFeeRate error)
+   *
+   */
+  TRANSACTION_PAY_FOR_MIN_FEE_RATE_REJECT: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 });
 
 export type Env = z.infer<typeof envSchema>;

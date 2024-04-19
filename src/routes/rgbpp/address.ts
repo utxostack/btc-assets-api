@@ -65,7 +65,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             }
           }
 
-          const collector = fastify.ckbIndexer.collector(query).collect();
+          const collector = fastify.ckb.indexer.collector(query).collect();
           const cells: Cell[] = [];
           for await (const cell of collector) {
             cells.push(cell);
