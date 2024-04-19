@@ -331,10 +331,16 @@ export default class TransactionManager implements ITransactionManager {
    * set the needPaymasterCell to true to append the paymaster cell to pay the rest of the fee
    */
   private async fixPoolRejectedTransactionByMinFeeRate(job: Job) {
+    this.cradle.logger.debug(
+      `[TransactionManager] Fix pool rejected transaction by increasing the fee rate: ${job.data.txid}`,
+    );
     // update the job data to append the paymaster cell next time
     job.updateData({
       ...job.data,
-      needPaymasterCell: true,
+      ckbVirtualResult: {
+        ...job.data.ckbVirtualResult,
+        needPaymasterCell: true,
+      },
     });
     await this.moveJobToDelayed(job);
   }

@@ -2,6 +2,7 @@ import { Collector, sendCkbTx } from '@rgbpp-sdk/ckb';
 import { Cradle } from '../container';
 import { Indexer, RPC } from '@ckb-lumos/lumos';
 import { z } from 'zod';
+import * as Sentry from '@sentry/node';
 
 // https://github.com/nervosnetwork/ckb/blob/develop/rpc/src/error.rs#L33
 export enum CKBRPCErrorCodes {
@@ -109,10 +110,15 @@ export class CKBRpcError extends Error {
     this.name = 'CKBRpcError';
     this.message = message;
 
-    const parsed = this.messageSchema.safeParse(message);
-    if (parsed.success) {
-      this.code = parsed.data.code;
-      this.message = parsed.data.message;
+    try {
+      const error = JSON.parse(message);
+      const parsed = this.messageSchema.safeParse(error);
+      if (parsed.success) {
+        this.code = parsed.data.code;
+        this.message = parsed.data.message;
+      }
+    } catch (e) {
+      Sentry.captureException(e);
     }
   }
 }
