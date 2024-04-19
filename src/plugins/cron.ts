@@ -63,16 +63,18 @@ export default fp(async (fastify) => {
       name: `retry-missing-transacitons-${env.NETWORK}`,
       cronTime: '*/5 * * * *',
       onTick: async () => {
-        const { name, cronTime } = retryMissingTransactionsJob;
-        const checkIn = getSentryCheckIn(name, cronTime);
-        try {
-          await transactionManager.retryMissingTransactions();
-          checkIn.ok();
-        } catch (err) {
-          checkIn.error();
-          fastify.log.error(err);
-          fastify.Sentry.captureException(err);
-        }
+        fastify.Sentry.startSpan({ op: 'cron', name: 'retry-missing-transactions' }, async () => {
+          const { name, cronTime } = retryMissingTransactionsJob;
+          const checkIn = getSentryCheckIn(name, cronTime);
+          try {
+            await transactionManager.retryMissingTransactions();
+            checkIn.ok();
+          } catch (err) {
+            checkIn.error();
+            fastify.log.error(err);
+            fastify.Sentry.captureException(err);
+          }
+        });
       },
     };
 
@@ -83,16 +85,18 @@ export default fp(async (fastify) => {
       name: monitorSlug,
       cronTime: env.UNLOCKER_CRON_SCHEDULE,
       onTick: async () => {
-        const { name, cronTime } = unlockBTCTimeLockCellsJob;
-        const checkIn = getSentryCheckIn(name, cronTime);
-        try {
-          await unlocker.unlockCells();
-          checkIn.ok();
-        } catch (err) {
-          checkIn.error();
-          fastify.log.error(err);
-          fastify.Sentry.captureException(err);
-        }
+        fastify.Sentry.startSpan({ op: 'cron', name: monitorSlug }, async () => {
+          const { name, cronTime } = unlockBTCTimeLockCellsJob;
+          const checkIn = getSentryCheckIn(name, cronTime);
+          try {
+            await unlocker.unlockCells();
+            checkIn.ok();
+          } catch (err) {
+            checkIn.error();
+            fastify.log.error(err);
+            fastify.Sentry.captureException(err);
+          }
+        });
       },
     };
 
