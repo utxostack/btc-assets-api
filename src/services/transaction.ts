@@ -6,6 +6,7 @@ import {
   appendCkbTxWitnesses,
   getBtcTimeLockScript,
   getRgbppLockScript,
+  getSecp256k1CellDep,
   updateCkbTxWithRealBtcTxId,
 } from '@rgbpp-sdk/ckb';
 import {
@@ -27,6 +28,7 @@ import { ElectrsAPINotFoundError } from './electrs';
 import { BloomFilter } from 'bloom-filters';
 import { BI } from '@ckb-lumos/lumos';
 import { CKBRpcError, CKBRPCErrorCodes } from './ckb';
+import { cloneDeep } from 'lodash';
 
 export interface ITransactionRequest {
   txid: string;
@@ -330,15 +332,20 @@ export default class TransactionManager implements ITransactionManager {
    * Fix the pool rejected transaction by increasing the fee rate
    * set the needPaymasterCell to true to append the paymaster cell to pay the rest of the fee
    */
-  private async fixPoolRejectedTransactionByMinFeeRate(job: Job) {
+  private async fixPoolRejectedTransactionByMinFeeRate(job: Job<ITransactionRequest>) {
     this.cradle.logger.debug(
       `[TransactionManager] Fix pool rejected transaction by increasing the fee rate: ${job.data.txid}`,
     );
+    const { txid, ckbVirtualResult } = job.data;
+    const { ckbRawTx } = ckbVirtualResult;
+    // append the secp256k1 cell dep to the transaction
+    ckbRawTx.cellDeps.push(getSecp256k1CellDep(this.isMainnet));
     // update the job data to append the paymaster cell next time
     job.updateData({
-      ...job.data,
+      txid,
       ckbVirtualResult: {
-        ...job.data.ckbVirtualResult,
+        ...ckbVirtualResult,
+        ckbRawTx,
         needPaymasterCell: true,
       },
     });
@@ -358,7 +365,7 @@ export default class TransactionManager implements ITransactionManager {
    */
   public async process(job: Job<ITransactionRequest>, token?: string) {
     try {
-      const { ckbVirtualResult, txid } = job.data;
+      const { ckbVirtualResult, txid } = cloneDeep(job.data);
       const btcTx = await this.cradle.electrs.getTransaction(txid);
       const isVerified = await this.verifyTransaction({ ckbVirtualResult, txid }, btcTx);
       if (!isVerified) {
