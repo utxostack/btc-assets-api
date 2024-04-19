@@ -62,6 +62,13 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     async (request, reply) => {
       const { btc_txid } = request.params;
       const isMainnet = env.NETWORK === 'mainnet';
+
+      // get the transaction hash from the job if it exists
+      const job = await fastify.transactionManager.getTransactionRequest(btc_txid);
+      if (job?.returnvalue) {
+        return { txhash: job.returnvalue };
+      }
+
       const transaction = await fastify.electrs.getTransaction(btc_txid);
 
       // query CKB transaction hash by RGBPP_LOCK cells
@@ -81,6 +88,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         }
       }
 
+      // XXX: unstable, need to be improved: https://github.com/ckb-cell/btc-assets-api/issues/45
       // query CKB transaction hash by BTC_TIME_LOCK cells
       const btcTimeLockScript = getBtcTimeLockScript(isMainnet);
       const txs = await fastify.ckbIndexer.getTransactions({
