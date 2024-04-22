@@ -1,5 +1,4 @@
 import fp from 'fastify-plugin';
-import * as Sentry from '@sentry/node';
 import { env } from '../env';
 
 export default fp(async (fastify) => {
@@ -14,6 +13,6 @@ export default fp(async (fastify) => {
     });
   } catch (err) {
     fastify.log.error(err);
-    Sentry.captureException(err);
+    fastify.Sentry.captureException(err);
   }
 });

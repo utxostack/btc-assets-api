@@ -274,6 +274,23 @@ export default class TransactionManager implements ITransactionManager {
     return ckbRawTx;
   }
 
+  private captureJobExceptionToSentryScope(job: Job<ITransactionRequest>, err: Error) {
+    const { ckbVirtualResult, txid } = job.data;
+    Sentry.withScope((scope) => {
+      scope.setTag('btcTxid', txid);
+      scope.setContext('job', {
+        btcTxid: txid,
+        ckbVirtualResult: {
+          ...ckbVirtualResult,
+          // serialize the ckbRawTx to string, otherwise it will be [object]
+          ckbRawTx: JSON.stringify(ckbVirtualResult.ckbRawTx),
+        },
+      });
+      this.cradle.logger.error(err);
+      scope.captureException(err);
+    });
+  }
+
   /**
    * Append the transaction witnesses to the CKB transaction using SPV proof
    * @param txid - the transaction id
@@ -409,7 +426,6 @@ export default class TransactionManager implements ITransactionManager {
         throw err;
       }
     } catch (err) {
-      const { ckbVirtualResult, txid } = job.data;
       this.cradle.logger.debug(err);
       if (err instanceof ElectrsAPINotFoundError) {
         // move the job to delayed queue if the transaction is not found yet
@@ -431,17 +447,7 @@ export default class TransactionManager implements ITransactionManager {
         await this.moveJobToDelayed(job, token);
         return;
       }
-      Sentry.setTag('txid', txid);
-      Sentry.setContext('job', {
-        txid,
-        ckbVirtualResult: {
-          ...ckbVirtualResult,
-          // serialize the ckbRawTx to string, otherwise it will be [object]
-          ckbRawTx: JSON.stringify(ckbVirtualResult.ckbRawTx),
-        },
-      });
-      this.cradle.logger.error(err);
-      Sentry.captureException(err);
+      this.captureJobExceptionToSentryScope(job, err as Error);
       throw err;
     }
   }

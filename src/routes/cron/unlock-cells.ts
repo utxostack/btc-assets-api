@@ -4,7 +4,6 @@ import { Server } from 'http';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import container from '../../container';
 import Unlocker from '../../services/unlocker';
-import * as Sentry from '@sentry/node';
 
 const unlockCellsCronRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (
   fastify,
@@ -26,7 +25,7 @@ const unlockCellsCronRoute: FastifyPluginCallback<Record<never, never>, Server, 
         await unlocker.unlockCells();
       } catch (err) {
         logger.error(err);
-        Sentry.captureException(err);
+        fastify.Sentry.captureException(err);
       }
     },
   );
