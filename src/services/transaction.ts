@@ -275,9 +275,9 @@ export default class TransactionManager implements ITransactionManager {
   private captureJobExceptionToSentryScope(job: Job<ITransactionRequest>, err: Error) {
     const { ckbVirtualResult, txid } = job.data;
     Sentry.withScope((scope) => {
-      scope.setTag('txid', txid);
+      scope.setTag('btcTxid', txid);
       scope.setContext('job', {
-        txid,
+        btcTxid: txid,
         ckbVirtualResult: {
           ...ckbVirtualResult,
           // serialize the ckbRawTx to string, otherwise it will be [object]
