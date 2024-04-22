@@ -1,22 +1,20 @@
 import { createContainer, InjectionMode, asValue, asClass } from 'awilix';
 import { Redis } from 'ioredis';
 import pino from 'pino';
-import Bitcoind from './services/bitcoind';
-import ElectrsAPI from './services/electrs';
 import { env } from './env';
 import TransactionManager from './services/transaction';
 import Paymaster from './services/paymaster';
 import Unlocker from './services/unlocker';
 import BitcoinSPV from './services/spv';
-import { CKB } from './services/ckb';
+import CKB from './services/ckb';
+import Bitcoin from './services/bitcoin';
 
 export interface Cradle {
   env: typeof env;
   logger: pino.BaseLogger;
   redis: Redis;
   ckb: CKB;
-  bitcoind: Bitcoind;
-  electrs: ElectrsAPI;
+  bitcoin: Bitcoin;
   bitcoinSPV: BitcoinSPV;
   paymaster: Paymaster;
   unlocker: Unlocker;
@@ -37,8 +35,7 @@ container.register({
     }),
   ),
   ckb: asClass(CKB).singleton(),
-  bitcoind: asClass(Bitcoind).singleton(),
-  electrs: asClass(ElectrsAPI).singleton(),
+  bitcoin: asClass(Bitcoin).singleton(),
   bitcoinSPV: asClass(BitcoinSPV).singleton(),
   paymaster: asClass(Paymaster).singleton(),
   transactionManager: asClass(TransactionManager).singleton(),

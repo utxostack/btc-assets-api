@@ -54,7 +54,7 @@ export default class Unlocker implements IUnlocker {
     const collect = this.collector.collect();
     const cells: IndexerCell[] = [];
 
-    const { blocks } = await this.cradle.bitcoind.getBlockchainInfo();
+    const { blocks } = await this.cradle.bitcoin.getBlockchainInfo();
     for await (const cell of collect) {
       // allow supported asset types only
       if (!cell.cellOutput.type || !isTypeAssetSupported(cell.cellOutput.type, this.isMainnet)) {
@@ -68,7 +68,7 @@ export default class Unlocker implements IUnlocker {
 
       const btcTxid = remove0x(btcTxIdFromBtcTimeLockArgs(cell.cellOutput.lock.args));
       const { after } = BTCTimeLock.unpack(cell.cellOutput.lock.args);
-      const btcTx = await this.cradle.electrs.getTransaction(btcTxid);
+      const btcTx = await this.cradle.bitcoin.getTransaction(btcTxid);
       const blockHeight = btcTx.status.block_height;
 
       // skip if btc tx not confirmed $after blocks yet

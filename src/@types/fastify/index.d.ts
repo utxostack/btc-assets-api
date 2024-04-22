@@ -1,10 +1,9 @@
 import { AwilixContainer, Cradle } from '../../container';
-import Bitcoind from '../../services/bitcoind';
-import ElectrsAPI from '../../services/electrs';
 import TransactionManager from '../../services/transaction';
 import Paymaster from '../../services/paymaster';
 import BitcoinSPV from '../../services/spv';
-import { CKB } from '../../services/ckb';
+import CKB from '../../services/ckb';
+import Bitcoin from '../../services/bitcoin';
 
 declare module 'fastify' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -12,8 +11,7 @@ declare module 'fastify' {
     extends FastifyJwtNamespace<{ namespace: 'security' }> {
     container: AwilixContainer<Cradle>;
     ckb: CKB;
-    electrs: ElectrsAPI;
-    bitcoind: Bitcoind;
+    bitcoin: Bitcoin;
     bitcoinSPV: BitcoinSPV;
     paymaster: Paymaster;
     transactionManager: TransactionManager;

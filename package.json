@@ -39,6 +39,7 @@
     "@fastify/swagger": "^8.14.0",
     "@fastify/swagger-ui": "^3.0.0",
     "@immobiliarelabs/fastify-sentry": "^8.0.1",
+    "@mempool/mempool.js": "^2.3.0",
     "@nervosnetwork/ckb-sdk-utils": "^0.109.1",
     "@rgbpp-sdk/btc": "0.0.0-snap-20240423144119",
     "@rgbpp-sdk/ckb": "0.0.0-snap-20240423144119",

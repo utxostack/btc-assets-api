@@ -38,10 +38,8 @@ async function routes(fastify: FastifyInstance) {
   fastify.register(rateLimit);
   fastify.register(healthcheck);
 
-  // Check if the Electrs API and Bitcoin JSON-RPC server are running on the correct network
   const env = container.resolve('env');
-  await container.resolve('bitcoind').checkNetwork(env.NETWORK as NetworkType);
-  await container.resolve('electrs').checkNetwork(env.NETWORK as NetworkType);
+  await container.resolve('bitcoin').checkNetwork(env.NETWORK as NetworkType);
 
   fastify.register(internalRoutes, { prefix: '/internal' });
   fastify.register(tokenRoutes, { prefix: '/token' });

@@ -3,7 +3,6 @@ import { z } from 'zod';
 export const ChainInfo = z.object({
   chain: z.string(),
   blocks: z.number(),
-  headers: z.number(),
   bestblockhash: z.string(),
   difficulty: z.number(),
   mediantime: z.number(),
@@ -63,7 +62,7 @@ const Input = z.object({
   scriptsig_asm: z.string(),
   witness: z.array(z.string()).optional(),
   is_coinbase: z.boolean(),
-  sequence: z.number(),
+  sequence: z.coerce.number(),
 });
 
 export const Transaction = z.object({

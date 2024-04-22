@@ -1,7 +1,5 @@
 import healthcheck from 'fastify-custom-healthcheck';
 import fp from 'fastify-plugin';
-import Bitcoind from '../services/bitcoind';
-import ElectrsAPI from '../services/electrs';
 import TransactionManager from '../services/transaction';
 import Paymaster from '../services/paymaster';
 
@@ -15,16 +13,6 @@ export default fp(async (fastify) => {
   fastify.addHealthCheck('redis', async () => {
     const redis = fastify.container.resolve('redis');
     await redis.ping();
-  });
-
-  fastify.addHealthCheck('bitcoind', async () => {
-    const bitcoind: Bitcoind = fastify.container.resolve('bitcoind');
-    await bitcoind.getBlockchainInfo();
-  });
-
-  fastify.addHealthCheck('electrs', async () => {
-    const electrs: ElectrsAPI = fastify.container.resolve('electrs');
-    await electrs.getTip();
   });
 
   fastify.addHealthCheck('queue', async () => {

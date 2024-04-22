@@ -11,8 +11,7 @@ A service for Retrieving BTC/RGB++ information/assets and processing transaction
 
 #### Requirements
 
-- [bitcoind](https://github.com/bitcoin/bitcoin): Running a Bitcoin full node
-- [mempool/electrs](https://github.com/mempool/electrs): Electrum Rust Server (Electrs) indexes Bitcoin chain data
+- [mempool.space API](https://mempool.space/docs): mempool.space merely provides data about the Bitcoin network.
 - [ckb-cell/ckb-bitcoin-spv-service](https://github.com/ckb-cell/ckb-bitcoin-spv-service): CKB Bitcoin SPV Service
 
 #### Configuration
@@ -58,13 +57,8 @@ JWT_SECRET=<your_secret>
 # JWT token denylist
 # JWT_DENYLIST=
 
-# Bitcoin JSON-RPC URL and credentials
-BITCOIN_JSON_RPC_URL=<http://bitcoin:8332>
-BITCOIN_JSON_RPC_USERNAME=<rpc_username>
-BITCOIN_JSON_RPC_PASSWORD=<rpc_password>
-
-# Electrs API URL
-BITCOIN_ELECTRS_API_URL=<http://electrs:3002>
+# Bitcoin Mempool.space API URL
+BITCOIN_MEMPOOL_SPACE_API_URL=https://mempool.space,
 
 # SPV Service URL
 BITCOIN_SPV_SERVICE_URL=<http://spv:3001>

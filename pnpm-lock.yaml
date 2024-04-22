@@ -47,6 +47,9 @@ dependencies:
   '@immobiliarelabs/fastify-sentry':
     specifier: ^8.0.1
     version: 8.0.1
+  '@mempool/mempool.js':
+    specifier: ^2.3.0
+    version: 2.3.0
   '@nervosnetwork/ckb-sdk-utils':
     specifier: ^0.109.1
     version: 0.109.1

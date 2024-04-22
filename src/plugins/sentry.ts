@@ -3,9 +3,8 @@ import fastifySentry from '@immobiliarelabs/fastify-sentry';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import pkg from '../../package.json';
 import { env } from '../env';
-import { ElectrsAPIError, ElectrsAPINotFoundError } from '../services/electrs';
 import { HttpStatusCode, AxiosError } from 'axios';
-import { BitcoinRPCError } from '../services/bitcoind';
+import { BitcoinMempoolAPIError } from '../services/bitcoin';
 
 export default fp(async (fastify) => {
   // @ts-expect-error - fastify-sentry types are not up to date
@@ -16,15 +15,11 @@ export default fp(async (fastify) => {
     integrations: [...(env.SENTRY_PROFILES_SAMPLE_RATE > 0 ? [new ProfilingIntegration()] : [])],
     environment: env.NODE_ENV,
     release: pkg.version,
+    // handle error in the errorResponse function below
+    shouldHandleError: false,
     errorResponse: (error, _, reply) => {
-      if (
-        error instanceof ElectrsAPIError ||
-        error instanceof ElectrsAPINotFoundError ||
-        error instanceof BitcoinRPCError
-      ) {
-        reply
-          .status(error.statusCode ?? HttpStatusCode.InternalServerError)
-          .send({ code: error.errorCode, message: error.message });
+      if (error instanceof BitcoinMempoolAPIError) {
+        reply.status(error.statusCode ?? HttpStatusCode.InternalServerError).send({ message: error.message });
         return;
       }
 

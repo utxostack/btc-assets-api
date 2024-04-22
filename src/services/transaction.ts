@@ -27,13 +27,13 @@ import { Cradle } from '../container';
 import { Transaction } from '../routes/bitcoin/types';
 import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
 import { BitcoinSPVError } from './spv';
-import { ElectrsAPINotFoundError } from './electrs';
 import { BloomFilter } from 'bloom-filters';
 import { BI } from '@ckb-lumos/lumos';
 import { CKBRpcError, CKBRPCErrorCodes } from './ckb';
 import { cloneDeep } from 'lodash';
 import { JwtPayload } from '../plugins/jwt';
 import { serializeCellDep } from '@nervosnetwork/ckb-sdk-utils';
+import { BitcoinMempoolAPIError } from './bitcoin';
 
 export interface ITransactionRequest {
   txid: string;
@@ -310,10 +310,8 @@ export default class TransactionManager implements ITransactionManager {
    * @param ckbRawTx - the CKB Raw Transaction
    */
   private async appendTxWitnesses(txid: string, ckbRawTx: CKBRawTransaction) {
-    // bitcoin JSON-RPC gettransaction is wallet only
-    // we need to use electrs to get the transaction hex and index in block
     const [hex, rgbppApiSpvProof] = await Promise.all([
-      this.cradle.electrs.getTransactionHex(txid),
+      this.cradle.bitcoin.getTransactionHex(txid),
       this.cradle.bitcoinSPV.getTxProof(txid),
     ]);
     // using for spv proof, we need to remove the witness data from the transaction
@@ -427,7 +425,7 @@ export default class TransactionManager implements ITransactionManager {
   public async process(job: Job<ITransactionRequest>, token?: string) {
     try {
       const { ckbVirtualResult, txid } = cloneDeep(job.data);
-      const btcTx = await this.cradle.electrs.getTransaction(txid);
+      const btcTx = await this.cradle.bitcoin.getTransaction(txid);
       const isVerified = await this.verifyTransaction({ ckbVirtualResult, txid }, btcTx);
       if (!isVerified) {
         throw new InvalidTransactionError('Invalid transaction', job.data);
@@ -471,7 +469,7 @@ export default class TransactionManager implements ITransactionManager {
       }
     } catch (err) {
       this.cradle.logger.debug(err);
-      if (err instanceof ElectrsAPINotFoundError) {
+      if (err instanceof BitcoinMempoolAPIError) {
         // move the job to delayed queue if the transaction is not found yet
         // only delay the job when the job is created less than 1 hour to make sure the transaction is existed
         // let the job failed if the transaction is not found after 1 hour
@@ -501,9 +499,8 @@ export default class TransactionManager implements ITransactionManager {
    * retry the mempool missing transactions when the blockchain block is confirmed
    */
   public async retryMissingTransactions() {
-    const blockchainInfo = await this.cradle.bitcoind.getBlockchainInfo();
+    const blockchainInfo = await this.cradle.bitcoin.getBlockchainInfo();
     // get the block height that has latest one confirmation
-    // make sure the electrs and spv service is synced with the bitcoind
     const targetHeight = blockchainInfo.blocks - 1;
 
     const previousHeight = await this.cradle.redis.get('missing-transactions-height');
@@ -515,8 +512,8 @@ export default class TransactionManager implements ITransactionManager {
       const heights = Array.from({ length: targetHeight - startHeight }, (_, i) => startHeight + i + 1);
       const txidsGroups = await Promise.all(
         heights.map(async (height) => {
-          const blockHash = await this.cradle.electrs.getBlockHashByHeight(height);
-          return this.cradle.electrs.getBlockTxIdsByHash(blockHash);
+          const blockHash = await this.cradle.bitcoin.getBlockHashByHeight(height);
+          return this.cradle.bitcoin.getBlockTxIdsByHash(blockHash);
         }),
       );
       const txids = txidsGroups.flat();

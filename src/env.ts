@@ -67,19 +67,11 @@ const envSchema = z.object({
     .default('')
     .transform((value) => value.split(','))
     .pipe(z.string().array()),
+
   /**
-   * The URL/USERNAME/PASSWORD of the Bitcoin JSON-RPC server.
-   * The JSON-RPC server is used to query the Bitcoin blockchain.
+   * Bitcoin Mempool.space API URL
    */
-  BITCOIN_JSON_RPC_URL: z.string(),
-  BITCOIN_JSON_RPC_USERNAME: z.string(),
-  BITCOIN_JSON_RPC_PASSWORD: z.string(),
-  /**
-   * The URL of the Electrs API.
-   * Electrs is a Rust implementation of Electrum Server.
-   * It is used to query the Bitcoin blockchain (balance, transactions, etc).
-   */
-  BITCOIN_ELECTRS_API_URL: z.string(),
+  BITCOIN_MEMPOOL_SPACE_API_URL: z.string(),
 
   /**
    * Bitcoin SPV service URL

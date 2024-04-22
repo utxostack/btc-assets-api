@@ -12,7 +12,7 @@ const rgbppRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
   fastify.decorate('transactionManager', container.resolve('transactionManager'));
   fastify.decorate('paymaster', container.resolve('paymaster'));
   fastify.decorate('ckb', container.resolve('ckb'));
-  fastify.decorate('electrs', container.resolve('electrs'));
+  fastify.decorate('bitcoin', container.resolve('bitcoin'));
   fastify.decorate('bitcoinSPV', container.resolve('bitcoinSPV'));
 
   fastify.register(transactionRoutes, { prefix: '/transaction' });
