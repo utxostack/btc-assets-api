@@ -13,6 +13,7 @@ import {
 import { remove0x } from '@rgbpp-sdk/btc';
 import { CUSTOM_HEADERS } from '../../constants';
 import { env } from '../../env';
+import { JwtPayload } from '../../plugins/jwt';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
@@ -34,9 +35,11 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     },
     async (request, reply) => {
       const { btc_txid, ckb_virtual_result } = request.body;
+      const jwt = (await request.jwtDecode()) as JwtPayload;
       const job: Job = await fastify.transactionManager.enqueueTransaction({
         txid: btc_txid,
         ckbVirtualResult: ckb_virtual_result,
+        context: { jwt },
       });
       const state = await job.getState();
       reply.send({ state });
@@ -179,7 +182,11 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
       };
 
       if (with_data === 'true') {
-        jobInfo.data = job.data;
+        const { txid, ckbVirtualResult } = job.data;
+        jobInfo.data = {
+          txid,
+          ckbVirtualResult,
+        };
       }
 
       if (state === 'failed') {

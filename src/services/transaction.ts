@@ -29,10 +29,14 @@ import { BloomFilter } from 'bloom-filters';
 import { BI } from '@ckb-lumos/lumos';
 import { CKBRpcError, CKBRPCErrorCodes } from './ckb';
 import { cloneDeep } from 'lodash';
+import { JwtPayload } from '../plugins/jwt';
 
 export interface ITransactionRequest {
   txid: string;
   ckbVirtualResult: CKBVirtualResult;
+  context?: {
+    jwt: JwtPayload;
+  };
 }
 
 export interface IProcessCallbacks {
@@ -275,8 +279,13 @@ export default class TransactionManager implements ITransactionManager {
   }
 
   private captureJobExceptionToSentryScope(job: Job<ITransactionRequest>, err: Error) {
-    const { ckbVirtualResult, txid } = job.data;
+    const { ckbVirtualResult, txid, context } = job.data;
     Sentry.withScope((scope) => {
+      if (context?.jwt) {
+        scope.setTag('token.app', context?.jwt.sub);
+        scope.setTag('token.domain', context?.jwt.aud);
+      }
+
       scope.setTag('btcTxid', txid);
       scope.setContext('job', {
         btcTxid: txid,
