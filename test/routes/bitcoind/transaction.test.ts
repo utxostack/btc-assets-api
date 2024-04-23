@@ -1,6 +1,7 @@
 import { beforeEach, expect, test } from 'vitest';
 import { buildFastify } from '../../../src/app';
 import { describe } from 'node:test';
+import { MempoolAPIErrorCode } from '../../../src/services/bitcoin';
 
 let token: string;
 
@@ -59,6 +60,7 @@ describe('/bitcoin/v1/transaction', () => {
 
     expect(response.statusCode).toBe(404);
     expect(data).toEqual({
+      code: MempoolAPIErrorCode.MempoolUnknown,
       message: 'Request failed with status code 404',
     });
 

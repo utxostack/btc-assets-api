@@ -33,7 +33,7 @@ import { CKBRpcError, CKBRPCErrorCodes } from './ckb';
 import { cloneDeep } from 'lodash';
 import { JwtPayload } from '../plugins/jwt';
 import { serializeCellDep } from '@nervosnetwork/ckb-sdk-utils';
-import { BitcoinMempoolAPIError } from './bitcoin';
+import { MempoolAPIError } from './bitcoin';
 import { HttpStatusCode } from 'axios';
 
 export interface ITransactionRequest {
@@ -470,7 +470,7 @@ export default class TransactionManager implements ITransactionManager {
       }
     } catch (err) {
       this.cradle.logger.debug(err);
-      if (err instanceof BitcoinMempoolAPIError && err.statusCode === HttpStatusCode.NotFound) {
+      if (err instanceof MempoolAPIError && err.statusCode === HttpStatusCode.NotFound) {
         // move the job to delayed queue if the transaction is not found yet
         // only delay the job when the job is created less than 1 hour to make sure the transaction is existed
         // let the job failed if the transaction is not found after 1 hour

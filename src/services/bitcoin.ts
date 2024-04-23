@@ -4,12 +4,43 @@ import { Block, ChainInfo, Transaction, UTXO } from '../routes/bitcoin/types';
 import { NetworkType } from '../constants';
 import { AxiosError } from 'axios';
 
-export class BitcoinMempoolAPIError extends Error {
+// https://github.com/mempool/electrs/blob/d4f788fc3d7a2b4eca4c5629270e46baba7d0f19/src/errors.rs#L6
+export enum MempoolElectrsMessage {
+  Connection = 'Connection error',
+  Interrupt = 'Interruption by external signal',
+  TooManyUtxos = 'Too many unspent transaction outputs',
+  TooManyTxs = 'Too many history transactions',
+  ElectrumClient = 'Electrum client error',
+}
+
+export enum MempoolAPIErrorCode {
+  Connection = 0x1000, // 4096
+  Interrupt = 0x1001, // 4097
+  TooManyUtxos = 0x1002, // 4098
+  TooManyTxs = 0x1003, // 4099
+  ElectrumClient = 0x1004, // 4100
+
+  MempoolUnknown = 0x1111, // 4369
+}
+
+const MempoolElectrsErrorMap = {
+  [MempoolElectrsMessage.Connection]: MempoolAPIErrorCode.Connection,
+  [MempoolElectrsMessage.Interrupt]: MempoolAPIErrorCode.Interrupt,
+  [MempoolElectrsMessage.TooManyUtxos]: MempoolAPIErrorCode.TooManyUtxos,
+  [MempoolElectrsMessage.TooManyTxs]: MempoolAPIErrorCode.TooManyTxs,
+  [MempoolElectrsMessage.ElectrumClient]: MempoolAPIErrorCode.ElectrumClient,
+};
+
+export class MempoolAPIError extends Error {
   public statusCode = 500;
+  public errorCode: MempoolAPIErrorCode;
 
   constructor(message: string) {
     super(message);
     this.name = this.constructor.name;
+
+    const errorKey = Object.keys(MempoolElectrsErrorMap).find((msg) => message.startsWith(msg));
+    this.errorCode = MempoolElectrsErrorMap[errorKey as MempoolElectrsMessage] ?? MempoolAPIErrorCode.MempoolUnknown;
   }
 }
 
@@ -20,7 +51,7 @@ const wrapTry = async <T extends (...args: any) => any>(fn: T): Promise<ReturnTy
   }
   return fn().catch((err: Error) => {
     if ((err as AxiosError).isAxiosError) {
-      const error = new BitcoinMempoolAPIError(err.message);
+      const error = new MempoolAPIError(err.message);
       if ((err as AxiosError).response) {
         error.statusCode = (err as AxiosError).response?.status || 500;
       }
