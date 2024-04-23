@@ -139,11 +139,21 @@ export class CKB {
   public waitForTranscationConfirmed(txHash: string) {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve) => {
-      const transaction = await this.rpc.getTransaction(txHash);
-      const { status } = transaction.txStatus;
-      if (status === 'committed') {
-        resolve(txHash);
-      } else {
+      try {
+        const transaction = await this.rpc.getTransaction(txHash);
+        const { status } = transaction.txStatus;
+        if (status === 'committed') {
+          resolve(txHash);
+        } else {
+          setTimeout(() => {
+            resolve(this.waitForTranscationConfirmed(txHash));
+          }, 1000);
+        }
+      } catch (e) {
+        Sentry.withScope((scope) => {
+          scope.setTag('ckb_txhash', txHash);
+          scope.captureException(e);
+        });
         setTimeout(() => {
           resolve(this.waitForTranscationConfirmed(txHash));
         }, 1000);
