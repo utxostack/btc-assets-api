@@ -6,6 +6,8 @@ import { HttpStatusCode } from 'axios';
 import { Server } from 'http';
 import z from 'zod';
 
+export const SPV_PROOF_CACHE_MAX_AGE = 60;
+
 const spvRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.get(
     '/proof',
@@ -29,14 +31,13 @@ const spvRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvi
         const proof = await fastify.bitcoinSPV.getTxProof(btc_txid, confirmations);
         if (proof) {
           reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
-          // spv proof cache for 30 minutes
-          reply.header(CUSTOM_HEADERS.ResponseCacheMaxAge, 60 * 30);
+          reply.header(CUSTOM_HEADERS.ResponseCacheMaxAge, SPV_PROOF_CACHE_MAX_AGE);
         }
         return proof;
       } catch (err) {
         if (err instanceof BitcoinSPVError) {
           reply.status(HttpStatusCode.ServiceUnavailable);
-          reply.header('Retry-After', '600000');
+          reply.header('Retry-After', (SPV_PROOF_CACHE_MAX_AGE * 1000).toString());
           return {
             code: err.code,
             message: err.message,
