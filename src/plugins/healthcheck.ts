@@ -1,6 +1,6 @@
 import healthcheck from 'fastify-custom-healthcheck';
 import fp from 'fastify-plugin';
-import TransactionManager from '../services/transaction';
+import TransactionProcessor from '../services/transaction';
 import Paymaster from '../services/paymaster';
 
 export default fp(async (fastify) => {
@@ -16,12 +16,12 @@ export default fp(async (fastify) => {
   });
 
   fastify.addHealthCheck('queue', async () => {
-    const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
-    const counts = await transactionManager.getQueueJobCounts();
+    const transactionProcessor: TransactionProcessor = fastify.container.resolve('transactionProcessor');
+    const counts = await transactionProcessor.getQueueJobCounts();
     if (!counts) {
       throw new Error('Transaction queue is not available');
     }
-    const isRunning = await transactionManager.isWorkerRunning();
+    const isRunning = await transactionProcessor.isWorkerRunning();
     if (!isRunning) {
       throw new Error('Transaction worker is not running');
     }

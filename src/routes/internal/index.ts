@@ -11,7 +11,7 @@ const internalRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTyp
     fastify.addHook('onRequest', adminAuthorize);
   }
 
-  fastify.decorate('transactionManager', container.resolve('transactionManager'));
+  fastify.decorate('transactionProcessor', container.resolve('transactionProcessor'));
 
   fastify.register(jobRoutes, { prefix: '/job' });
   done();

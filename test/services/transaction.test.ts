@@ -1,5 +1,5 @@
 import { describe, beforeEach, expect, test, vi } from 'vitest';
-import TransactionManager, { ITransactionRequest } from '../../src/services/transaction';
+import TransactionProcessor, { ITransactionRequest } from '../../src/services/transaction';
 import container from '../../src/container';
 import { CKBVirtualResult, InputCell, OutputCell } from '../../src/routes/rgbpp/types';
 import { ChainInfo, Transaction } from '../../src/routes/bitcoin/types';
@@ -11,17 +11,17 @@ const commitment = calculateCommitment({
   outputs: [] as OutputCell[],
 } as CKBVirtualResult['ckbRawTx']);
 
-describe('transactionManager', () => {
-  let transactionManager: TransactionManager;
+describe('transactionProcessor', () => {
+  let transactionProcessor: TransactionProcessor;
   const cradle = container.cradle;
 
   beforeEach(async () => {
-    transactionManager = new TransactionManager(cradle);
+    transactionProcessor = new TransactionProcessor(cradle);
   });
 
   test('verifyTransaction: should return true for valid transaction', async () => {
     vi.spyOn(
-      transactionManager as unknown as {
+      transactionProcessor as unknown as {
         getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;
       },
       'getCommitmentFromBtcTx',
@@ -37,13 +37,13 @@ describe('transactionManager', () => {
       },
     };
     const btcTx = await cradle.bitcoin.getTransaction(transactionRequest.txid);
-    const isValid = await transactionManager.verifyTransaction(transactionRequest, btcTx);
+    const isValid = await transactionProcessor.verifyTransaction(transactionRequest, btcTx);
     expect(isValid).toBe(true);
   });
 
   test('verifyTransaction: should return false for mismatch commitment', async () => {
     vi.spyOn(
-      transactionManager as unknown as {
+      transactionProcessor as unknown as {
         getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;
       },
       'getCommitmentFromBtcTx',
@@ -59,14 +59,14 @@ describe('transactionManager', () => {
       },
     };
     const btcTx = await cradle.bitcoin.getTransaction(transactionRequest.txid);
-    const isValid = await transactionManager.verifyTransaction(transactionRequest, btcTx);
+    const isValid = await transactionProcessor.verifyTransaction(transactionRequest, btcTx);
     expect(isValid).toBe(false);
   });
 
   test('verifyTransaction: should return false for mismatch ckb tx', async () => {
     const commitment = 'mismatchcommitment';
     vi.spyOn(
-      transactionManager as unknown as {
+      transactionProcessor as unknown as {
         getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;
       },
       'getCommitmentFromBtcTx',
@@ -82,18 +82,18 @@ describe('transactionManager', () => {
       },
     };
     const btcTx = await cradle.bitcoin.getTransaction(transactionRequest.txid);
-    const isValid = await transactionManager.verifyTransaction(transactionRequest, btcTx);
+    const isValid = await transactionProcessor.verifyTransaction(transactionRequest, btcTx);
     expect(isValid).toBe(false);
   });
 
   test('verifyTransaction: should throw TransactionNotConfirmedError for unconfirmed transaction', async () => {
     vi.spyOn(
-      transactionManager as unknown as {
+      transactionProcessor as unknown as {
         getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;
       },
       'getCommitmentFromBtcTx',
     ).mockResolvedValueOnce(Buffer.from(commitment, 'hex'));
-    vi.spyOn(transactionManager['cradle']['bitcoin'], 'getTransaction').mockResolvedValueOnce({
+    vi.spyOn(transactionProcessor['cradle']['bitcoin'], 'getTransaction').mockResolvedValueOnce({
       status: { confirmed: false, block_height: 0 },
     } as unknown as Transaction);
 
@@ -109,7 +109,7 @@ describe('transactionManager', () => {
 
     const btcTx = await cradle.bitcoin.getTransaction(transactionRequest.txid);
     await expect(
-      transactionManager.verifyTransaction(transactionRequest, btcTx),
+      transactionProcessor.verifyTransaction(transactionRequest, btcTx),
     ).rejects.toThrowErrorMatchingSnapshot();
   });
 
@@ -124,9 +124,9 @@ describe('transactionManager', () => {
       },
     };
 
-    transactionManager.enqueueTransaction(transactionRequest);
-    const count = await transactionManager['queue'].getJobCounts();
-    const job = await transactionManager['queue'].getJob(transactionRequest.txid);
+    transactionProcessor.enqueueTransaction(transactionRequest);
+    const count = await transactionProcessor['queue'].getJobCounts();
+    const job = await transactionProcessor['queue'].getJob(transactionRequest.txid);
     expect(count.delayed).toBe(1);
     expect(job?.delay).toBe(cradle.env.TRANSACTION_QUEUE_JOB_DELAY);
   });
@@ -142,14 +142,14 @@ describe('transactionManager', () => {
       '8eb22b379c0ef491dea2d819e721d5df296bebc67a056a0fbb8c92f11920824d',
     ]);
     const retry = vi.fn();
-    vi.spyOn(transactionManager['queue'], 'getJobs').mockResolvedValue([
+    vi.spyOn(transactionProcessor['queue'], 'getJobs').mockResolvedValue([
       {
         id: 'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
         retry,
       } as unknown as Job,
     ]);
 
-    await transactionManager.retryMissingTransactions();
+    await transactionProcessor.retryMissingTransactions();
 
     expect(retry).toHaveBeenCalled();
   });
@@ -165,14 +165,14 @@ describe('transactionManager', () => {
       '8eb22b379c0ef491dea2d819e721d5df296bebc67a056a0fbb8c92f11920824d',
     ]);
     const retry = vi.fn();
-    vi.spyOn(transactionManager['queue'], 'getJobs').mockResolvedValue([
+    vi.spyOn(transactionProcessor['queue'], 'getJobs').mockResolvedValue([
       {
         id: 'bb8c92f119208248ea0fdb22b379c0ef491dea2d819e721d5df296bebc67a056',
         retry,
       } as unknown as Job,
     ]);
 
-    await transactionManager.retryMissingTransactions();
+    await transactionProcessor.retryMissingTransactions();
 
     expect(retry).not.toHaveBeenCalled();
   });

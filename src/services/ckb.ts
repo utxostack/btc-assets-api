@@ -123,7 +123,7 @@ export class CKBRpcError extends Error {
   }
 }
 
-export default class CKB {
+export default class CKBClient {
   public rpc: RPC;
   public indexer: Indexer;
 

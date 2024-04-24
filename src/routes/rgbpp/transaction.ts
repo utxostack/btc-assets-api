@@ -36,7 +36,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     async (request, reply) => {
       const { btc_txid, ckb_virtual_result } = request.body;
       const jwt = (await request.jwtDecode()) as JwtPayload;
-      const job: Job = await fastify.transactionManager.enqueueTransaction({
+      const job: Job = await fastify.transactionProcessor.enqueueTransaction({
         txid: btc_txid,
         ckbVirtualResult: ckb_virtual_result,
         context: { jwt },
@@ -67,7 +67,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
       const isMainnet = env.NETWORK === 'mainnet';
 
       // get the transaction hash from the job if it exists
-      const job = await fastify.transactionManager.getTransactionRequest(btc_txid);
+      const job = await fastify.transactionProcessor.getTransactionRequest(btc_txid);
       if (job?.returnvalue) {
         return { txhash: job.returnvalue };
       }
@@ -168,7 +168,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     async (request, reply) => {
       const { btc_txid } = request.params;
       const { with_data } = request.query;
-      const job = await fastify.transactionManager.getTransactionRequest(btc_txid);
+      const job = await fastify.transactionProcessor.getTransactionRequest(btc_txid);
       if (!job) {
         reply.status(404);
         return;
@@ -215,7 +215,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     },
     async (request, reply) => {
       const { btc_txid } = request.body;
-      const job = await fastify.transactionManager.getTransactionRequest(btc_txid);
+      const job = await fastify.transactionProcessor.getTransactionRequest(btc_txid);
       if (!job) {
         reply.status(404);
         return;

@@ -3,7 +3,7 @@ import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import container from '../../container';
-import TransactionManager from '../../services/transaction';
+import TransactionProcessor from '../../services/transaction';
 import { VERCEL_MAX_DURATION } from '../../constants';
 
 const processTransactionsCronRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (
@@ -21,11 +21,11 @@ const processTransactionsCronRoute: FastifyPluginCallback<Record<never, never>, 
     },
     async () => {
       const logger = container.resolve<pino.BaseLogger>('logger');
-      const transactionManager: TransactionManager = container.resolve('transactionManager');
+      const transactionProcessor: TransactionProcessor = container.resolve('transactionProcessor');
       try {
         await new Promise((resolve) => {
           setTimeout(resolve, (VERCEL_MAX_DURATION - 10) * 1000);
-          transactionManager.startProcess({
+          transactionProcessor.startProcess({
             onActive: (job) => {
               logger.info(`Job active: ${job.id}`);
             },
@@ -34,8 +34,8 @@ const processTransactionsCronRoute: FastifyPluginCallback<Record<never, never>, 
             },
           });
         });
-        await transactionManager.pauseProcess();
-        await transactionManager.closeProcess();
+        await transactionProcessor.pauseProcess();
+        await transactionProcessor.closeProcess();
       } catch (err) {
         logger.error(err);
         fastify.Sentry.captureException(err);

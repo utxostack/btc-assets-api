@@ -1,5 +1,5 @@
 import fp from 'fastify-plugin';
-import TransactionManager from '../services/transaction';
+import TransactionProcessor from '../services/transaction';
 import cron from 'fastify-cron';
 import { Env } from '../env';
 import Unlocker from '../services/unlocker';
@@ -44,9 +44,9 @@ export default fp(async (fastify) => {
     };
 
     // processing rgb++ ckb transaction
-    const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
+    const transactionProcessor: TransactionProcessor = fastify.container.resolve('transactionProcessor');
     fastify.addHook('onReady', async () => {
-      transactionManager.startProcess({
+      transactionProcessor.startProcess({
         onActive: (job) => {
           fastify.log.info(`Job active: ${job.id}`);
         },
@@ -56,7 +56,7 @@ export default fp(async (fastify) => {
       });
     });
     fastify.addHook('onClose', async () => {
-      transactionManager.closeProcess();
+      transactionProcessor.closeProcess();
     });
 
     const retryMissingTransactionsJob = {
@@ -67,7 +67,7 @@ export default fp(async (fastify) => {
           const { name, cronTime } = retryMissingTransactionsJob;
           const checkIn = getSentryCheckIn(name, cronTime);
           try {
-            await transactionManager.retryMissingTransactions();
+            await transactionProcessor.retryMissingTransactions();
             checkIn.ok();
           } catch (err) {
             checkIn.error();

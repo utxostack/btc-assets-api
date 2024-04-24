@@ -1,13 +1,13 @@
 import container from '../../src/container';
 import { describe, test, beforeEach, afterEach, vi, expect } from 'vitest';
-import SPV from '../../src/services/spv';
+import SPVClient from '../../src/services/spv';
 
 describe('BitcoinSPV', () => {
-  let spv: SPV;
+  let spv: SPVClient;
 
   beforeEach(async () => {
     const cradle = container.cradle;
-    spv = new SPV(cradle);
+    spv = new SPVClient(cradle);
   });
 
   afterEach(() => {

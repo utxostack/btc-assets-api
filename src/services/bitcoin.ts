@@ -7,7 +7,7 @@ import Electrs from '../utils/electrs';
 import * as Sentry from '@sentry/node';
 
 // https://github.com/mempool/electrs/blob/d4f788fc3d7a2b4eca4c5629270e46baba7d0f19/src/errors.rs#L6
-export enum MempoolElectrsMessage {
+export enum MempoolErrorMessage {
   Connection = 'Connection error',
   Interrupt = 'Interruption by external signal',
   TooManyUtxos = 'Too many unspent transaction outputs',
@@ -15,7 +15,7 @@ export enum MempoolElectrsMessage {
   ElectrumClient = 'Electrum client error',
 }
 
-export enum MempoolAPIErrorCode {
+export enum BitcoinClientErrorCode {
   Connection = 0x1000, // 4096
   Interrupt = 0x1001, // 4097
   TooManyUtxos = 0x1002, // 4098
@@ -25,24 +25,24 @@ export enum MempoolAPIErrorCode {
   MempoolUnknown = 0x1111, // 4369
 }
 
-const MempoolElectrsErrorMap = {
-  [MempoolElectrsMessage.Connection]: MempoolAPIErrorCode.Connection,
-  [MempoolElectrsMessage.Interrupt]: MempoolAPIErrorCode.Interrupt,
-  [MempoolElectrsMessage.TooManyUtxos]: MempoolAPIErrorCode.TooManyUtxos,
-  [MempoolElectrsMessage.TooManyTxs]: MempoolAPIErrorCode.TooManyTxs,
-  [MempoolElectrsMessage.ElectrumClient]: MempoolAPIErrorCode.ElectrumClient,
+const BitcoinClientErrorMap = {
+  [MempoolErrorMessage.Connection]: BitcoinClientErrorCode.Connection,
+  [MempoolErrorMessage.Interrupt]: BitcoinClientErrorCode.Interrupt,
+  [MempoolErrorMessage.TooManyUtxos]: BitcoinClientErrorCode.TooManyUtxos,
+  [MempoolErrorMessage.TooManyTxs]: BitcoinClientErrorCode.TooManyTxs,
+  [MempoolErrorMessage.ElectrumClient]: BitcoinClientErrorCode.ElectrumClient,
 };
 
-export class MempoolAPIError extends Error {
+export class BitcoinClientAPIError extends Error {
   public statusCode = 500;
-  public errorCode: MempoolAPIErrorCode;
+  public errorCode: BitcoinClientErrorCode;
 
   constructor(message: string) {
     super(message);
     this.name = this.constructor.name;
 
-    const errorKey = Object.keys(MempoolElectrsErrorMap).find((msg) => message.startsWith(msg));
-    this.errorCode = MempoolElectrsErrorMap[errorKey as MempoolElectrsMessage] ?? MempoolAPIErrorCode.MempoolUnknown;
+    const errorKey = Object.keys(BitcoinClientErrorMap).find((msg) => message.startsWith(msg));
+    this.errorCode = BitcoinClientErrorMap[errorKey as MempoolErrorMessage] ?? BitcoinClientErrorCode.MempoolUnknown;
   }
 }
 
@@ -57,7 +57,7 @@ const wrapTry = async <T extends (...args: any) => Promise<any>>(fn: T): Promise
     return ret;
   } catch (err) {
     if ((err as AxiosError).isAxiosError) {
-      const error = new MempoolAPIError((err as AxiosError).message);
+      const error = new BitcoinClientAPIError((err as AxiosError).message);
       if ((err as AxiosError).response) {
         error.statusCode = (err as AxiosError).response?.status || 500;
       }
@@ -67,7 +67,7 @@ const wrapTry = async <T extends (...args: any) => Promise<any>>(fn: T): Promise
   }
 };
 
-export default class Bitcoin {
+export default class BitcoinClient {
   private cradle: Cradle;
   private mempool: ReturnType<typeof mempoolJS>;
   private electrs?: Electrs;
@@ -151,9 +151,11 @@ export default class Bitcoin {
     });
   }
 
-  public async getTransactionsByAddress(address: string): Promise<Transaction[]> {
+  public async getTransactionsByAddress(address: string, after_txid?: string): Promise<Transaction[]> {
     return wrapTry(async () => {
-      const txs = await this.mempool.bitcoin.addresses.getAddressTxs({ address });
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error after_txid is not defined in the type definition
+      const txs = await this.mempool.bitcoin.addresses.getAddressTxs({ address, after_txid });
       return txs.map((tx) => Transaction.parse(tx));
     });
   }
