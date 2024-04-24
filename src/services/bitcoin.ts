@@ -3,7 +3,7 @@ import { Cradle } from '../container';
 import { Block, ChainInfo, Transaction, UTXO } from '../routes/bitcoin/types';
 import { NetworkType } from '../constants';
 import { AxiosError } from 'axios';
-import Electrs from '../utils/electrs';
+import ElectrsClient from '../utils/electrs';
 import * as Sentry from '@sentry/node';
 
 // https://github.com/mempool/electrs/blob/d4f788fc3d7a2b4eca4c5629270e46baba7d0f19/src/errors.rs#L6
@@ -70,7 +70,7 @@ const wrapTry = async <T extends (...args: any) => Promise<any>>(fn: T): Promise
 export default class BitcoinClient {
   private cradle: Cradle;
   private mempool: ReturnType<typeof mempoolJS>;
-  private electrs?: Electrs;
+  private electrs?: ElectrsClient;
 
   constructor(cradle: Cradle) {
     this.cradle = cradle;
@@ -82,7 +82,7 @@ export default class BitcoinClient {
     });
 
     if (cradle.env.BITCOIN_ELECTRS_API_URL) {
-      this.electrs = new Electrs(cradle);
+      this.electrs = new ElectrsClient(cradle);
     }
   }
 

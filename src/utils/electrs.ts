@@ -4,7 +4,7 @@ import { Cradle } from '../container';
 import { UTXO } from '../routes/bitcoin/types';
 import { addLoggerInterceptor } from './interceptors';
 
-export default class Electrs {
+export default class ElectrsClient {
   private request: AxiosInstance;
 
   constructor({ env, logger }: Cradle) {
