@@ -6,6 +6,7 @@ import {
   IndexerCell,
   buildBtcTimeCellsSpentTx,
   getBtcTimeLockScript,
+  isClusterSporeTypeSupported,
   isTypeAssetSupported,
   remove0x,
   sendCkbTx,
@@ -57,6 +58,11 @@ export default class Unlocker implements IUnlocker {
     for await (const cell of collect) {
       // allow supported asset types only
       if (!cell.cellOutput.type || !isTypeAssetSupported(cell.cellOutput.type, this.isMainnet)) {
+        continue;
+      }
+
+      // temporary skip cluster spore type
+      if (isClusterSporeTypeSupported(cell.cellOutput.type, this.isMainnet)) {
         continue;
       }
 
