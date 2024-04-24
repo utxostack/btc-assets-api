@@ -5,7 +5,7 @@ import { env } from './env';
 import TransactionManager from './services/transaction';
 import Paymaster from './services/paymaster';
 import Unlocker from './services/unlocker';
-import BitcoinSPV from './services/spv';
+import SPV from './services/spv';
 import CKB from './services/ckb';
 import Bitcoin from './services/bitcoin';
 
@@ -15,7 +15,7 @@ export interface Cradle {
   redis: Redis;
   ckb: CKB;
   bitcoin: Bitcoin;
-  bitcoinSPV: BitcoinSPV;
+  spv: SPV;
   paymaster: Paymaster;
   unlocker: Unlocker;
   transactionManager: TransactionManager;
@@ -36,7 +36,7 @@ container.register({
   ),
   ckb: asClass(CKB).singleton(),
   bitcoin: asClass(Bitcoin).singleton(),
-  bitcoinSPV: asClass(BitcoinSPV).singleton(),
+  spv: asClass(SPV).singleton(),
   paymaster: asClass(Paymaster).singleton(),
   transactionManager: asClass(TransactionManager).singleton(),
   unlocker: asClass(Unlocker).singleton(),

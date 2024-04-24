@@ -1,7 +1,7 @@
 import { AwilixContainer, Cradle } from '../../container';
 import TransactionManager from '../../services/transaction';
 import Paymaster from '../../services/paymaster';
-import BitcoinSPV from '../../services/spv';
+import SPV from '../../services/spv';
 import CKB from '../../services/ckb';
 import Bitcoin from '../../services/bitcoin';
 
@@ -12,7 +12,7 @@ declare module 'fastify' {
     container: AwilixContainer<Cradle>;
     ckb: CKB;
     bitcoin: Bitcoin;
-    bitcoinSPV: BitcoinSPV;
+    spv: SPV;
     paymaster: Paymaster;
     transactionManager: TransactionManager;
   }

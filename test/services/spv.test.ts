@@ -1,13 +1,13 @@
 import container from '../../src/container';
 import { describe, test, beforeEach, afterEach, vi, expect } from 'vitest';
-import BitcoinSPV from '../../src/services/spv';
+import SPV from '../../src/services/spv';
 
 describe('BitcoinSPV', () => {
-  let bitcoinSPV: BitcoinSPV;
+  let spv: SPV;
 
   beforeEach(async () => {
     const cradle = container.cradle;
-    bitcoinSPV = new BitcoinSPV(cradle);
+    spv = new SPV(cradle);
   });
 
   afterEach(() => {
@@ -15,7 +15,7 @@ describe('BitcoinSPV', () => {
   });
 
   test('getTxProof: throw BitcoinSPVError', async () => {
-    vi.spyOn(bitcoinSPV['request'], 'post').mockResolvedValue({
+    vi.spyOn(spv['request'], 'post').mockResolvedValue({
       data: {
         jsonrpc: '2.0',
         error: {
@@ -27,25 +27,25 @@ describe('BitcoinSPV', () => {
       },
     });
     await expect(
-      bitcoinSPV.getTxProof('ede749ecee5e607e761e4fffb6d754799498056872456a7d33abe426d7b9951c', 100),
+      spv.getTxProof('ede749ecee5e607e761e4fffb6d754799498056872456a7d33abe426d7b9951c', 100),
     ).rejects.toThrowErrorMatchingSnapshot();
   });
 
   test('getTxProof: get proof successfuly', async () => {
-    vi.spyOn(bitcoinSPV['request'], 'post').mockResolvedValue({
+    vi.spyOn(spv['request'], 'post').mockResolvedValue({
       data: {
         jsonrpc: '2.0',
         result: {
-          "spv_client": {
-            "tx_hash": "0x5e570545c3ffd656199d3babd85f05377ac91b396126b166cf370e2f0edddae5",
-            "index": "0x1"
+          spv_client: {
+            tx_hash: '0x5e570545c3ffd656199d3babd85f05377ac91b396126b166cf370e2f0edddae5',
+            index: '0x1',
           },
-          "proof": "00000000000000"
+          proof: '00000000000000',
         },
         id: 'aa1a7882-9c0a-4eaa-87e8-1ed906b957f8',
       },
     });
-    const proof = await bitcoinSPV.getTxProof('ede749ecee5e607e761e4fffb6d754799498056872456a7d33abe426d7b9951c', 100);
+    const proof = await spv.getTxProof('ede749ecee5e607e761e4fffb6d754799498056872456a7d33abe426d7b9951c', 100);
     expect(proof).toHaveProperty('spv_client');
     expect(proof).toHaveProperty('proof');
   });

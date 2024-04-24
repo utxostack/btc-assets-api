@@ -3,6 +3,8 @@ import { Cradle } from '../container';
 import { Block, ChainInfo, Transaction, UTXO } from '../routes/bitcoin/types';
 import { NetworkType } from '../constants';
 import { AxiosError } from 'axios';
+import Electrs from '../utils/electrs';
+import * as Sentry from '@sentry/node';
 
 // https://github.com/mempool/electrs/blob/d4f788fc3d7a2b4eca4c5629270e46baba7d0f19/src/errors.rs#L6
 export enum MempoolElectrsMessage {
@@ -45,37 +47,47 @@ export class MempoolAPIError extends Error {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const wrapTry = async <T extends (...args: any) => any>(fn: T): Promise<ReturnType<T>> => {
+const wrapTry = async <T extends (...args: any) => Promise<any>>(fn: T): Promise<ReturnType<T>> => {
   if (typeof fn !== 'function') {
     throw new Error('wrapTry: fn must be a function');
   }
-  return fn().catch((err: Error) => {
+
+  try {
+    const ret = await fn();
+    return ret;
+  } catch (err) {
     if ((err as AxiosError).isAxiosError) {
-      const error = new MempoolAPIError(err.message);
+      const error = new MempoolAPIError((err as AxiosError).message);
       if ((err as AxiosError).response) {
         error.statusCode = (err as AxiosError).response?.status || 500;
       }
       throw error;
     }
     throw err;
-  });
+  }
 };
 
 export default class Bitcoin {
-  private mempool: ReturnType<typeof mempoolJS>;
   private cradle: Cradle;
+  private mempool: ReturnType<typeof mempoolJS>;
+  private electrs?: Electrs;
 
   constructor(cradle: Cradle) {
+    this.cradle = cradle;
+
     const url = new URL(cradle.env.BITCOIN_MEMPOOL_SPACE_API_URL);
     this.mempool = mempoolJS({
       hostname: url.hostname,
       network: cradle.env.NETWORK,
     });
-    this.cradle = cradle;
+
+    if (cradle.env.BITCOIN_ELECTRS_API_URL) {
+      this.electrs = new Electrs(cradle);
+    }
   }
 
   public async checkNetwork(network: NetworkType) {
-    const hash = await this.mempool.bitcoin.blocks.getBlockHeight({ height: 0 });
+    const hash = await this.getBlockHashByHeight(0);
     switch (network) {
       case NetworkType.mainnet:
         // Bitcoin mainnet genesis block hash
@@ -109,15 +121,33 @@ export default class Bitcoin {
 
   public async sendRawTransaction(txhex: string): Promise<string> {
     return wrapTry(async () => {
-      const txid = await this.mempool.bitcoin.transactions.postTx({ txhex });
-      return txid as string;
+      try {
+        const txid = await this.mempool.bitcoin.transactions.postTx({ txhex });
+        return txid as string;
+      } catch (err) {
+        this.cradle.logger.error(err);
+        Sentry.captureException(err);
+        if (this.electrs) {
+          return this.electrs.sendRawTransaction(txhex);
+        }
+        throw err;
+      }
     });
   }
 
   public async getUtxoByAddress(address: string): Promise<UTXO[]> {
     return wrapTry(async () => {
-      const utxo = await this.mempool.bitcoin.addresses.getAddressTxsUtxo({ address });
-      return utxo.map((utxo) => UTXO.parse(utxo));
+      try {
+        const utxo = await this.mempool.bitcoin.addresses.getAddressTxsUtxo({ address });
+        return utxo.map((utxo) => UTXO.parse(utxo));
+      } catch (err) {
+        this.cradle.logger.error(err);
+        Sentry.captureException(err);
+        if (this.electrs) {
+          return this.electrs.getUtxoByAddress(address);
+        }
+        throw err;
+      }
     });
   }
 
@@ -148,41 +178,83 @@ export default class Bitcoin {
 
   public async getBlockByHeight(height: number): Promise<Block> {
     return wrapTry(async () => {
-      const hash = await this.mempool.bitcoin.blocks.getBlockHeight({ height });
-      const block = await this.mempool.bitcoin.blocks.getBlock({ hash });
-      return block;
+      try {
+        const hash = await this.mempool.bitcoin.blocks.getBlockHeight({ height });
+        const block = await this.mempool.bitcoin.blocks.getBlock({ hash });
+        return Block.parse(block);
+      } catch (err) {
+        this.cradle.logger.error(err);
+        Sentry.captureException(err);
+        if (this.electrs) {
+          const hash = await this.electrs.getBlockHashByHeight(height);
+          const block = await this.electrs.getBlockByHash(hash);
+          return Block.parse(block);
+        }
+        throw err;
+      }
     });
   }
 
   public async getBlockHashByHeight(height: number): Promise<string> {
     return wrapTry(async () => {
-      return this.mempool.bitcoin.blocks.getBlockHeight({ height });
+      try {
+        const hash = await this.mempool.bitcoin.blocks.getBlockHeight({ height });
+        return hash;
+      } catch (err) {
+        this.cradle.logger.error(err);
+        Sentry.captureException(err);
+        if (this.electrs) {
+          const hash = await this.electrs.getBlockHashByHeight(height);
+          return hash;
+        }
+        throw err;
+      }
     });
   }
 
   public async getBlockHeaderByHash(hash: string) {
     return wrapTry(async () => {
-      return this.mempool.bitcoin.blocks.getBlockHeader({ hash });
-    });
-  }
-
-  public async getBlockHeaderByHeight(height: number) {
-    return wrapTry(async () => {
-      const hash = await this.mempool.bitcoin.blocks.getBlockHeight({ height });
-      return this.getBlockHeaderByHash(hash);
+      try {
+        return this.mempool.bitcoin.blocks.getBlockHeader({ hash });
+      } catch (err) {
+        this.cradle.logger.error(err);
+        Sentry.captureException(err);
+        if (this.electrs) {
+          return this.electrs.getBlockHeaderByHash(hash);
+        }
+        throw err;
+      }
     });
   }
 
   public async getBlockTxIdsByHash(hash: string): Promise<string[]> {
     return wrapTry(async () => {
-      const txids = await this.mempool.bitcoin.blocks.getBlockTxids({ hash });
-      return txids;
+      try {
+        const txids = await this.mempool.bitcoin.blocks.getBlockTxids({ hash });
+        return txids;
+      } catch (err) {
+        this.cradle.logger.error(err);
+        Sentry.captureException(err);
+        if (this.electrs) {
+          return this.electrs.getBlockTxIdsByHash(hash);
+        }
+        throw err;
+      }
     });
   }
 
   public async getTip(): Promise<number> {
     return wrapTry(async () => {
-      return this.mempool.bitcoin.blocks.getBlocksTipHeight();
+      try {
+        return this.mempool.bitcoin.blocks.getBlocksTipHeight();
+      } catch (err) {
+        this.cradle.logger.error(err);
+        Sentry.captureException(err);
+        if (this.electrs) {
+          return this.electrs.getTip();
+        }
+        throw err;
+      }
     });
   }
 }

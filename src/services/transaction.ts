@@ -313,7 +313,7 @@ export default class TransactionManager implements ITransactionManager {
   private async appendTxWitnesses(txid: string, ckbRawTx: CKBRawTransaction) {
     const [hex, rgbppApiSpvProof] = await Promise.all([
       this.cradle.bitcoin.getTransactionHex(txid),
-      this.cradle.bitcoinSPV.getTxProof(txid),
+      this.cradle.spv.getTxProof(txid),
     ]);
     // using for spv proof, we need to remove the witness data from the transaction
     const hexWithoutWitness = transactionToHex(BitcoinTransaction.fromHex(hex), false);

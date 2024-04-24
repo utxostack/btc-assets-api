@@ -72,6 +72,12 @@ const envSchema = z.object({
    * Bitcoin Mempool.space API URL
    */
   BITCOIN_MEMPOOL_SPACE_API_URL: z.string(),
+  /**
+   * The URL of the Electrs API.
+   * Electrs is a Rust implementation of Electrum Server.
+   * used for fallback when the mempool.space API is down.
+   */
+  BITCOIN_ELECTRS_API_URL: z.string().optional(),
 
   /**
    * Bitcoin SPV service URL

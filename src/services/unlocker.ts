@@ -117,7 +117,7 @@ export default class Unlocker implements IUnlocker {
     });
 
     const btcAssetsApi = {
-      getRgbppSpvProof: this.cradle.bitcoinSPV.getTxProof.bind(this.cradle.bitcoinSPV),
+      getRgbppSpvProof: this.cradle.spv.getTxProof.bind(this.cradle.spv),
     } as unknown as BtcAssetsApi;
     const ckbRawTx = await buildBtcTimeCellsSpentTx({
       btcTimeCells: cells,

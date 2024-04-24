@@ -43,7 +43,7 @@ export class BitcoinSPVError extends Error {
 /**
  * Bitcoin SPV service client
  */
-export default class BitcoinSPV {
+export default class SPV {
   private request: AxiosInstance;
   private cradle: Cradle;
 
