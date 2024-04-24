@@ -1,7 +1,6 @@
 import fp from 'fastify-plugin';
 import { env } from '../env';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import * as Sentry from '@sentry/node';
 import { ApiCacheStatus, CUSTOM_HEADERS } from '../constants';
 import { DOCS_ROUTE_PREFIX } from './swagger';
 
@@ -34,7 +33,7 @@ export default fp(async (fastify) => {
 
       // if the request cache is exist, return it
       const key = getCacheKey(request);
-      Sentry.startSpan({ op: 'cache/get', name: key }, () => {
+      fastify.Sentry.startSpan({ op: 'cache/get', name: key }, () => {
         fastify.redis.get(key, async (err, result) => {
           if (!err && result) {
             const response = JSON.parse(result);
@@ -49,7 +48,7 @@ export default fp(async (fastify) => {
           }
           if (err) {
             fastify.log.error(err);
-            Sentry.captureException(err);
+            fastify.Sentry.captureException(err);
           }
 
           reply.header(CUSTOM_HEADERS.ApiCache, ApiCacheStatus.Miss);
@@ -81,11 +80,11 @@ export default fp(async (fastify) => {
         const key = getCacheKey(request);
         const value = JSON.stringify(payload);
         const maxAge = reply.getHeader(CUSTOM_HEADERS.ResponseCacheMaxAge) as number | undefined;
-        Sentry.startSpan({ op: 'cache/set', name: key }, () => {
+        fastify.Sentry.startSpan({ op: 'cache/set', name: key }, () => {
           fastify.redis.set(key, value, 'EX', maxAge ?? MAX_AGE_FOREVER, (err) => {
             if (err) {
               fastify.log.error(err);
-              Sentry.captureException(err);
+              fastify.Sentry.captureException(err);
             }
             reply.removeHeader(CUSTOM_HEADERS.ResponseCacheable);
             setCacheControlHeaders(reply);
@@ -102,6 +101,6 @@ export default fp(async (fastify) => {
     });
   } catch (err) {
     fastify.log.error(err);
-    Sentry.captureException(err);
+    fastify.Sentry.captureException(err);
   }
 });

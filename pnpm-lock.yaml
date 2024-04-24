@@ -44,6 +44,9 @@ dependencies:
   '@fastify/swagger-ui':
     specifier: ^3.0.0
     version: 3.0.0
+  '@immobiliarelabs/fastify-sentry':
+    specifier: ^8.0.1
+    version: 8.0.1
   '@nervosnetwork/ckb-sdk-utils':
     specifier: ^0.109.1
     version: 0.109.1
@@ -1151,6 +1154,17 @@ packages:
     resolution: {integrity: sha512-6EwiSjwWYP7pTckG6I5eyFANjPhmPjUX9JRLUSfNPC7FX7zK9gyZAfUEaECL6ALTpGX5AjnBq3C9XmVWPitNpw==}
     dev: true
 
+  /@immobiliarelabs/fastify-sentry@8.0.1:
+    resolution: {integrity: sha512-gA++aSJWeM7hNSFm4M75Bq3pAWlgPamUnI0kdMrZxt3Ab+SMZIq7GOBbX4tZpvEfSB5F9gDkVb5TIXm+qUN1hg==}
+    engines: {node: '>=18'}
+    dependencies:
+      '@sentry/node': 7.110.1
+      '@sentry/tracing': 7.110.1
+      '@sentry/utils': 7.110.1
+      cookie: 0.6.0
+      fastify-plugin: 4.5.1
+    dev: false
+
   /@ioredis/commands@1.2.0:
     resolution: {integrity: sha512-Sx1pU8EM64o2BrqNpEO1CNLtKQwyhuXuqyfH7oGKCk+1a33d2r5saW8zNwm3j6BTExtjrv2BxTgzzkMwts6vGg==}
     dev: false
@@ -1541,12 +1555,29 @@ packages:
       '@sentry/utils': 7.102.1
     dev: false
 
+  /@sentry-internal/tracing@7.110.1:
+    resolution: {integrity: sha512-4kTd6EM0OP1SVWl2yLn3KIwlCpld1lyhNDeR8G1aKLm1PN+kVsR6YB/jy9KPPp4Q3lN3W9EkTSES3qhP4jVffQ==}
+    engines: {node: '>=8'}
+    dependencies:
+      '@sentry/core': 7.110.1
+      '@sentry/types': 7.110.1
+      '@sentry/utils': 7.110.1
+    dev: false
+
   /@sentry/core@7.102.1:
     resolution: {integrity: sha512-QjY+LSP3du3J/C8x/FfEbRxgZgsWd0jfTJ4P7s9f219I1csK4OeBMC3UA1HwEa0pY/9OF6H/egW2CjOcMM5Pdg==}
     engines: {node: '>=8'}
     dependencies:
       '@sentry/types': 7.102.1
       '@sentry/utils': 7.102.1
+    dev: false
+
+  /@sentry/core@7.110.1:
+    resolution: {integrity: sha512-yC1yeUFQlmHj9u/KxKmwOMVanBmgfX+4MZnZU31QPqN95adyZTwpaYFZl4fH5kDVnz7wXJI0qRP8SxuMePtqhw==}
+    engines: {node: '>=8'}
+    dependencies:
+      '@sentry/types': 7.110.1
+      '@sentry/utils': 7.110.1
     dev: false
 
   /@sentry/node@7.102.1:
@@ -1559,6 +1590,16 @@ packages:
       '@sentry/utils': 7.102.1
     dev: false
 
+  /@sentry/node@7.110.1:
+    resolution: {integrity: sha512-n6sNzZJ/ChfyCI1FxuGWgloeevC8j2vax3vXM4IZrSIm5hS1d9L2oCJ4HEPuxGUxCkQ1f4kXPcdmNaQsWH0JBw==}
+    engines: {node: '>=8'}
+    dependencies:
+      '@sentry-internal/tracing': 7.110.1
+      '@sentry/core': 7.110.1
+      '@sentry/types': 7.110.1
+      '@sentry/utils': 7.110.1
+    dev: false
+
   /@sentry/profiling-node@7.102.1:
     resolution: {integrity: sha512-eqOUdu04eI4ODqeh/nHvC/mdwm3tWkqm02anR2ITEjKVJxHliHH6+jr+3M2X56e1hIxOibtL+JrR89Du9HEl9w==}
     engines: {node: '>=8.0.0'}
@@ -1569,8 +1610,20 @@ packages:
       node-abi: 3.56.0
     dev: false
 
+  /@sentry/tracing@7.110.1:
+    resolution: {integrity: sha512-y9tFHCV/8PeuV9TBOyMJ9w1vVOhkzoHy9d78eO5N3Q1lC+wImJSEBxb6aPcZ+RkuFBKSMm7fZTF3OFA32dHHLA==}
+    engines: {node: '>=8'}
+    dependencies:
+      '@sentry-internal/tracing': 7.110.1
+    dev: false
+
   /@sentry/types@7.102.1:
     resolution: {integrity: sha512-htKorf3t/D0XYtM7foTcmG+rM47rDP6XdbvCcX5gBCuCYlzpM1vqCt2rl3FLktZC6TaIpFRJw1TLfx6m+x5jdA==}
+    engines: {node: '>=8'}
+    dev: false
+
+  /@sentry/types@7.110.1:
+    resolution: {integrity: sha512-sZxOpM5gfyxvJeWVvNpHnxERTnlqcozjqNcIv29SZ6wonlkekmxDyJ3uCuPv85VO54WLyA4uzskPKnNFHacI8A==}
     engines: {node: '>=8'}
     dev: false
 
@@ -1579,6 +1632,13 @@ packages:
     engines: {node: '>=8'}
     dependencies:
       '@sentry/types': 7.102.1
+    dev: false
+
+  /@sentry/utils@7.110.1:
+    resolution: {integrity: sha512-eibLo2m1a7sHkOHxYYmRujr3D7ek2l9sv26F1SLoQBVDF7Afw5AKyzPmtA1D+4M9P/ux1okj7cGj3SaBrVpxXA==}
+    engines: {node: '>=8'}
+    dependencies:
+      '@sentry/types': 7.110.1
     dev: false
 
   /@sinclair/typebox@0.25.24:
@@ -2730,6 +2790,11 @@ packages:
 
   /cookie@0.5.0:
     resolution: {integrity: sha512-YZ3GUyn/o8gfKJlnlX7g7xq4gyO6OSuhGPKaaGssGB2qgDUS0gPgtTvoyZLTt9Ab6dC4hfc9dV5arkvc/OCmrw==}
+    engines: {node: '>= 0.6'}
+    dev: false
+
+  /cookie@0.6.0:
+    resolution: {integrity: sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw==}
     engines: {node: '>= 0.6'}
     dev: false
 

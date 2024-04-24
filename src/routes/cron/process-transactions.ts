@@ -5,7 +5,6 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import container from '../../container';
 import TransactionManager from '../../services/transaction';
 import { VERCEL_MAX_DURATION } from '../../constants';
-import * as Sentry from '@sentry/node';
 
 const processTransactionsCronRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (
   fastify,
@@ -39,7 +38,7 @@ const processTransactionsCronRoute: FastifyPluginCallback<Record<never, never>, 
         await transactionManager.closeProcess();
       } catch (err) {
         logger.error(err);
-        Sentry.captureException(err);
+        fastify.Sentry.captureException(err);
       }
     },
   );

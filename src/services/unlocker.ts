@@ -30,7 +30,7 @@ export default class Unlocker implements IUnlocker {
 
   constructor(cradle: Cradle) {
     this.cradle = cradle;
-    this.collector = this.cradle.ckbIndexer.collector({
+    this.collector = this.cradle.ckb.indexer.collector({
       lock: {
         ...this.lockScript,
         args: '0x',

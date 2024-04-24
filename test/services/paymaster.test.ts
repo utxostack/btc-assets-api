@@ -85,12 +85,15 @@ describe('Paymaster', () => {
   });
 
   test('getNextCell: should return the next job when queue has sufficient jobs', async () => {
+    const originalCkb = container.resolve('ckb');
     container.register(
-      'ckbRpc',
+      'ckb',
       asValue({
-        getLiveCell: vi.fn().mockResolvedValue({
-          status: 'live',
-        }),
+        rpc: {
+          getLiveCell: vi.fn().mockResolvedValue({
+            status: 'live',
+          }),
+        },
       }),
     );
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(10);
@@ -100,18 +103,22 @@ describe('Paymaster', () => {
     vi.spyOn(paymaster, 'refillCellQueue');
 
     const cell = await paymaster.getNextCell('token');
+    container.register('ckb', asValue(originalCkb));
     expect(cell?.outputData).toEqual('0x123');
     expect(paymaster.refillCellQueue).not.toHaveBeenCalled();
     expect(paymaster['refilling']).toBeFalsy();
   });
 
   test('getNextCell: should trigger refill when queue has fewer jobs than threshold', async () => {
+    const originalCkb = container.resolve('ckb');
     container.register(
-      'ckbRpc',
+      'ckb',
       asValue({
-        getLiveCell: vi.fn().mockResolvedValue({
-          status: 'live',
-        }),
+        rpc: {
+          getLiveCell: vi.fn().mockResolvedValue({
+            status: 'live',
+          }),
+        },
       }),
     );
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(2);
@@ -121,11 +128,23 @@ describe('Paymaster', () => {
     );
 
     const cell = await paymaster.getNextCell('token');
+    container.register('ckb', asValue(originalCkb));
     expect(cell?.outputData).toEqual('0x123');
     expect(paymaster.refillCellQueue).toHaveBeenCalled();
   });
 
   test('getNextCell: should return a job when queue is empty and refill is successful', async () => {
+    const originalCkb = container.resolve('ckb');
+    container.register(
+      'ckb',
+      asValue({
+        rpc: {
+          getLiveCell: vi.fn().mockResolvedValue({
+            status: 'live',
+          }),
+        },
+      }),
+    );
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(0);
     vi.spyOn(paymaster, 'refillCellQueue').mockResolvedValue(1);
     vi.spyOn(paymaster['worker'], 'getNextJob').mockResolvedValue(
@@ -133,15 +152,28 @@ describe('Paymaster', () => {
     );
 
     await paymaster.getNextCell('token');
+    container.register('ckb', asValue(originalCkb));
     expect(paymaster.refillCellQueue).toHaveBeenCalled();
   });
 
   test('getNextCell: should handle error when queue is empty and refill fails', async () => {
+    const originalCkb = container.resolve('ckb');
+    container.register(
+      'ckb',
+      asValue({
+        rpc: {
+          getLiveCell: vi.fn().mockResolvedValue({
+            status: 'live',
+          }),
+        },
+      }),
+    );
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(0);
     vi.spyOn(paymaster, 'refillCellQueue').mockRejectedValue(new Error('Refill failed'));
     vi.spyOn(paymaster['worker'], 'getNextJob');
 
     await expect(paymaster.getNextCell('token')).rejects.toThrow('Refill failed');
+    container.register('ckb', asValue(originalCkb));
     expect(paymaster.refillCellQueue).toHaveBeenCalled();
     expect(paymaster['worker'].getNextJob).not.toHaveBeenCalled();
   });
@@ -176,7 +208,7 @@ describe('Paymaster', () => {
         yield* mockCells;
       },
     };
-    vi.spyOn(paymaster['cradle'].ckbIndexer, 'collector').mockReturnValue(mockCollector);
+    vi.spyOn(paymaster['cradle'].ckb.indexer, 'collector').mockReturnValue(mockCollector);
     vi.spyOn(paymaster['queue'], 'getWaitingCount').mockResolvedValue(9);
     vi.spyOn(paymaster['queue'], 'add');
 
@@ -191,7 +223,7 @@ describe('Paymaster', () => {
         // No cells yielded
       },
     };
-    vi.spyOn(paymaster['cradle'].ckbIndexer, 'collector').mockReturnValue(mockCollector);
+    vi.spyOn(paymaster['cradle'].ckb.indexer, 'collector').mockReturnValue(mockCollector);
     vi.spyOn(paymaster['queue'], 'add');
 
     const filled = await paymaster.refillCellQueue();

@@ -89,14 +89,18 @@ export default class Paymaster implements IPaymaster {
     return null;
   }
 
-  private async getContext() {
+  private async captureExceptionToSentryScope(err: Error) {
     const remaining = await this.queue.getWaitingCount();
-    return {
-      address: this.ckbAddress,
-      remaining: remaining,
-      preset: this.presetCount,
-      threshold: this.refillThreshold,
-    };
+    Sentry.withScope((scope) => {
+      scope.setContext('paymaster', {
+        address: this.ckbAddress,
+        remaining: remaining,
+        preset: this.presetCount,
+        threshold: this.refillThreshold,
+      });
+      scope.captureException(err);
+    });
+    return;
   }
 
   /*
@@ -182,9 +186,7 @@ export default class Paymaster implements IPaymaster {
           // XXX: consider to send an alert email or other notifications
           this.cradle.logger.warn('Filled paymaster cells less than the preset count');
           const error = new PaymasterCellNotEnoughError('Filled paymaster cells less than the preset count');
-          const context = await this.getContext();
-          Sentry.setContext('paymaster', context);
-          Sentry.captureException(error);
+          this.captureExceptionToSentryScope(error);
         }
         this.refilling = false;
       }
@@ -198,7 +200,7 @@ export default class Paymaster implements IPaymaster {
       }
 
       const data = job.data;
-      const liveCell = await this.cradle.ckbRpc.getLiveCell(data.outPoint!, false);
+      const liveCell = await this.cradle.ckb.rpc.getLiveCell(data.outPoint!, false);
       if (!liveCell || liveCell.status !== 'live') {
         job.moveToFailed(new Error('The paymaster cell is not live'), token);
         continue;
@@ -228,7 +230,7 @@ export default class Paymaster implements IPaymaster {
       return filled;
     }
 
-    const collector = this.cradle.ckbIndexer.collector({
+    const collector = this.cradle.ckb.indexer.collector({
       lock: this.lockScript,
       type: 'empty',
       outputCapacityRange: [BI.from(this.cellCapacity).toHexString(), BI.from(this.cellCapacity + 1).toHexString()],
@@ -273,9 +275,7 @@ export default class Paymaster implements IPaymaster {
 
       if (!paymasterCell) {
         const error = new PaymasterCellNotEnoughError('No paymaster cell available');
-        const context = await this.getContext();
-        Sentry.setContext('paymaster', context);
-        Sentry.captureException(error);
+        this.captureExceptionToSentryScope(error);
         throw error;
       }
 
@@ -310,7 +310,7 @@ export default class Paymaster implements IPaymaster {
       }
     } catch (err) {
       this.cradle.logger.error(`[Paymaster] Mark paymaster cell as spent failed: ${token}`);
-      Sentry.captureException(err);
+      this.captureExceptionToSentryScope(err as Error);
       // XXX: Don't throw the error to avoid the transaction marked as failed
     }
   }
@@ -328,7 +328,7 @@ export default class Paymaster implements IPaymaster {
       }
     } catch (err) {
       this.cradle.logger.error(`[Paymaster] Mark paymaster cell as spent failed: ${token}`);
-      Sentry.captureException(err);
+      this.captureExceptionToSentryScope(err as Error);
       // XXX: Don't throw the error to avoid the transaction marked as failed
     }
   }

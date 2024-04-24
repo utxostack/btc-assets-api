@@ -13,6 +13,7 @@ import {
 import { remove0x } from '@rgbpp-sdk/btc';
 import { CUSTOM_HEADERS } from '../../constants';
 import { env } from '../../env';
+import { JwtPayload } from '../../plugins/jwt';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.post(
@@ -34,9 +35,11 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     },
     async (request, reply) => {
       const { btc_txid, ckb_virtual_result } = request.body;
+      const jwt = (await request.jwtDecode()) as JwtPayload;
       const job: Job = await fastify.transactionManager.enqueueTransaction({
         txid: btc_txid,
         ckbVirtualResult: ckb_virtual_result,
+        context: { jwt },
       });
       const state = await job.getState();
       reply.send({ state });
@@ -62,6 +65,13 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     async (request, reply) => {
       const { btc_txid } = request.params;
       const isMainnet = env.NETWORK === 'mainnet';
+
+      // get the transaction hash from the job if it exists
+      const job = await fastify.transactionManager.getTransactionRequest(btc_txid);
+      if (job?.returnvalue) {
+        return { txhash: job.returnvalue };
+      }
+
       const transaction = await fastify.electrs.getTransaction(btc_txid);
 
       // query CKB transaction hash by RGBPP_LOCK cells
@@ -69,7 +79,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         const args = buildRgbppLockArgs(index, btc_txid);
         const lock = genRgbppLockScript(args, isMainnet);
 
-        const txs = await fastify.ckbIndexer.getTransactions({
+        const txs = await fastify.ckb.indexer.getTransactions({
           script: lock,
           scriptType: 'lock',
         });
@@ -81,9 +91,10 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         }
       }
 
+      // XXX: unstable, need to be improved: https://github.com/ckb-cell/btc-assets-api/issues/45
       // query CKB transaction hash by BTC_TIME_LOCK cells
       const btcTimeLockScript = getBtcTimeLockScript(isMainnet);
-      const txs = await fastify.ckbIndexer.getTransactions({
+      const txs = await fastify.ckb.indexer.getTransactions({
         script: {
           ...btcTimeLockScript,
           args: '0x',
@@ -93,7 +104,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
 
       if (txs.objects.length > 0) {
         for (const { txHash } of txs.objects) {
-          const tx = await fastify.ckbRPC.getTransaction(txHash);
+          const tx = await fastify.ckb.rpc.getTransaction(txHash);
           const isBtcTimeLockTx = tx.transaction.outputs.some((output) => {
             if (
               output.lock.codeHash !== btcTimeLockScript.codeHash ||
@@ -171,7 +182,11 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
       };
 
       if (with_data === 'true') {
-        jobInfo.data = job.data;
+        const { txid, ckbVirtualResult } = job.data;
+        jobInfo.data = {
+          txid,
+          ckbVirtualResult,
+        };
       }
 
       if (state === 'failed') {
