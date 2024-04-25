@@ -77,8 +77,17 @@ export const Transaction = z.object({
   status: Status,
 });
 
+export const RecommendedFees = z.object({
+  fastestFee: z.number(),
+  halfHourFee: z.number(),
+  hourFee: z.number(),
+  economyFee: z.number(),
+  minimumFee: z.number(),
+});
+
 export type ChainInfo = z.infer<typeof ChainInfo>;
 export type Block = z.infer<typeof Block>;
 export type Balance = z.infer<typeof Balance>;
 export type UTXO = z.infer<typeof UTXO>;
 export type Transaction = z.infer<typeof Transaction>;
+export type RecommendedFees = z.infer<typeof RecommendedFees>;

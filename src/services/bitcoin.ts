@@ -1,6 +1,6 @@
 import mempoolJS from '@mempool/mempool.js';
 import { Cradle } from '../container';
-import { Block, ChainInfo, Transaction, UTXO } from '../routes/bitcoin/types';
+import { Block, ChainInfo, RecommendedFees, Transaction, UTXO } from '../routes/bitcoin/types';
 import { NetworkType } from '../constants';
 import { AxiosError } from 'axios';
 import ElectrsClient from '../utils/electrs';
@@ -106,8 +106,8 @@ export default class BitcoinClient {
   }
 
   public async getBlockchainInfo(): Promise<ChainInfo> {
-    const hash = await this.mempool.bitcoin.blocks.getBlocksTipHash();
-    const tip = await this.mempool.bitcoin.blocks.getBlock({ hash });
+    const hash = await this.getBlocksTipHash();
+    const tip = await this.getBlockByHash(hash);
 
     const { difficulty, mediantime } = tip;
     return {
@@ -117,6 +117,13 @@ export default class BitcoinClient {
       difficulty,
       mediantime,
     };
+  }
+
+  public async getRecommendedFees(): Promise<RecommendedFees> {
+    return wrapTry(async () => {
+      const fees = await this.mempool.bitcoin.fees.getFeesRecommended();
+      return RecommendedFees.parse(fees);
+    });
   }
 
   public async sendRawTransaction(txhex: string): Promise<string> {
@@ -245,15 +252,15 @@ export default class BitcoinClient {
     });
   }
 
-  public async getTip(): Promise<number> {
+  public async getBlocksTipHash(): Promise<string> {
     return wrapTry(async () => {
       try {
-        return this.mempool.bitcoin.blocks.getBlocksTipHeight();
+        return this.mempool.bitcoin.blocks.getBlocksTipHash();
       } catch (err) {
         this.cradle.logger.error(err);
         Sentry.captureException(err);
         if (this.electrs) {
-          return this.electrs.getTip();
+          return this.electrs.getBlocksTipHash();
         }
         throw err;
       }

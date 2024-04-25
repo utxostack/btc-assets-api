@@ -64,8 +64,8 @@ export default class ElectrsClient {
     return response.data;
   }
 
-  public async getTip() {
-    const response = await this.get<number>('/blocks/tip/height');
+  public async getBlocksTipHash() {
+    const response = await this.get<string>('/blocks/tip/hash');
     return response.data;
   }
 }

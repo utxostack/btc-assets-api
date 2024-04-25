@@ -7,6 +7,7 @@ import addressRoutes from './address';
 import container from '../../container';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import BitcoinClient from '../../services/bitcoin';
+import feesRoutes from './fees';
 
 const bitcoinRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.decorate('bitcoin', container.resolve<BitcoinClient>('bitcoin'));
@@ -15,6 +16,7 @@ const bitcoinRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
   fastify.register(blockRoutes, { prefix: '/block' });
   fastify.register(transactionRoutes, { prefix: '/transaction' });
   fastify.register(addressRoutes, { prefix: '/address' });
+  fastify.register(feesRoutes, { prefix: '/fees' });
   done();
 };
 
