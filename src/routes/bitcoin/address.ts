@@ -105,6 +105,9 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         params: z.object({
           address: z.string().describe('The Bitcoin address'),
         }),
+        querystring: z.object({
+          after_txid: z.string().optional().describe('The txid of the transaction to start after'),
+        }),
         response: {
           200: z.array(Transaction),
         },
@@ -112,7 +115,8 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     },
     async (request) => {
       const { address } = request.params;
-      const txs = await fastify.bitcoin.getTransactionsByAddress(address);
+      const { after_txid } = request.query;
+      const txs = await fastify.bitcoin.getTransactionsByAddress(address, after_txid);
       return txs;
     },
   );
