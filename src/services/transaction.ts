@@ -4,9 +4,12 @@ import {
   RGBPPLock,
   RGBPP_TX_ID_PLACEHOLDER,
   appendCkbTxWitnesses,
+  generateSporeTransferCoBuild,
   getBtcTimeLockScript,
   getRgbppLockScript,
   getSecp256k1CellDep,
+  getSporeTypeDep,
+  isClusterSporeTypeSupported,
   updateCkbTxWithRealBtcTxId,
 } from '@rgbpp-sdk/ckb';
 import {
@@ -30,6 +33,7 @@ import { BI } from '@ckb-lumos/lumos';
 import { CKBRpcError, CKBRPCErrorCodes } from './ckb';
 import { cloneDeep } from 'lodash';
 import { JwtPayload } from '../plugins/jwt';
+import { serializeCellDep } from '@nervosnetwork/ckb-sdk-utils';
 
 export interface ITransactionRequest {
   txid: string;
@@ -314,11 +318,42 @@ export default class TransactionManager implements ITransactionManager {
     ]);
     // using for spv proof, we need to remove the witness data from the transaction
     const hexWithoutWitness = transactionToHex(BitcoinTransaction.fromHex(hex), false);
-    const signedTx = await appendCkbTxWitnesses({
+    let signedTx = await appendCkbTxWitnesses({
       ckbRawTx,
       btcTxBytes: hexWithoutWitness,
       rgbppApiSpvProof,
     })!;
+
+    // append the spore cobuild witness to the transaction if needed
+    const sporeTypeDep = getSporeTypeDep(this.isMainnet);
+    const hasSporeTypeDep = signedTx.cellDeps.some((cellDep) => {
+      return serializeCellDep(cellDep) === serializeCellDep(sporeTypeDep);
+    });
+    if (hasSporeTypeDep) {
+      signedTx = await this.appendSporeCobuildWitness(signedTx);
+    }
+
+    return signedTx;
+  }
+
+  /**
+   * Append the spore cobuild witness to the transaction if the input contains spore cell
+   * (support spore transfer only for now, will support more in the future)
+   * @param signedTx - the signed CKB transaction
+   */
+  private async appendSporeCobuildWitness(signedTx: CKBRawTransaction) {
+    const inputs = await Promise.all(
+      signedTx.inputs.map(async (input) => {
+        return this.cradle.ckb.rpc.getLiveCell(input.previousOutput!, false);
+      }),
+    );
+    const sporeLiveCell = inputs.find(({ cell }) => {
+      return cell?.output.type && isClusterSporeTypeSupported(cell?.output.type, this.isMainnet);
+    });
+    if (sporeLiveCell?.cell) {
+      const [output] = signedTx.outputs;
+      signedTx.witnesses[signedTx.witnesses.length - 1] = generateSporeTransferCoBuild(sporeLiveCell.cell, output);
+    }
     return signedTx;
   }
 
