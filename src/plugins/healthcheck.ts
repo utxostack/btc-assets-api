@@ -2,8 +2,11 @@ import healthcheck from 'fastify-custom-healthcheck';
 import fp from 'fastify-plugin';
 import TransactionProcessor from '../services/transaction';
 import Paymaster from '../services/paymaster';
+import axios from 'axios';
+import { Env } from '../env';
 
 export default fp(async (fastify) => {
+  const env: Env = fastify.container.resolve('env');
   await fastify.register(healthcheck, {
     path: '/healthcheck',
     exposeFailure: true,
@@ -13,6 +16,14 @@ export default fp(async (fastify) => {
   fastify.addHealthCheck('redis', async () => {
     const redis = fastify.container.resolve('redis');
     await redis.ping();
+  });
+
+  fastify.addHealthCheck('mempool', async () => {
+    await axios.get(`${env.BITCOIN_MEMPOOL_SPACE_API_URL}/api/blocks/tip/height`);
+  });
+
+  fastify.addHealthCheck('electrs', async () => {
+    await axios.get(`${env.BITCOIN_ELECTRS_API_URL}/blocks/tip/height`);
   });
 
   fastify.addHealthCheck('queue', async () => {
