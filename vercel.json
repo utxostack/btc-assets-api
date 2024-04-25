@@ -4,15 +4,5 @@
       "source": "/(.*)",
       "destination": "/api/serverless.ts"
     }
-  ],
-  "crons": [
-    {
-      "path": "/cron/process-transactions",
-      "schedule": "*/2 * * * *"
-    },
-    {
-      "path": "/cron/unlock-cells",
-      "schedule": "*/5 * * * *"
-    }
   ]
 }
