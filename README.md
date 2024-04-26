@@ -58,7 +58,12 @@ JWT_SECRET=<your_secret>
 # JWT_DENYLIST=
 
 # Bitcoin Mempool.space API URL
-BITCOIN_MEMPOOL_SPACE_API_URL=https://mempool.space,
+# used to get bitcoin data and broadcast transaction
+BITCOIN_MEMPOOL_SPACE_API_URL=https://mempool.space
+
+# Electrs API URL (optional)
+# used for fallback when the mempool.space API is not available
+# BITCOIN_ELECTRS_API_URL=<http://electrs:3002>
 
 # SPV Service URL
 BITCOIN_SPV_SERVICE_URL=<http://spv:3001>
