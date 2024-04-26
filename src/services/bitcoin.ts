@@ -160,28 +160,71 @@ export default class BitcoinClient {
 
   public async getTransactionsByAddress(address: string, after_txid?: string): Promise<Transaction[]> {
     return wrapTry(async () => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error after_txid is not defined in the type definition
-      const txs = await this.mempool.bitcoin.addresses.getAddressTxs({ address, after_txid });
-      return txs.map((tx) => Transaction.parse(tx));
+      try {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error after_txid is not defined in the type definition
+        const txs = await this.mempool.bitcoin.addresses.getAddressTxs({ address, after_txid });
+        return txs.map((tx) => Transaction.parse(tx));
+      } catch (err) {
+        this.cradle.logger.error(err);
+        Sentry.captureException(err);
+        if (this.electrs) {
+          const txs = await this.electrs.getTransactionsByAddress(address, after_txid);
+          return txs.map((tx) => Transaction.parse(tx));
+        }
+        throw err;
+      }
     });
   }
 
   public async getTransaction(txid: string): Promise<Transaction> {
     return wrapTry(async () => {
-      const tx = await this.mempool.bitcoin.transactions.getTx({ txid });
-      return Transaction.parse(tx);
+      try {
+        const tx = await this.mempool.bitcoin.transactions.getTx({ txid });
+        return Transaction.parse(tx);
+      } catch (err) {
+        this.cradle.logger.error(err);
+        Sentry.captureException(err);
+        if (this.electrs) {
+          const tx = await this.electrs.getTransaction(txid);
+          return Transaction.parse(tx);
+        }
+        throw err;
+      }
     });
   }
 
   public async getTransactionHex(txid: string): Promise<string> {
-    return wrapTry(() => this.mempool.bitcoin.transactions.getTxHex({ txid }));
+    return wrapTry(async () => {
+      try {
+        const hex = await this.mempool.bitcoin.transactions.getTxHex({ txid });
+        return hex;
+      } catch (err) {
+        this.cradle.logger.error(err);
+        Sentry.captureException(err);
+        if (this.electrs) {
+          const hex = await this.electrs.getTransactionHex(txid);
+          return hex;
+        }
+        throw err;
+      }
+    });
   }
 
   public async getBlockByHash(hash: string): Promise<Block> {
     return wrapTry(async () => {
-      const block = await this.mempool.bitcoin.blocks.getBlock({ hash });
-      return block;
+      try {
+        const block = await this.mempool.bitcoin.blocks.getBlock({ hash });
+        return Block.parse(block);
+      } catch (err) {
+        this.cradle.logger.error(err);
+        Sentry.captureException(err);
+        if (this.electrs) {
+          const block = await this.electrs.getBlockByHash(hash);
+          return Block.parse(block);
+        }
+        throw err;
+      }
     });
   }
 

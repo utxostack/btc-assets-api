@@ -29,8 +29,12 @@ export default class ElectrsClient {
     return response.data;
   }
 
-  public async getTransactionsByAddress(address: string) {
-    const response = await this.get<Transaction[]>(`/address/${address}/txs`);
+  public async getTransactionsByAddress(address: string, after_txid?: string) {
+    let url = `/address/${address}/txs`;
+    if (after_txid) {
+      url += `?after_txid=${after_txid}`;
+    }
+    const response = await this.get<Transaction[]>(url);
     return response.data;
   }
 
