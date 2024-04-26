@@ -70,6 +70,7 @@ const envSchema = z.object({
 
   /**
    * Bitcoin Mempool.space API URL
+   * used to get bitcoin data and broadcast transaction
    */
   BITCOIN_MEMPOOL_SPACE_API_URL: z.string(),
   /**
