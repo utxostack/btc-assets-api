@@ -36,7 +36,7 @@ describe('transactionProcessor', () => {
         needPaymasterCell: false,
       },
     };
-    const btcTx = await cradle.bitcoin.getTransaction(transactionRequest.txid);
+    const btcTx = await cradle.bitcoin.getTx({ txid: transactionRequest.txid });
     const isValid = await transactionProcessor.verifyTransaction(transactionRequest, btcTx);
     expect(isValid).toBe(true);
   });
@@ -58,7 +58,7 @@ describe('transactionProcessor', () => {
         needPaymasterCell: false,
       },
     };
-    const btcTx = await cradle.bitcoin.getTransaction(transactionRequest.txid);
+    const btcTx = await cradle.bitcoin.getTx({ txid: transactionRequest.txid });
     const isValid = await transactionProcessor.verifyTransaction(transactionRequest, btcTx);
     expect(isValid).toBe(false);
   });
@@ -81,7 +81,7 @@ describe('transactionProcessor', () => {
         needPaymasterCell: false,
       },
     };
-    const btcTx = await cradle.bitcoin.getTransaction(transactionRequest.txid);
+    const btcTx = await cradle.bitcoin.getTx({ txid: transactionRequest.txid });
     const isValid = await transactionProcessor.verifyTransaction(transactionRequest, btcTx);
     expect(isValid).toBe(false);
   });
@@ -93,7 +93,7 @@ describe('transactionProcessor', () => {
       },
       'getCommitmentFromBtcTx',
     ).mockResolvedValueOnce(Buffer.from(commitment, 'hex'));
-    vi.spyOn(transactionProcessor['cradle']['bitcoin'], 'getTransaction').mockResolvedValueOnce({
+    vi.spyOn(transactionProcessor['cradle']['bitcoin'], 'getTx').mockResolvedValueOnce({
       status: { confirmed: false, block_height: 0 },
     } as unknown as Transaction);
 
@@ -107,7 +107,7 @@ describe('transactionProcessor', () => {
       },
     };
 
-    const btcTx = await cradle.bitcoin.getTransaction(transactionRequest.txid);
+    const btcTx = await cradle.bitcoin.getTx({ txid: transactionRequest.txid });
     await expect(
       transactionProcessor.verifyTransaction(transactionRequest, btcTx),
     ).rejects.toThrowErrorMatchingSnapshot();
@@ -135,8 +135,8 @@ describe('transactionProcessor', () => {
     vi.spyOn(cradle.bitcoin, 'getBlockchainInfo').mockResolvedValue({
       blocks: 123456,
     } as unknown as ChainInfo);
-    vi.spyOn(cradle.bitcoin, 'getBlockHashByHeight').mockResolvedValue('00000000abcdefghijklmnopqrstuvwxyz');
-    vi.spyOn(cradle.bitcoin, 'getBlockTxIdsByHash').mockResolvedValue([
+    vi.spyOn(cradle.bitcoin, 'getBlockHeight').mockResolvedValue('00000000abcdefghijklmnopqrstuvwxyz');
+    vi.spyOn(cradle.bitcoin, 'getBlockTxids').mockResolvedValue([
       'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
       '8ea0fbb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a056',
       '8eb22b379c0ef491dea2d819e721d5df296bebc67a056a0fbb8c92f11920824d',
@@ -158,8 +158,8 @@ describe('transactionProcessor', () => {
     vi.spyOn(cradle.bitcoin, 'getBlockchainInfo').mockResolvedValue({
       blocks: 123456,
     } as unknown as ChainInfo);
-    vi.spyOn(cradle.bitcoin, 'getBlockHashByHeight').mockResolvedValue('00000000abcdefghijklmnopqrstuvwxyz');
-    vi.spyOn(cradle.bitcoin, 'getBlockTxIdsByHash').mockResolvedValue([
+    vi.spyOn(cradle.bitcoin, 'getBlockHeight').mockResolvedValue('00000000abcdefghijklmnopqrstuvwxyz');
+    vi.spyOn(cradle.bitcoin, 'getBlockTxids').mockResolvedValue([
       'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
       '8ea0fbb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a056',
       '8eb22b379c0ef491dea2d819e721d5df296bebc67a056a0fbb8c92f11920824d',
