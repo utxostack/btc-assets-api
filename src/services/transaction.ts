@@ -312,7 +312,7 @@ export default class TransactionProcessor implements ITransactionProcessor {
    */
   private async appendTxWitnesses(txid: string, ckbRawTx: CKBRawTransaction) {
     const [hex, rgbppApiSpvProof] = await Promise.all([
-      this.cradle.bitcoin.getTransactionHex(txid),
+      this.cradle.bitcoin.getTxHex({ txid }),
       this.cradle.spv.getTxProof(txid),
     ]);
     // using for spv proof, we need to remove the witness data from the transaction
@@ -426,7 +426,7 @@ export default class TransactionProcessor implements ITransactionProcessor {
   public async process(job: Job<ITransactionRequest>, token?: string) {
     try {
       const { ckbVirtualResult, txid } = cloneDeep(job.data);
-      const btcTx = await this.cradle.bitcoin.getTransaction(txid);
+      const btcTx = await this.cradle.bitcoin.getTx({ txid });
       const isVerified = await this.verifyTransaction({ ckbVirtualResult, txid }, btcTx);
       if (!isVerified) {
         throw new InvalidTransactionError('Invalid transaction', job.data);
@@ -513,8 +513,8 @@ export default class TransactionProcessor implements ITransactionProcessor {
       const heights = Array.from({ length: targetHeight - startHeight }, (_, i) => startHeight + i + 1);
       const txidsGroups = await Promise.all(
         heights.map(async (height) => {
-          const blockHash = await this.cradle.bitcoin.getBlockHashByHeight(height);
-          return this.cradle.bitcoin.getBlockTxIdsByHash(blockHash);
+          const blockHash = await this.cradle.bitcoin.getBlockHeight({ height });
+          return this.cradle.bitcoin.getBlockTxids({ hash: blockHash });
         }),
       );
       const txids = txidsGroups.flat();

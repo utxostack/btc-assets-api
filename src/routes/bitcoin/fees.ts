@@ -16,7 +16,7 @@ const feesRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePro
       },
     },
     async () => {
-      const fees = await fastify.bitcoin.getRecommendedFees();
+      const fees = await fastify.bitcoin.getFeesRecommended();
       return fees;
     },
   );

@@ -34,7 +34,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async (request) => {
       const { address } = request.params;
       const { min_satoshi } = request.query;
-      const utxos = await fastify.bitcoin.getUtxoByAddress(address);
+      const utxos = await fastify.bitcoin.getAddressTxsUtxo({ address });
       return utxos.reduce(
         (acc: Balance, utxo: UTXO) => {
           if (utxo.status.confirmed) {
@@ -83,7 +83,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async function (request) {
       const { address } = request.params;
       const { only_confirmed, min_satoshi } = request.query;
-      let utxos = await fastify.bitcoin.getUtxoByAddress(address);
+      let utxos = await fastify.bitcoin.getAddressTxsUtxo({ address });
 
       // compatible with the case where only_confirmed is undefined
       if (only_confirmed === 'true' || only_confirmed === 'undefined') {
@@ -116,7 +116,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async (request) => {
       const { address } = request.params;
       const { after_txid } = request.query;
-      const txs = await fastify.bitcoin.getTransactionsByAddress(address, after_txid);
+      const txs = await fastify.bitcoin.getAddressTxs({ address, after_txid });
       return txs;
     },
   );

@@ -47,7 +47,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async (request) => {
       const { btc_address } = request.params;
       const { type_script } = request.query;
-      const utxos = await fastify.bitcoin.getUtxoByAddress(btc_address);
+      const utxos = await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
       const cells = await Promise.all(
         utxos.map(async (utxo) => {
           const { txid, vout } = utxo;

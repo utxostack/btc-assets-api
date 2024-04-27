@@ -22,7 +22,7 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     },
     async (request, reply) => {
       const { hash } = request.params;
-      const block = await fastify.bitcoin.getBlockByHash(hash);
+      const block = await fastify.bitcoin.getBlock({ hash });
       reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
       return block;
     },
@@ -46,7 +46,7 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     },
     async (request, reply) => {
       const { hash } = request.params;
-      const txids = await fastify.bitcoin.getBlockTxIdsByHash(hash);
+      const txids = await fastify.bitcoin.getBlockTxids({ hash });
       reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
       return { txids };
     },
@@ -70,7 +70,7 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     },
     async (request, reply) => {
       const { hash } = request.params;
-      const header = await fastify.bitcoin.getBlockHeaderByHash(hash);
+      const header = await fastify.bitcoin.getBlockHeader({ hash });
       reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
       return {
         header,
@@ -82,7 +82,7 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     '/height/:height',
     {
       schema: {
-        description: 'Get a block by its height',
+        description: 'Get a block hash by its height',
         tags: ['Bitcoin'],
         params: z.object({
           height: z.coerce.number().describe('The Bitcoin block height'),
@@ -97,7 +97,7 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     async (request, reply) => {
       const { height } = request.params;
       const [hash, chain] = await Promise.all([
-        fastify.bitcoin.getBlockHashByHeight(height),
+        fastify.bitcoin.getBlockHeight({ height }),
         fastify.bitcoin.getBlockchainInfo(),
       ]);
       if (height < chain.blocks) {

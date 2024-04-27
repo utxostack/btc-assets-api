@@ -80,8 +80,8 @@ export default class SPVClient {
 
   public async getTxProof(btcTxid: string, confirmations: number = 0) {
     const txid = remove0x(btcTxid);
-    const btcTx = await this.cradle.bitcoin.getTransaction(txid);
-    const btcTxids = await this.cradle.bitcoin.getBlockTxIdsByHash(btcTx.status.block_hash!);
+    const btcTx = await this.cradle.bitcoin.getTx({ txid });
+    const btcTxids = await this.cradle.bitcoin.getBlockTxids({ hash: btcTx.status.block_hash! });
     const btcIdxInBlock = btcTxids.findIndex((id) => id === txid);
     return this._getTxProof(txid, btcIdxInBlock, confirmations);
   }

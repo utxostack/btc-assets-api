@@ -72,7 +72,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         return { txhash: job.returnvalue };
       }
 
-      const transaction = await fastify.bitcoin.getTransaction(btc_txid);
+      const transaction = await fastify.bitcoin.getTx({ txid: btc_txid });
 
       // query CKB transaction hash by RGBPP_LOCK cells
       for (let index = 0; index < transaction.vout.length; index++) {
