@@ -161,6 +161,11 @@ const envSchema = z
          * used for fallback when the mempool.space API is not available.
          */
         BITCOIN_ELECTRS_API_URL: z.string().optional(),
+        /**
+         * Bitcoin data provider, support mempool and electrs
+         * use mempool.space as default, electrs as fallback
+         * change to electrs if you want to use electrs as default and mempool.space as fallback
+         */
         BITCOIN_DATA_PROVIDER: z.literal('mempool').default('mempool'),
       }),
       z.object({

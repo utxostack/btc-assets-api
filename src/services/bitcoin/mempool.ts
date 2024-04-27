@@ -7,6 +7,9 @@ export class MempoolClient implements IBitcoinDataProvider {
   private mempool: ReturnType<typeof mempoolJS>;
 
   constructor(cradle: Cradle) {
+    if (!cradle.env.BITCOIN_MEMPOOL_SPACE_API_URL) {
+      throw new Error('BITCOIN_MEMPOOL_SPACE_API_URL is required');
+    }
     const url = new URL(cradle.env.BITCOIN_MEMPOOL_SPACE_API_URL);
     this.mempool = mempoolJS({
       hostname: url.hostname,
