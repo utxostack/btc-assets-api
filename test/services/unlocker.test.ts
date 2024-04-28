@@ -77,7 +77,7 @@ describe('Unlocker', () => {
     // @ts-expect-error
     vi.spyOn(unlocker['cradle'].bitcoin, 'getBlockchainInfo').mockResolvedValue({ blocks: 100 });
     // @ts-expect-error
-    vi.spyOn(unlocker['cradle'].bitcoin, 'getTransaction').mockResolvedValue({ status: { block_height: 95 } });
+    vi.spyOn(unlocker['cradle'].bitcoin, 'getTx').mockResolvedValue({ status: { block_height: 95 } });
     mockBtcTimeLockCell();
 
     const cells = await unlocker.getNextBatchLockCell();
@@ -88,7 +88,7 @@ describe('Unlocker', () => {
     // @ts-expect-error
     vi.spyOn(unlocker['cradle'].bitcoin, 'getBlockchainInfo').mockResolvedValue({ blocks: 101 });
     // @ts-expect-error
-    vi.spyOn(unlocker['cradle'].bitcoin, 'getTransaction').mockResolvedValue({ status: { block_height: 95 } });
+    vi.spyOn(unlocker['cradle'].bitcoin, 'getTx').mockResolvedValue({ status: { block_height: 95 } });
     mockBtcTimeLockCell();
 
     const cells = await unlocker.getNextBatchLockCell();
@@ -101,7 +101,7 @@ describe('Unlocker', () => {
     // @ts-expect-error
     vi.spyOn(unlocker['cradle'].bitcoin, 'getBlockchainInfo').mockResolvedValue({ blocks: 101 });
     // @ts-expect-error
-    vi.spyOn(unlocker['cradle'].bitcoin, 'getTransaction').mockResolvedValue({ status: { block_height: 95 } });
+    vi.spyOn(unlocker['cradle'].bitcoin, 'getTx').mockResolvedValue({ status: { block_height: 95 } });
     mockBtcTimeLockCell();
 
     const cells = await unlocker.getNextBatchLockCell();

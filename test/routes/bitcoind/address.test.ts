@@ -1,6 +1,7 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { buildFastify } from '../../../src/app';
 import { afterEach } from 'node:test';
+import BitcoinClient from '../../../src/services/bitcoin';
 
 let token: string;
 
@@ -91,9 +92,9 @@ describe('/bitcoin/v1/address', () => {
     const fastify = buildFastify();
     await fastify.ready();
 
-    const bitcoin = fastify.container.resolve('bitcoin');
-    const originalGetUtxoByAddress = bitcoin.getUtxoByAddress;
-    vi.spyOn(bitcoin, 'getUtxoByAddress').mockResolvedValue([
+    const bitcoin: BitcoinClient = fastify.container.resolve('bitcoin');
+    const originalGetAddressTxsUtxo = bitcoin.getAddressTxsUtxo;
+    vi.spyOn(bitcoin, 'getAddressTxsUtxo').mockResolvedValue([
       {
         txid: '9706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
         vout: 0,
@@ -121,7 +122,7 @@ describe('/bitcoin/v1/address', () => {
       },
     });
     const data = response.json();
-    bitcoin.getUtxoByAddress = originalGetUtxoByAddress;
+    bitcoin.getAddressTxsUtxo = originalGetAddressTxsUtxo;
 
     expect(response.statusCode).toBe(200);
     expect(data.length).toBe(1);
@@ -133,9 +134,9 @@ describe('/bitcoin/v1/address', () => {
     const fastify = buildFastify();
     await fastify.ready();
 
-    const bitcoin = fastify.container.resolve('bitcoin');
-    const originalGetUtxoByAddress = bitcoin.getUtxoByAddress;
-    vi.spyOn(bitcoin, 'getUtxoByAddress').mockResolvedValue([
+    const bitcoin: BitcoinClient = fastify.container.resolve('bitcoin');
+    const originalGetAddressTxsUtxo = bitcoin.getAddressTxsUtxo;
+    vi.spyOn(bitcoin, 'getAddressTxsUtxo').mockResolvedValue([
       {
         txid: '9706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
         vout: 0,
@@ -163,7 +164,7 @@ describe('/bitcoin/v1/address', () => {
       },
     });
     const data = response.json();
-    bitcoin.getUtxoByAddress = originalGetUtxoByAddress;
+    bitcoin.getAddressTxsUtxo = originalGetAddressTxsUtxo;
 
     expect(response.statusCode).toBe(200);
     expect(data.length).toBe(2);
@@ -175,9 +176,9 @@ describe('/bitcoin/v1/address', () => {
     const fastify = buildFastify();
     await fastify.ready();
 
-    const bitcoin = fastify.container.resolve('bitcoin');
-    const originalGetUtxoByAddress = bitcoin.getUtxoByAddress;
-    vi.spyOn(bitcoin, 'getUtxoByAddress').mockResolvedValue([
+    const bitcoin: BitcoinClient = fastify.container.resolve('bitcoin');
+    const originalGetAddressTxsUtxo = bitcoin.getAddressTxsUtxo;
+    vi.spyOn(bitcoin, 'getAddressTxsUtxo').mockResolvedValue([
       {
         txid: '9706131c1e327a068a6aafc16dc69a46c50bc7c65f180513896bdad39a6babfc',
         vout: 0,
@@ -205,7 +206,7 @@ describe('/bitcoin/v1/address', () => {
       },
     });
     const data = response.json();
-    bitcoin.getUtxoByAddress = originalGetUtxoByAddress;
+    bitcoin.getAddressTxsUtxo = originalGetAddressTxsUtxo;
 
     expect(response.statusCode).toBe(200);
     expect(data.length).toBe(1);

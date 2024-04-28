@@ -15,6 +15,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    concurrency: test-group
+    strategy:
+      matrix:
+        BITCOIN_DATA_PROVIDER: [mempool, electrs]
 
     services:
       redis:
@@ -48,6 +52,7 @@ jobs:
       - name: Run Unit Tests
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          BITCOIN_DATA_PROVIDER: ${{ matrix.BITCOIN_DATA_PROVIDER }}
           BITCOIN_MEMPOOL_SPACE_API_URL: ${{ secrets.BITCOIN_MEMPOOL_SPACE_API_URL }}
           BITCOIN_ELECTRS_API_URL: ${{ secrets.BITCOIN_ELECTRS_API_URL }}
           BITCOIN_SPV_SERVICE_URL: ${{ secrets.BITCOIN_SPV_SERVICE_URL }}
