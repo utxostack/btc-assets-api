@@ -3,6 +3,7 @@
 A service for Retrieving BTC/RGB++ information/assets and processing transactions with these assets
 
 ### Features
+
 - Retrieving Blockchain Information such as Bitcoin chain info, blocks, headers, transactions, addresses and RGB++ assets
 - Transaction Handling by posting transactions to the /bitcoin/v1/transaction or /rgbpp/v1/transaction/ckb-tx endpoint
 - RGB++ CKB transaction Queue simplifies the RGB++ assets workflows by some cron jobs
@@ -11,12 +12,14 @@ A service for Retrieving BTC/RGB++ information/assets and processing transaction
 
 #### Requirements
 
-- [mempool.space API](https://mempool.space/docs): mempool.space merely provides data about the Bitcoin network.
+- [mempool.space](https://mempool.space/docs) or [mempool/electrs](https://github.com/mempool/electrs): provides data about the Bitcoin network.
+  - We can use either of them as data provider
+  - Or use both, designating one as the primary provider and the other as the fallback
 - [ckb-cell/ckb-bitcoin-spv-service](https://github.com/ckb-cell/ckb-bitcoin-spv-service): CKB Bitcoin SPV Service
 
 #### Configuration
 
-Copy the `.env.example` file to `.env`: 
+Copy the `.env.example` file to `.env`:
 
 ```bash
 cp .env.example .env
@@ -57,13 +60,16 @@ JWT_SECRET=<your_secret>
 # JWT token denylist
 # JWT_DENYLIST=
 
+# Bitcoin data provider, support mempool and electrs
+# use mempool.space as default, electrs as fallback
+# change to electrs if you want to use electrs as default and mempool.space as fallback
+BITCOIN_DATA_PROVIDER=mempool
 # Bitcoin Mempool.space API URL
-# used to get bitcoin data and broadcast transaction
+# optinal when BITCOIN_DATA_PROVIDER=electrs
 BITCOIN_MEMPOOL_SPACE_API_URL=https://mempool.space
-
-# Electrs API URL (optional)
-# used for fallback when the mempool.space API is not available
-# BITCOIN_ELECTRS_API_URL=<http://electrs:3002>
+# Electrs API URL
+# optinal when BITCOIN_DATA_PROVIDER=mempool
+BITCOIN_ELECTRS_API_URL=<http://electrs:3002>
 
 # SPV Service URL
 BITCOIN_SPV_SERVICE_URL=<http://spv:3001>
