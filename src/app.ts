@@ -1,6 +1,5 @@
 import fastify from 'fastify';
 import { FastifyInstance } from 'fastify';
-import { AxiosError, HttpStatusCode } from 'axios';
 import sensible from '@fastify/sensible';
 import compress from '@fastify/compress';
 import bitcoinRoutes from './routes/bitcoin';
@@ -18,9 +17,6 @@ import cors from './plugins/cors';
 import { NetworkType } from './constants';
 import rgbppRoutes from './routes/rgbpp';
 import cronRoutes from './routes/cron';
-import { ElectrsAPIError, ElectrsAPINotFoundError } from './services/electrs';
-import { BitcoinRPCError } from './services/bitcoind';
-import { AppErrorCode } from './error';
 import { provider } from 'std-env';
 import ipBlock from './plugins/ip-block';
 import internalRoutes from './routes/internal';
@@ -63,38 +59,6 @@ async function routes(fastify: FastifyInstance) {
       fastify.cron.startAllJobs();
     });
   }
-
-  fastify.setErrorHandler((error, _, reply) => {
-    if (
-      error instanceof ElectrsAPIError ||
-      error instanceof ElectrsAPINotFoundError ||
-      error instanceof BitcoinRPCError
-    ) {
-      reply
-        .status(error.statusCode ?? HttpStatusCode.InternalServerError)
-        .send({ code: error.errorCode, message: error.message });
-      return;
-    }
-
-    if (error instanceof AxiosError) {
-      const { response } = error;
-      reply.status(response?.status ?? HttpStatusCode.InternalServerError).send({
-        code: AppErrorCode.UnknownResponseError,
-        message: response?.data ?? error.message,
-      });
-      return;
-    }
-
-    // captureException only for 5xx errors or unknown errors
-    if (!error.statusCode || error.statusCode >= HttpStatusCode.InternalServerError) {
-      fastify.log.error(error);
-      fastify.Sentry.captureException(error);
-    }
-    reply.status(error.statusCode ?? HttpStatusCode.InternalServerError).send({
-      code: AppErrorCode.UnknownResponseError,
-      message: error.message,
-    });
-  });
 }
 
 export function buildFastify() {
