@@ -237,6 +237,7 @@ export default class Paymaster implements IPaymaster {
       lock: this.lockScript,
       type: 'empty',
       outputCapacityRange: [BI.from(this.cellCapacity).toHexString(), BI.from(this.cellCapacity + 1).toHexString()],
+      order: 'desc',
     });
     const cells = collector.collect();
 
@@ -248,6 +249,7 @@ export default class Paymaster implements IPaymaster {
       const job = await this.queue.getJob(jobId);
       if (job) {
         this.cradle.logger.info(`[Paymaster] Paymaster cell already in the queue: ${jobId}`);
+        job.moveToDelayed(Date.now(), jobId);
         continue;
       }
       // add the cell to the queue
