@@ -185,7 +185,7 @@ export default class Paymaster implements IPaymaster {
         const filled = await this.refillCellQueue();
         if (filled + count < this.presetCount) {
           // XXX: consider to send an alert email or other notifications
-          this.cradle.logger.warn('Filled paymaster cells less than the preset count');
+          this.cradle.logger.warn('[Paymaster] Filled paymaster cells less than the preset count');
           const error = new PaymasterCellNotEnoughError('Filled paymaster cells less than the preset count');
           this.captureExceptionToSentryScope(error, {
             filled,
@@ -205,6 +205,9 @@ export default class Paymaster implements IPaymaster {
       const data = job.data;
       const liveCell = await this.cradle.ckb.rpc.getLiveCell(data.outPoint!, false);
       if (!liveCell || liveCell.status !== 'live') {
+        this.cradle.logger.warn(
+          `[Paymaster] The paymaster cell is not live: ${data.outPoint!.txHash}:${data.outPoint!.index}`,
+        );
         job.moveToFailed(new Error('The paymaster cell is not live'), token);
         continue;
       }
@@ -245,13 +248,17 @@ export default class Paymaster implements IPaymaster {
       const outPoint = cell.outPoint!;
       const jobId = `${outPoint.txHash}:${outPoint.index}`;
 
-      // check if the cell is already in the queue
       const job = await this.queue.getJob(jobId);
       if (job) {
         this.cradle.logger.info(`[Paymaster] Paymaster cell already in the queue: ${jobId}`);
-        job.moveToDelayed(Date.now(), jobId);
+        const state = await job.getState();
+        if (state !== 'completed' && state !== 'failed') {
+          this.cradle.logger.info(`[Paymaster] Move paymaster cell to delayed: ${jobId}`);
+          await job.moveToDelayed(Date.now(), jobId);
+        }
         continue;
       }
+
       // add the cell to the queue
       await this.queue.add(PAYMASTER_CELL_QUEUE_NAME, cell, { jobId });
       this.cradle.logger.info(`[Paymaster] Refill paymaster cell: ${jobId}`);
