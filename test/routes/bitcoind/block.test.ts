@@ -28,7 +28,7 @@ describe('/bitcoin/v1/block', () => {
 
     const response = await fastify.inject({
       method: 'GET',
-      url: '/bitcoin/v1/block/0000000000000005ae0b929ee3afbf2956aaa0059f9d7608dc396cf5f8f4dda6',
+      url: '/bitcoin/v1/block/000000000000009c08dc77c3f224d9f5bbe335a78b996ec1e0701e065537ca81',
       headers: {
         Authorization: `Bearer ${token}`,
         Origin: 'https://test.com',
