@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@cell-studio/mempool.js':
+    specifier: ^2.4.0
+    version: 2.4.0
   '@ckb-lumos/base':
     specifier: '^0.22.2 '
     version: 0.22.2
@@ -47,9 +50,6 @@ dependencies:
   '@immobiliarelabs/fastify-sentry':
     specifier: ^8.0.1
     version: 8.0.1
-  '@mempool/mempool.js':
-    specifier: ^2.3.0
-    version: 2.3.0
   '@nervosnetwork/ckb-sdk-utils':
     specifier: ^0.109.1
     version: 0.109.1
@@ -396,6 +396,17 @@ packages:
     dependencies:
       '@noble/hashes': 1.4.0
       '@noble/secp256k1': 1.7.1
+    dev: false
+
+  /@cell-studio/mempool.js@2.4.0:
+    resolution: {integrity: sha512-g9cvOGrBILES4nfryfFDfNZvIq2WxlYk3IcBrH4otAv/j8DGCQ3IyxjZq81qv6bz7TeFxVp1YUEr2T7FluJZNQ==}
+    dependencies:
+      axios: 1.6.7
+      ws: 8.3.0
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - utf-8-validate
     dev: false
 
   /@ckb-lumos/base@0.22.2:

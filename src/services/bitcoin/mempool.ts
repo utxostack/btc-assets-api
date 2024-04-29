@@ -1,6 +1,6 @@
 import { Cradle } from '../../container';
 import { IBitcoinDataProvider } from './interface';
-import mempoolJS from '@mempool/mempool.js';
+import mempoolJS from '@cell-studio/mempool.js';
 import { Block, RecommendedFees, Transaction, UTXO } from './schema';
 
 export class MempoolClient implements IBitcoinDataProvider {
@@ -33,8 +33,6 @@ export class MempoolClient implements IBitcoinDataProvider {
   }
 
   public async getAddressTxs({ address, after_txid }: { address: string; after_txid?: string }) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
     const response = await this.mempool.bitcoin.addresses.getAddressTxs({ address, after_txid });
     return response.map((tx) => Transaction.parse(tx));
   }
