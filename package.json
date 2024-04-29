@@ -25,6 +25,7 @@
     ]
   },
   "dependencies": {
+    "@cell-studio/mempool.js": "^2.4.0",
     "@ckb-lumos/base": "^0.22.2 ",
     "@ckb-lumos/ckb-indexer": "^0.22.2",
     "@ckb-lumos/codec": "^0.22.2",

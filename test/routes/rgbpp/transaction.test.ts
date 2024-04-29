@@ -1,8 +1,7 @@
 import { beforeEach, expect, test, vi } from 'vitest';
 import { buildFastify } from '../../../src/app';
 import { describe } from 'node:test';
-import { Env } from '../../../src/env';
-import TransactionManager, { ITransactionRequest } from '../../../src/services/transaction';
+import TransactionProcessor, { ITransactionRequest } from '../../../src/services/transaction';
 import { CKBVirtualResult } from '../../../src/routes/rgbpp/types';
 import { Job } from 'bullmq';
 
@@ -90,9 +89,9 @@ describe('/bitcoin/v1/transaction', () => {
     const fastify = buildFastify();
     await fastify.ready();
 
-    const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
+    const transactionProcessor: TransactionProcessor = fastify.container.resolve('transactionProcessor');
 
-    vi.spyOn(transactionManager, 'getTransactionRequest').mockResolvedValue({
+    vi.spyOn(transactionProcessor, 'getTransactionRequest').mockResolvedValue({
       getState: vi.fn().mockResolvedValue('completed'),
       attemptsMade: 1,
       data: {
@@ -124,9 +123,9 @@ describe('/bitcoin/v1/transaction', () => {
     const fastify = buildFastify();
     await fastify.ready();
 
-    const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
+    const transactionProcessor: TransactionProcessor = fastify.container.resolve('transactionProcessor');
 
-    vi.spyOn(transactionManager, 'getTransactionRequest').mockResolvedValue({
+    vi.spyOn(transactionProcessor, 'getTransactionRequest').mockResolvedValue({
       getState: vi.fn().mockResolvedValue('failed'),
       attemptsMade: 1,
       failedReason: 'Failed to send transaction',
@@ -160,9 +159,9 @@ describe('/bitcoin/v1/transaction', () => {
     const fastify = buildFastify();
     await fastify.ready();
 
-    const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
+    const transactionProcessor: TransactionProcessor = fastify.container.resolve('transactionProcessor');
 
-    vi.spyOn(transactionManager, 'getTransactionRequest').mockResolvedValue({
+    vi.spyOn(transactionProcessor, 'getTransactionRequest').mockResolvedValue({
       getState: vi.fn().mockResolvedValue('completed'),
       attemptsMade: 1,
       data: {

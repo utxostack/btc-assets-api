@@ -23,7 +23,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     },
     async (request) => {
       const { btc_txid } = request.params;
-      const transaction = await fastify.electrs.getTransaction(btc_txid);
+      const transaction = await fastify.bitcoin.getTx({ txid: btc_txid });
       const cells: Cell[] = [];
       for (let index = 0; index < transaction.vout.length; index++) {
         const args = buildRgbppLockArgs(index, btc_txid);

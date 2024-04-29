@@ -16,7 +16,7 @@ const infoRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProv
       },
     },
     async () => {
-      const blockchainInfo = await fastify.bitcoind.getBlockchainInfo();
+      const blockchainInfo = await fastify.bitcoin.getBlockchainInfo();
       return blockchainInfo;
     },
   );

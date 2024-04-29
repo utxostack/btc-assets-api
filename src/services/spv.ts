@@ -43,7 +43,7 @@ export class BitcoinSPVError extends Error {
 /**
  * Bitcoin SPV service client
  */
-export default class BitcoinSPV {
+export default class SPVClient {
   private request: AxiosInstance;
   private cradle: Cradle;
 
@@ -80,8 +80,8 @@ export default class BitcoinSPV {
 
   public async getTxProof(btcTxid: string, confirmations: number = 0) {
     const txid = remove0x(btcTxid);
-    const btcTx = await this.cradle.electrs.getTransaction(txid);
-    const btcTxids = await this.cradle.electrs.getBlockTxIdsByHash(btcTx.status.block_hash!);
+    const btcTx = await this.cradle.bitcoin.getTx({ txid });
+    const btcTxids = await this.cradle.bitcoin.getBlockTxids({ hash: btcTx.status.block_hash! });
     const btcIdxInBlock = btcTxids.findIndex((id) => id === txid);
     return this._getTxProof(txid, btcIdxInBlock, confirmations);
   }

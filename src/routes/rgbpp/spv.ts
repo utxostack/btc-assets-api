@@ -28,7 +28,7 @@ const spvRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvi
     async (request, reply) => {
       try {
         const { btc_txid, confirmations } = request.query;
-        const proof = await fastify.bitcoinSPV.getTxProof(btc_txid, confirmations);
+        const proof = await fastify.spv.getTxProof(btc_txid, confirmations);
         if (proof) {
           reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
           reply.header(CUSTOM_HEADERS.ResponseCacheMaxAge, SPV_PROOF_CACHE_MAX_AGE);
