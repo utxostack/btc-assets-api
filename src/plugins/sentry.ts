@@ -4,7 +4,7 @@ import { ProfilingIntegration } from '@sentry/profiling-node';
 import pkg from '../../package.json';
 import { env } from '../env';
 import { HttpStatusCode, AxiosError } from 'axios';
-import { BitcoinMempoolAPIError } from '../services/bitcoin';
+import { BitcoinClientAPIError } from '../services/bitcoin';
 
 export default fp(async (fastify) => {
   // @ts-expect-error - fastify-sentry types are not up to date
@@ -16,9 +16,9 @@ export default fp(async (fastify) => {
     environment: env.NODE_ENV,
     release: pkg.version,
     // handle error in the errorResponse function below
-    shouldHandleError: false,
+    shouldHandleError: () => false,
     errorResponse: (error, _, reply) => {
-      if (error instanceof BitcoinMempoolAPIError) {
+      if (error instanceof BitcoinClientAPIError) {
         reply.status(error.statusCode ?? HttpStatusCode.InternalServerError).send({ message: error.message });
         return;
       }

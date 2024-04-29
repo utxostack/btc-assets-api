@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios';
+import { AxiosError, HttpStatusCode } from 'axios';
 import * as Sentry from '@sentry/node';
 import { Cradle } from '../../container';
 import { IBitcoinDataProvider } from './interface';
@@ -22,8 +22,6 @@ export enum BitcoinClientErrorCode {
   TooManyUtxos = 0x1002, // 4098
   TooManyTxs = 0x1003, // 4099
   ElectrumClient = 0x1004, // 4100
-
-  MempoolUnknown = 0x1111, // 4369
 }
 
 const BitcoinClientErrorMap = {
@@ -35,7 +33,7 @@ const BitcoinClientErrorMap = {
 };
 
 export class BitcoinClientAPIError extends Error {
-  public statusCode = 500;
+  public statusCode = HttpStatusCode.ServiceUnavailable;
   public errorCode: BitcoinClientErrorCode;
 
   constructor(message: string) {
@@ -43,8 +41,7 @@ export class BitcoinClientAPIError extends Error {
     this.name = this.constructor.name;
 
     const errorKey = Object.keys(BitcoinClientErrorMap).find((msg) => message.startsWith(msg));
-    this.errorCode =
-      BitcoinClientErrorMap[errorKey as BitcoinClientErrorMessage] ?? BitcoinClientErrorCode.MempoolUnknown;
+    this.errorCode = BitcoinClientErrorMap[errorKey as BitcoinClientErrorMessage];
   }
 }
 
@@ -93,6 +90,7 @@ export default class BitcoinClient implements IBitcoinClient {
       this.cradle.logger.debug(`Calling ${method} with args: ${JSON.stringify(args)}`);
       // @ts-expect-error args: A spread argument must either have a tuple type or be passed to a rest parameter
       const result = await this.source[method].call(this.source, ...args).catch((err) => {
+        this.cradle.logger.error(err);
         Sentry.captureException(err);
         if (this.fallback) {
           this.cradle.logger.warn(`Fallback to ${this.fallback.constructor.name} due to error: ${err.message}`);
@@ -104,6 +102,7 @@ export default class BitcoinClient implements IBitcoinClient {
       // @ts-expect-error return type is correct
       return result;
     } catch (err) {
+      this.cradle.logger.error(err);
       if ((err as AxiosError).isAxiosError) {
         const error = new BitcoinClientAPIError((err as AxiosError).message);
         if ((err as AxiosError).response) {
