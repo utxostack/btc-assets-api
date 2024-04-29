@@ -89,7 +89,7 @@ export default class Paymaster implements IPaymaster {
     return null;
   }
 
-  private async captureExceptionToSentryScope(err: Error) {
+  private async captureExceptionToSentryScope(err: Error, attrs?: Record<string, unknown>) {
     const remaining = await this.queue.getWaitingCount();
     Sentry.withScope((scope) => {
       scope.setContext('paymaster', {
@@ -97,6 +97,7 @@ export default class Paymaster implements IPaymaster {
         remaining: remaining,
         preset: this.presetCount,
         threshold: this.refillThreshold,
+        ...attrs,
       });
       scope.captureException(err);
     });
@@ -186,7 +187,9 @@ export default class Paymaster implements IPaymaster {
           // XXX: consider to send an alert email or other notifications
           this.cradle.logger.warn('Filled paymaster cells less than the preset count');
           const error = new PaymasterCellNotEnoughError('Filled paymaster cells less than the preset count');
-          this.captureExceptionToSentryScope(error);
+          this.captureExceptionToSentryScope(error, {
+            filled,
+          });
         }
         this.refilling = false;
       }
