@@ -16,7 +16,7 @@ export class ElectrsClient implements IBitcoinDataProvider {
   }
 
   public async getFeesRecommended(): Promise<RecommendedFees> {
-    throw new Error('ElectrsClient does not support getFeesRecommended');
+    throw new Error('Electrs: Recommended fees not available');
   }
 
   public async postTx({ txhex }: { txhex: string }) {
