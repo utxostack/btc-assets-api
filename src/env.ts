@@ -70,6 +70,14 @@ const envSchema = z
       .pipe(z.string().array()),
 
     /**
+     * Application Mode
+     * - full: Full application mode, includes API and background tasks.
+     * - api_only: API only mode, excludes background tasks.
+     * - background_only: Background tasks only mode, excludes API.
+     */
+    APP_MODE: z.enum(['full', 'api', 'background']).default('full'),
+
+    /**
      * Bitcoin SPV service URL
      * https://github.com/ckb-cell/ckb-bitcoin-spv-service
      */
