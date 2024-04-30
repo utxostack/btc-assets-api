@@ -85,21 +85,27 @@ PAYMASTER_CELL_CAPACITY=31600000000
 PAYMASTER_CELL_PRESET_COUNT=500
 # Paymaster cell refill threshold, refill paymaster cell when the balance is less than this threshold.
 PAYMASTER_CELL_REFILL_THRESHOLD=0.3
+# Check the paymaster BTC UTXO when processing rgb++ ckb transaction
+PAYMASTER_RECEIVE_UTXO_CHECK=false
 # Paymaster bitcoin address, used to receive BTC from users
 PAYMASTER_RECEIVE_BTC_ADDRESS=<paymaster_btc_address>
 # Paymaster receives BTC UTXO size in sats
 PAYMASTER_BTC_CONTAINER_FEE_SATS=7000
 
-# BTCTimeLock cell unlock batch size
-UNLOCKER_CELL_BATCH_SIZE=100
 # BTCTimeLock cell unlock cron job schedule, default is every 5 minutes
 UNLOCKER_CRON_SCHEDULE='*/5 * * * *'
+# BTCTimeLock cell unlock batch size
+UNLOCKER_CELL_BATCH_SIZE=100
 # BTCTimeLock cell unlocker monitor slug, used for monitoring unlocker status on sentry
 UNLOCKER_MONITOR_SLUG=btctimelock-cells-unlocker
 
 # RGB++ CKB transaction Queue cron job delay in milliseconds
 # the /rgbpp/v1/transaction/ckb-tx endpoint is called, the transaction will be added to the queue
 TRANSACTION_QUEUE_JOB_DELAY=12000
+# RGB++ CKB transaction Queue cron job attempts
+TRANSACTION_QUEUE_JOB_ATTEMPTS=6
+# Pay fee for transaction with pool reject by min fee rate, false by default
+TRANSACTION_PAY_FOR_MIN_FEE_RATE_REJECT=false
 ```
 
 More configuration options can be found in the `src/env.ts` file.
