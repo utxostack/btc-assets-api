@@ -248,7 +248,16 @@ export default class Paymaster implements IPaymaster {
       const job = await this.queue.getJob(jobId);
       if (job) {
         this.cradle.logger.info(`[Paymaster] Paymaster cell already in the queue: ${jobId}`);
-        continue;
+        // cause the issue that the job is not moved to delayed when appendCellAndSignTx throw error
+        // try to remove the inactive job and add the cell back to the queue
+        // (inactive job means the job is processed on 1 minute ago but not completed)
+        const active = await job.isActive();
+        if (active && job.processedOn && job.processedOn < Date.now() - 60_000) {
+          this.cradle.logger.warn(`[Paymaster] Remove the inactive paymaster cell: ${jobId}`);
+          await job.remove();
+        } else {
+          continue;
+        }
       }
       // add the cell to the queue
       await this.queue.add(PAYMASTER_CELL_QUEUE_NAME, cell, { jobId });
@@ -309,6 +318,7 @@ export default class Paymaster implements IPaymaster {
     try {
       const job = await this.getPaymasterCellJobByRawTx(signedTx);
       if (job) {
+        this.cradle.logger.info(`[Paymaster] Mark paymaster cell as spent: ${token}`);
         await job.moveToCompleted(null, token, false);
       }
     } catch (err) {
@@ -327,6 +337,7 @@ export default class Paymaster implements IPaymaster {
     try {
       const job = await this.getPaymasterCellJobByRawTx(signedTx);
       if (job) {
+        this.cradle.logger.info(`[Paymaster] Mark paymaster cell as unspent: ${token}`);
         await job.moveToDelayed(Date.now(), token);
       }
     } catch (err) {
