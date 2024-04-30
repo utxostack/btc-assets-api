@@ -435,13 +435,13 @@ export default class TransactionProcessor implements ITransactionProcessor {
       const ckbRawTx = this.getCkbRawTxWithRealBtcTxid(ckbVirtualResult, txid);
       let signedTx = await this.appendTxWitnesses(txid, ckbRawTx);
 
-      // append paymaster cell and sign the transaction if needed
-      if (ckbVirtualResult.needPaymasterCell) {
-        signedTx = await this.appendPaymasterCellAndSignTx(btcTx, ckbVirtualResult, signedTx);
-      }
-      this.cradle.logger.debug(`[TransactionProcessor] Transaction signed: ${JSON.stringify(signedTx)}`);
-
       try {
+        // append paymaster cell and sign the transaction if needed
+        if (ckbVirtualResult.needPaymasterCell) {
+          signedTx = await this.appendPaymasterCellAndSignTx(btcTx, ckbVirtualResult, signedTx);
+        }
+        this.cradle.logger.debug(`[TransactionProcessor] Transaction signed: ${JSON.stringify(signedTx)}`);
+
         const txHash = await this.cradle.ckb.sendTransaction(signedTx);
         job.returnvalue = txHash;
         this.cradle.logger.info(`[TransactionProcessor] Transaction sent: ${txHash}`);
