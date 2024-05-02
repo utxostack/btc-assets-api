@@ -350,8 +350,10 @@ export default class TransactionProcessor implements ITransactionProcessor {
       return cell?.output.type && isClusterSporeTypeSupported(cell?.output.type, this.isMainnet);
     });
     if (sporeLiveCell?.cell) {
-      const [output] = signedTx.outputs;
-      signedTx.witnesses[signedTx.witnesses.length - 1] = generateSporeTransferCoBuild(sporeLiveCell.cell, output);
+      signedTx.witnesses[signedTx.witnesses.length - 1] = generateSporeTransferCoBuild(
+        [sporeLiveCell.cell],
+        signedTx.outputs,
+      );
     }
     return signedTx;
   }
