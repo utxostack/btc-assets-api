@@ -5,9 +5,11 @@ import {
   Collector,
   IndexerCell,
   buildBtcTimeCellsSpentTx,
+  buildSporeBtcTimeCellsSpentTx,
   getBtcTimeLockScript,
   isClusterSporeTypeSupported,
   isTypeAssetSupported,
+  isUDTTypeSupported,
   remove0x,
   sendCkbTx,
   signBtcTimeCellSpentTx,
@@ -18,7 +20,7 @@ import { Cradle } from '../container';
 
 interface IUnlocker {
   getNextBatchLockCell(): Promise<IndexerCell[]>;
-  unlockCells(): Promise<string | undefined>;
+  unlockCells(): Promise<string[]>;
 }
 
 /**
@@ -61,11 +63,6 @@ export default class Unlocker implements IUnlocker {
         continue;
       }
 
-      // temporary skip cluster spore type
-      if (isClusterSporeTypeSupported(cell.cellOutput.type, this.isMainnet)) {
-        continue;
-      }
-
       const btcTxid = remove0x(btcTxIdFromBtcTimeLockArgs(cell.cellOutput.lock.args));
       const { after } = BTCTimeLock.unpack(cell.cellOutput.lock.args);
       const btcTx = await this.cradle.bitcoin.getTx({ txid: btcTxid });
@@ -102,27 +99,48 @@ export default class Unlocker implements IUnlocker {
   }
 
   /**
-   * Unlock the BTC time lock cells and send the CKB transaction
+   * Build CKB transaction to spend the BTC time lock cells
+   * @param cells - BTC time lock cells
    */
-  public async unlockCells() {
-    const cells = await this.getNextBatchLockCell();
-    if (cells.length === 0) {
-      return;
-    }
-    this.cradle.logger.info(`[Unlocker] Unlock ${cells.length} BTC time lock cells`);
-
-    const collector = new Collector({
-      ckbNodeUrl: this.cradle.env.CKB_RPC_URL,
-      ckbIndexerUrl: this.cradle.env.CKB_RPC_URL,
-    });
-
+  private async buildSpentTxs(cells: IndexerCell[]): Promise<CKBComponents.RawTransaction[]> {
     const btcAssetsApi = {
       getRgbppSpvProof: this.cradle.spv.getTxProof.bind(this.cradle.spv),
     } as unknown as BtcAssetsApi;
-    const ckbRawTx = await buildBtcTimeCellsSpentTx({
-      btcTimeCells: cells,
-      btcAssetsApi,
-      isMainnet: this.isMainnet,
+
+    const ckbRawTxs = [];
+
+    // udt type cells unlock
+    const udtTypeCells = cells.filter((cell) => isUDTTypeSupported(cell.output.type!, this.isMainnet));
+    if (udtTypeCells.length > 0) {
+      const ckbRawTx = await buildBtcTimeCellsSpentTx({
+        btcTimeCells: udtTypeCells,
+        btcAssetsApi,
+        isMainnet: this.isMainnet,
+      });
+      ckbRawTxs.push(ckbRawTx);
+    }
+
+    // spore type cells unlock
+    const sporeTypeCells = cells.filter((cell) => isClusterSporeTypeSupported(cell.output.type!, this.isMainnet));
+    if (sporeTypeCells.length > 0) {
+      const ckbRawTx = await buildSporeBtcTimeCellsSpentTx({
+        btcTimeCells: sporeTypeCells,
+        btcAssetsApi,
+        isMainnet: this.isMainnet,
+      });
+      ckbRawTxs.push(ckbRawTx);
+    }
+    return ckbRawTxs;
+  }
+
+  /**
+   * Sign and send the CKB transaction to unlock the BTC time lock cells
+   * @param ckbRawTx - CKB raw transaction
+   */
+  private async sendUnlockTx(ckbRawTx: CKBComponents.RawTransaction) {
+    const collector = new Collector({
+      ckbNodeUrl: this.cradle.env.CKB_RPC_URL,
+      ckbIndexerUrl: this.cradle.env.CKB_RPC_URL,
     });
 
     const outputCapacityRange = [
@@ -145,5 +163,20 @@ export default class Unlocker implements IUnlocker {
     });
     this.cradle.logger.info(`[Unlocker] Transaction sent: ${txHash}`);
     return txHash;
+  }
+
+  /**
+   * Unlock the BTC time lock cells and send the CKB transaction
+   */
+  public async unlockCells() {
+    const cells = await this.getNextBatchLockCell();
+    if (cells.length === 0) {
+      return [];
+    }
+    this.cradle.logger.info(`[Unlocker] Unlock ${cells.length} BTC time lock cells`);
+
+    const ckbRawTxs = await this.buildSpentTxs(cells);
+    const txhashs = await Promise.all(ckbRawTxs.map(async (ckbRawTx) => this.sendUnlockTx(ckbRawTx)));
+    return txhashs;
   }
 }
