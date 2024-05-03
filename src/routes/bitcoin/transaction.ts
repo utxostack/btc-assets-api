@@ -54,6 +54,30 @@ const transactionRoutes: FastifyPluginCallback<Record<never, never>, Server, Zod
       return transaction;
     },
   );
+
+  fastify.get(
+    '/:txid/hex',
+    {
+      schema: {
+        description: 'Get a transaction hex by its txid',
+        tags: ['Bitcoin'],
+        params: z.object({
+          txid: z.string().describe('The Bitcoin transaction id'),
+        }),
+        response: {
+          200: z.object({
+            hex: z.string(),
+          }),
+        },
+      },
+    },
+    async (request, reply) => {
+      const { txid } = request.params;
+      const hex = await fastify.bitcoin.getTxHex({ txid });
+      reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
+      return { hex };
+    },
+  );
   done();
 };
 
