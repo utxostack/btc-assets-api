@@ -54,6 +54,7 @@ export default class BitcoinClient implements IBitcoinClient {
   private cradle: Cradle;
   private source: IBitcoinDataProvider;
   private fallback?: IBitcoinDataProvider;
+  private backups: IBitcoinDataProvider[] = [];
 
   constructor(cradle: Cradle) {
     this.cradle = cradle;
@@ -62,22 +63,29 @@ export default class BitcoinClient implements IBitcoinClient {
     switch (env.BITCOIN_DATA_PROVIDER) {
       case 'mempool':
         this.cradle.logger.info('Using Mempool.space API as the bitcoin data provider');
-        this.source = new MempoolClient(cradle);
+        this.source = new MempoolClient(env.BITCOIN_MEMPOOL_SPACE_API_URL, cradle);
         if (env.BITCOIN_ELECTRS_API_URL) {
           this.cradle.logger.info('Using Electrs API as the fallback bitcoin data provider');
-          this.fallback = new ElectrsClient(cradle);
+          this.fallback = new ElectrsClient(env.BITCOIN_ELECTRS_API_URL);
         }
         break;
       case 'electrs':
         this.cradle.logger.info('Using Electrs API as the bitcoin data provider');
-        this.source = new ElectrsClient(cradle);
+        this.source = new ElectrsClient(env.BITCOIN_ELECTRS_API_URL);
         if (env.BITCOIN_MEMPOOL_SPACE_API_URL) {
           this.cradle.logger.info('Using Mempool.space API as the fallback bitcoin data provider');
-          this.fallback = new MempoolClient(cradle);
+          this.fallback = new MempoolClient(env.BITCOIN_MEMPOOL_SPACE_API_URL, cradle);
         }
         break;
       default:
         throw new Error('Invalid bitcoin data provider');
+    }
+
+    if (this.fallback) {
+      this.backups.push(this.fallback);
+    }
+    if (env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST) {
+      this.backups = env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST.map((url) => new ElectrsClient(url));
     }
   }
 
@@ -152,7 +160,9 @@ export default class BitcoinClient implements IBitcoinClient {
   }
 
   public async postTx({ txhex }: { txhex: string }) {
-    return this.call('postTx', [{ txhex }]);
+    const txid = await this.call('postTx', [{ txhex }]);
+    Promise.all(this.backups.map((backup) => backup.postTx({ txhex })));
+    return txid;
   }
 
   public async getAddressTxsUtxo({ address }: { address: string }) {

@@ -74,6 +74,13 @@ const envSchema = z
      * https://github.com/ckb-cell/ckb-bitcoin-spv-service
      */
     BITCOIN_SPV_SERVICE_URL: z.string(),
+
+    /**
+     * Bitcoin additional broadcast electrs URL list
+     * broadcast transaction to multiple electrs API when receive bitcoin transaction from users
+     */
+    BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST: z.string().transform((value) => value.split(',')),
+
     /**
      * The URL of the CKB JSON-RPC server.
      */
