@@ -1,7 +1,7 @@
 import { AxiosError, HttpStatusCode } from 'axios';
 import * as Sentry from '@sentry/node';
 import { Cradle } from '../../container';
-import { IBitcoinDataProvider } from './interface';
+import { IBitcoinBroadcastBackuper, IBitcoinDataProvider } from './interface';
 import { MempoolClient } from './mempool';
 import { ElectrsClient } from './electrs';
 import { NetworkType } from '../../constants';
@@ -54,7 +54,7 @@ export default class BitcoinClient implements IBitcoinClient {
   private cradle: Cradle;
   private source: IBitcoinDataProvider;
   private fallback?: IBitcoinDataProvider;
-  private backups: IBitcoinDataProvider[] = [];
+  private backupers: IBitcoinBroadcastBackuper[] = [];
 
   constructor(cradle: Cradle) {
     this.cradle = cradle;
@@ -82,10 +82,10 @@ export default class BitcoinClient implements IBitcoinClient {
     }
 
     if (this.fallback) {
-      this.backups.push(this.fallback);
+      this.backupers.push(this.fallback);
     }
     if (env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST) {
-      this.backups = env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST.map((url) => new ElectrsClient(url));
+      this.backupers = env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST.map((url) => new ElectrsClient(url));
     }
   }
 
@@ -161,7 +161,7 @@ export default class BitcoinClient implements IBitcoinClient {
 
   public async postTx({ txhex }: { txhex: string }) {
     const txid = await this.call('postTx', [{ txhex }]);
-    Promise.all(this.backups.map((backup) => backup.postTx({ txhex })));
+    Promise.all(this.backupers.map((backuper) => backuper.postTx({ txhex })));
     return txid;
   }
 
