@@ -182,13 +182,3 @@ exports[`/bitcoin/v1/address > Get address transactions 1`] = `
   },
 ]
 `;
-
-exports[`/bitcoin/v1/address > Get address unspent transaction outputs with only_confirmed = undefined 1`] = `
-{
-  "address": "tb1qm4eyx777203zmajlawz958wn27z08envm2jelm",
-  "dust_satoshi": 1000,
-  "pending_satoshi": 0,
-  "satoshi": 0,
-  "utxo_count": 1,
-}
-`;
