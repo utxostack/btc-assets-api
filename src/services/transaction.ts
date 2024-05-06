@@ -346,12 +346,18 @@ export default class TransactionProcessor implements ITransactionProcessor {
         return this.cradle.ckb.rpc.getLiveCell(input.previousOutput!, false);
       }),
     );
-    const sporeLiveCell = inputs.find(({ cell }) => {
-      return cell?.output.type && isClusterSporeTypeSupported(cell?.output.type, this.isMainnet);
-    });
-    if (sporeLiveCell?.cell) {
+    const sporeLiveCells = inputs
+      .filter(({ status, cell }) => {
+        return (
+          status === CKBComponents.CellStatus.Live &&
+          cell?.output.type &&
+          isClusterSporeTypeSupported(cell?.output.type, this.isMainnet)
+        );
+      })
+      .map((liveCell) => liveCell.cell!);
+    if (sporeLiveCells.length > 0) {
       signedTx.witnesses[signedTx.witnesses.length - 1] = generateSporeTransferCoBuild(
-        [sporeLiveCell.cell],
+        sporeLiveCells,
         signedTx.outputs,
       );
     }
