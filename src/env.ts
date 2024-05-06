@@ -79,7 +79,10 @@ const envSchema = z
      * Bitcoin additional broadcast electrs URL list
      * broadcast transaction to multiple electrs API when receive bitcoin transaction from users
      */
-    BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST: z.string().transform((value) => value.split(',')),
+    BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST: z
+      .string()
+      .transform((value) => value.split(','))
+      .optional(),
 
     /**
      * The URL of the CKB JSON-RPC server.

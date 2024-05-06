@@ -84,7 +84,10 @@ export default class BitcoinClient implements IBitcoinClient {
     if (this.fallback) {
       this.backupers.push(this.fallback);
     }
-    if (env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST) {
+    if (
+      env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST &&
+      env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST.length > 0
+    ) {
       this.backupers = env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST.map((url) => new ElectrsClient(url));
     }
   }
