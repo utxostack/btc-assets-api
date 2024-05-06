@@ -1,6 +1,6 @@
 ## Upgrading to V2
 
-We have released v2.0.0 for support mempool.space API as the primary Bitcoin data provider, and it was used to broadcast transactions. But it is still compatible with the electrs used previously. 
+We have released v2.0.0 for support mempool.space API as the primary Bitcoin data provider, and it is used to broadcast transactions. But it is still compatible with the electrs used previously. 
 
 There are two ways to upgrade: 
 
