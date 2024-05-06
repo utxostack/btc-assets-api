@@ -15,7 +15,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    concurrency: test-group
     strategy:
       matrix:
         BITCOIN_DATA_PROVIDER: [mempool, electrs]
