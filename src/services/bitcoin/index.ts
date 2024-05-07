@@ -1,4 +1,4 @@
-import { AxiosError, HttpStatusCode } from 'axios';
+import { HttpStatusCode, isAxiosError } from 'axios';
 import * as Sentry from '@sentry/node';
 import { Cradle } from '../../container';
 import { IBitcoinBroadcastBackuper, IBitcoinDataProvider } from './interface';
@@ -115,10 +115,10 @@ export default class BitcoinClient implements IBitcoinClient {
       return result;
     } catch (err) {
       this.cradle.logger.error(err);
-      if ((err as AxiosError).isAxiosError) {
-        const error = new BitcoinClientAPIError((err as AxiosError).message);
-        if ((err as AxiosError).response) {
-          error.statusCode = (err as AxiosError).response?.status || 500;
+      if (isAxiosError(err)) {
+        const error = new BitcoinClientAPIError(err.response?.data ?? err.message);
+        if (err.response?.status) {
+          error.statusCode = err.response.status;
         }
         throw error;
       }

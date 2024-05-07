@@ -3,7 +3,7 @@ import fastifySentry from '@immobiliarelabs/fastify-sentry';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import pkg from '../../package.json';
 import { env } from '../env';
-import { HttpStatusCode, AxiosError } from 'axios';
+import { HttpStatusCode, isAxiosError } from 'axios';
 import { BitcoinClientAPIError } from '../services/bitcoin';
 
 export default fp(async (fastify) => {
@@ -23,7 +23,7 @@ export default fp(async (fastify) => {
         return;
       }
 
-      if (error instanceof AxiosError) {
+      if (isAxiosError(error)) {
         const { response } = error;
         reply.status(response?.status ?? HttpStatusCode.InternalServerError).send({
           message: response?.data ?? error.message,
