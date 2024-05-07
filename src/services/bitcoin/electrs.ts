@@ -6,9 +6,6 @@ export class ElectrsClient implements IBitcoinDataProvider {
   private request: AxiosInstance;
 
   constructor(baseURL: string) {
-    if (!baseURL) {
-      throw new Error('BITCOIN_ELECTRS_API_URL is required');
-    }
     this.request = axios.create({
       baseURL,
     });
