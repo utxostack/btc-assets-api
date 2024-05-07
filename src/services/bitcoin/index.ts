@@ -115,11 +115,9 @@ export default class BitcoinClient implements IBitcoinClient {
       return result;
     } catch (err) {
       this.cradle.logger.error(err);
-      if ((err as AxiosError).isAxiosError) {
-        const error = new BitcoinClientAPIError((err as AxiosError).message);
-        if ((err as AxiosError).response) {
-          error.statusCode = (err as AxiosError).response?.status || 500;
-        }
+      if (err instanceof AxiosError) {
+        const error = new BitcoinClientAPIError(err.response?.data ?? err.message);
+        error.statusCode = err.response?.status || 500;
         throw error;
       }
       throw err;
