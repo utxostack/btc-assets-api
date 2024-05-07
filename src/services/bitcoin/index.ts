@@ -1,7 +1,7 @@
 import { AxiosError, HttpStatusCode } from 'axios';
 import * as Sentry from '@sentry/node';
 import { Cradle } from '../../container';
-import { IBitcoinDataProvider } from './interface';
+import { IBitcoinBroadcastBackuper, IBitcoinDataProvider } from './interface';
 import { MempoolClient } from './mempool';
 import { ElectrsClient } from './electrs';
 import { NetworkType } from '../../constants';
@@ -54,6 +54,7 @@ export default class BitcoinClient implements IBitcoinClient {
   private cradle: Cradle;
   private source: IBitcoinDataProvider;
   private fallback?: IBitcoinDataProvider;
+  private backupers: IBitcoinBroadcastBackuper[] = [];
 
   constructor(cradle: Cradle) {
     this.cradle = cradle;
@@ -62,22 +63,33 @@ export default class BitcoinClient implements IBitcoinClient {
     switch (env.BITCOIN_DATA_PROVIDER) {
       case 'mempool':
         this.cradle.logger.info('Using Mempool.space API as the bitcoin data provider');
-        this.source = new MempoolClient(cradle);
+        this.source = new MempoolClient(env.BITCOIN_MEMPOOL_SPACE_API_URL, cradle);
         if (env.BITCOIN_ELECTRS_API_URL) {
           this.cradle.logger.info('Using Electrs API as the fallback bitcoin data provider');
-          this.fallback = new ElectrsClient(cradle);
+          this.fallback = new ElectrsClient(env.BITCOIN_ELECTRS_API_URL);
         }
         break;
       case 'electrs':
         this.cradle.logger.info('Using Electrs API as the bitcoin data provider');
-        this.source = new ElectrsClient(cradle);
+        this.source = new ElectrsClient(env.BITCOIN_ELECTRS_API_URL);
         if (env.BITCOIN_MEMPOOL_SPACE_API_URL) {
           this.cradle.logger.info('Using Mempool.space API as the fallback bitcoin data provider');
-          this.fallback = new MempoolClient(cradle);
+          this.fallback = new MempoolClient(env.BITCOIN_MEMPOOL_SPACE_API_URL, cradle);
         }
         break;
       default:
         throw new Error('Invalid bitcoin data provider');
+    }
+
+    if (this.fallback) {
+      this.backupers.push(this.fallback);
+    }
+    if (
+      env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST &&
+      env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST.length > 0
+    ) {
+      const additionalElectrs = env.BITCOIN_ADDITIONAL_BROADCAST_ELECTRS_URL_LIST.map((url) => new ElectrsClient(url));
+      this.backupers.push(...additionalElectrs);
     }
   }
 
@@ -152,7 +164,9 @@ export default class BitcoinClient implements IBitcoinClient {
   }
 
   public async postTx({ txhex }: { txhex: string }) {
-    return this.call('postTx', [{ txhex }]);
+    const txid = await this.call('postTx', [{ txhex }]);
+    Promise.all(this.backupers.map((backuper) => backuper.postTx({ txhex })));
+    return txid;
   }
 
   public async getAddressTxsUtxo({ address }: { address: string }) {

@@ -1,17 +1,13 @@
 import axios, { AxiosInstance } from 'axios';
-import { Cradle } from '../../container';
 import { IBitcoinDataProvider } from './interface';
 import { Block, RecommendedFees, Transaction, UTXO } from './schema';
 
 export class ElectrsClient implements IBitcoinDataProvider {
   private request: AxiosInstance;
 
-  constructor(cradle: Cradle) {
-    if (!cradle.env.BITCOIN_ELECTRS_API_URL) {
-      throw new Error('BITCOIN_ELECTRS_API_URL is required');
-    }
+  constructor(baseURL: string) {
     this.request = axios.create({
-      baseURL: cradle.env.BITCOIN_ELECTRS_API_URL,
+      baseURL,
     });
   }
 
