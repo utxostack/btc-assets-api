@@ -58,9 +58,7 @@ describe('/bitcoin/v1/transaction', () => {
     const data = await response.json();
 
     expect(response.statusCode).toBe(404);
-    expect(data).toEqual({
-      message: 'Request failed with status code 404',
-    });
+    expect(data).toMatchSnapshot();
 
     await fastify.close();
   });

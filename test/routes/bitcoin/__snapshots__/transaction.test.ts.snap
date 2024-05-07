@@ -1,5 +1,11 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Get not exists transaction 1`] = `
+{
+  "message": "Transaction not found",
+}
+`;
+
 exports[`Get transaction by txid 1`] = `
 {
   "fee": 141,
