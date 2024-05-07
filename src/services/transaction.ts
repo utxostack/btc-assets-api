@@ -348,11 +348,7 @@ export default class TransactionProcessor implements ITransactionProcessor {
     );
     const sporeLiveCells = inputs
       .filter(({ status, cell }) => {
-        return (
-          status === CKBComponents.CellStatus.Live &&
-          cell?.output.type &&
-          isClusterSporeTypeSupported(cell?.output.type, this.isMainnet)
-        );
+        return status === 'live' && cell?.output.type && isClusterSporeTypeSupported(cell?.output.type, this.isMainnet);
       })
       .map((liveCell) => liveCell.cell!);
     if (sporeLiveCells.length > 0) {
