@@ -9,11 +9,11 @@ import spvRoute from './spv';
 import paymasterRoutes from './paymaster';
 
 const rgbppRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
-  fastify.decorate('transactionManager', container.resolve('transactionManager'));
+  fastify.decorate('transactionProcessor', container.resolve('transactionProcessor'));
   fastify.decorate('paymaster', container.resolve('paymaster'));
   fastify.decorate('ckb', container.resolve('ckb'));
-  fastify.decorate('electrs', container.resolve('electrs'));
-  fastify.decorate('bitcoinSPV', container.resolve('bitcoinSPV'));
+  fastify.decorate('bitcoin', container.resolve('bitcoin'));
+  fastify.decorate('spv', container.resolve('spv'));
 
   fastify.register(transactionRoutes, { prefix: '/transaction' });
   fastify.register(assetsRoute, { prefix: '/assets' });

@@ -1,11 +1,12 @@
 import healthcheck from 'fastify-custom-healthcheck';
 import fp from 'fastify-plugin';
-import Bitcoind from '../services/bitcoind';
-import ElectrsAPI from '../services/electrs';
-import TransactionManager from '../services/transaction';
+import TransactionProcessor from '../services/transaction';
 import Paymaster from '../services/paymaster';
+import axios from 'axios';
+import { Env } from '../env';
 
 export default fp(async (fastify) => {
+  const env: Env = fastify.container.resolve('env');
   await fastify.register(healthcheck, {
     path: '/healthcheck',
     exposeFailure: true,
@@ -17,23 +18,21 @@ export default fp(async (fastify) => {
     await redis.ping();
   });
 
-  fastify.addHealthCheck('bitcoind', async () => {
-    const bitcoind: Bitcoind = fastify.container.resolve('bitcoind');
-    await bitcoind.getBlockchainInfo();
+  fastify.addHealthCheck('mempool', async () => {
+    await axios.get(`${env.BITCOIN_MEMPOOL_SPACE_API_URL}/api/blocks/tip/height`);
   });
 
   fastify.addHealthCheck('electrs', async () => {
-    const electrs: ElectrsAPI = fastify.container.resolve('electrs');
-    await electrs.getTip();
+    await axios.get(`${env.BITCOIN_ELECTRS_API_URL}/blocks/tip/height`);
   });
 
   fastify.addHealthCheck('queue', async () => {
-    const transactionManager: TransactionManager = fastify.container.resolve('transactionManager');
-    const counts = await transactionManager.getQueueJobCounts();
+    const transactionProcessor: TransactionProcessor = fastify.container.resolve('transactionProcessor');
+    const counts = await transactionProcessor.getQueueJobCounts();
     if (!counts) {
       throw new Error('Transaction queue is not available');
     }
-    const isRunning = await transactionManager.isWorkerRunning();
+    const isRunning = await transactionProcessor.isWorkerRunning();
     if (!isRunning) {
       throw new Error('Transaction worker is not running');
     }

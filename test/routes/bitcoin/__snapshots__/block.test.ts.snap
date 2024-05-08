@@ -2,19 +2,19 @@
 
 exports[`/bitcoin/v1/block > Get block by hash 1`] = `
 {
-  "bits": 422051352,
-  "difficulty": 107392535.89663602,
-  "height": 2579636,
-  "id": "0000000000000005ae0b929ee3afbf2956aaa0059f9d7608dc396cf5f8f4dda6",
-  "mediantime": 1709002141,
-  "merkle_root": "5b4c5be9e900d3702d78fe91fb3395d74f158107671734aaf86b071d11ad2c65",
-  "nonce": 1330201347,
-  "previousblockhash": "00000000385247e00cbbd81c48a9358d65d6aa56dee36e0c39b6794f5962af00",
-  "size": 624046,
-  "timestamp": 1709006957,
-  "tx_count": 1206,
-  "version": 538968064,
-  "weight": 1050313,
+  "bits": 436273151,
+  "difficulty": 16777216,
+  "height": 2091140,
+  "id": "000000000000009c08dc77c3f224d9f5bbe335a78b996ec1e0701e065537ca81",
+  "mediantime": 1630621997,
+  "merkle_root": "5d10d8d158bb8eb217d01fecc435bd10eda028043a913dc2bfe0ccf536a51cc9",
+  "nonce": 1600805744,
+  "previousblockhash": "0000000000000073f95d1fc0a93d449f82a754410c635e46264ec6c7c4d5741e",
+  "size": 575,
+  "timestamp": 1630625150,
+  "tx_count": 2,
+  "version": 543162372,
+  "weight": 1865,
 }
 `;
 

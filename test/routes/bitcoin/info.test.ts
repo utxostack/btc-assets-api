@@ -42,7 +42,6 @@ describe('/bitcoin/v1/info', () => {
     expect(data).toHaveProperty('blocks');
     expect(data).toHaveProperty('chain');
     expect(data).toHaveProperty('difficulty');
-    expect(data).toHaveProperty('headers');
     expect(data).toHaveProperty('mediantime');
 
     await fastify.close();

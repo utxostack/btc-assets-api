@@ -1,26 +1,24 @@
 import { createContainer, InjectionMode, asValue, asClass } from 'awilix';
 import { Redis } from 'ioredis';
 import pino from 'pino';
-import Bitcoind from './services/bitcoind';
-import ElectrsAPI from './services/electrs';
 import { env } from './env';
-import TransactionManager from './services/transaction';
+import TransactionProcessor from './services/transaction';
 import Paymaster from './services/paymaster';
 import Unlocker from './services/unlocker';
-import BitcoinSPV from './services/spv';
-import { CKB } from './services/ckb';
+import SPVClient from './services/spv';
+import CKBClient from './services/ckb';
+import BitcoinClient from './services/bitcoin';
 
 export interface Cradle {
   env: typeof env;
   logger: pino.BaseLogger;
   redis: Redis;
-  ckb: CKB;
-  bitcoind: Bitcoind;
-  electrs: ElectrsAPI;
-  bitcoinSPV: BitcoinSPV;
+  ckb: CKBClient;
+  bitcoin: BitcoinClient;
+  spv: SPVClient;
   paymaster: Paymaster;
   unlocker: Unlocker;
-  transactionManager: TransactionManager;
+  transactionProcessor: TransactionProcessor;
 }
 
 const container = createContainer<Cradle>({
@@ -36,12 +34,11 @@ container.register({
       maxRetriesPerRequest: null,
     }),
   ),
-  ckb: asClass(CKB).singleton(),
-  bitcoind: asClass(Bitcoind).singleton(),
-  electrs: asClass(ElectrsAPI).singleton(),
-  bitcoinSPV: asClass(BitcoinSPV).singleton(),
+  ckb: asClass(CKBClient).singleton(),
+  bitcoin: asClass(BitcoinClient).singleton(),
+  spv: asClass(SPVClient).singleton(),
   paymaster: asClass(Paymaster).singleton(),
-  transactionManager: asClass(TransactionManager).singleton(),
+  transactionProcessor: asClass(TransactionProcessor).singleton(),
   unlocker: asClass(Unlocker).singleton(),
 });
 

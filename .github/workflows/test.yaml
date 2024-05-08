@@ -4,7 +4,7 @@ name: Unit Tests
 on:
   workflow_dispatch:
   push:
-    branches: 
+    branches:
       - main
       - develop
   pull_request:
@@ -15,6 +15,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        BITCOIN_DATA_PROVIDER: [mempool, electrs]
 
     services:
       redis:
@@ -48,9 +51,8 @@ jobs:
       - name: Run Unit Tests
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          BITCOIN_JSON_RPC_URL: ${{ secrets.BITCOIN_JSON_RPC_URL }}
-          BITCOIN_JSON_RPC_USERNAME: ${{ secrets.BITCOIN_JSON_RPC_USERNAME }}
-          BITCOIN_JSON_RPC_PASSWORD: ${{ secrets.BITCOIN_JSON_RPC_PASSWORD }}
+          BITCOIN_DATA_PROVIDER: ${{ matrix.BITCOIN_DATA_PROVIDER }}
+          BITCOIN_MEMPOOL_SPACE_API_URL: ${{ secrets.BITCOIN_MEMPOOL_SPACE_API_URL }}
           BITCOIN_ELECTRS_API_URL: ${{ secrets.BITCOIN_ELECTRS_API_URL }}
           BITCOIN_SPV_SERVICE_URL: ${{ secrets.BITCOIN_SPV_SERVICE_URL }}
           PAYMASTER_RECEIVE_BTC_ADDRESS: ${{ secrets.PAYMASTER_RECEIVE_BTC_ADDRESS }}

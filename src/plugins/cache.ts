@@ -94,9 +94,6 @@ export default fp(async (fastify) => {
         return;
       }
 
-      // if the response is not cacheable, set default cache control headers
-      reply.cacheControl('public');
-      reply.cacheControl('max-age', 10);
       next();
     });
   } catch (err) {
