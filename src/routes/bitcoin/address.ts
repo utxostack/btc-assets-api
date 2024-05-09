@@ -83,7 +83,13 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async function (request) {
       const { address } = request.params;
       const { only_confirmed, min_satoshi } = request.query;
-      let utxos = await fastify.bitcoin.getAddressTxsUtxo({ address });
+
+      const cached = await fastify.utxoSyncer.getUTXOsFromCache(address);
+      let utxos = cached ? cached : await fastify.bitcoin.getAddressTxsUtxo({ address });
+      if (cached) {
+        fastify.log.debug(`[UTXO] get utxos from cache: ${address}`);
+      }
+      await fastify.utxoSyncer.enqueueSyncJob(address);
 
       // compatible with the case where only_confirmed is undefined
       if (only_confirmed === 'true' || only_confirmed === 'undefined') {

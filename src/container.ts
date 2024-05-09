@@ -9,6 +9,7 @@ import SPVClient from './services/spv';
 import CKBClient from './services/ckb';
 import BitcoinClient from './services/bitcoin';
 import RgbppCollector from './services/rgbpp';
+import UTXOSyncer from './services/utxo';
 
 export interface Cradle {
   env: typeof env;
@@ -21,6 +22,7 @@ export interface Cradle {
   unlocker: Unlocker;
   transactionProcessor: TransactionProcessor;
   rgbppCollector: RgbppCollector;
+  utxoSyncer: UTXOSyncer;
 }
 
 const container = createContainer<Cradle>({
@@ -43,6 +45,7 @@ container.register({
   transactionProcessor: asClass(TransactionProcessor).singleton(),
   unlocker: asClass(Unlocker).singleton(),
   rgbppCollector: asClass(RgbppCollector).singleton(),
+  utxoSyncer: asClass(UTXOSyncer).singleton(),
 });
 
 export default container;

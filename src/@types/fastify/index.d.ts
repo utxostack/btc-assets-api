@@ -5,6 +5,7 @@ import SPVClient from '../../services/spv';
 import CKBClient from '../../services/ckb';
 import BitcoinClient from '../../services/bitcoin';
 import RgbppCollector from '../../services/rgbpp';
+import UTXOSyncer from '../../services/utxo';
 
 declare module 'fastify' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -17,5 +18,6 @@ declare module 'fastify' {
     paymaster: Paymaster;
     transactionProcessor: TransactionProcessor;
     rgbppCollector: RgbppCollector;
+    utxoSyncer: UTXOSyncer;
   }
 }

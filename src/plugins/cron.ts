@@ -4,6 +4,7 @@ import cron from 'fastify-cron';
 import { Env } from '../env';
 import Unlocker from '../services/unlocker';
 import RgbppCollector from '../services/rgbpp';
+import UTXOSyncer from '../services/utxo';
 
 export default fp(async (fastify) => {
   try {
@@ -92,6 +93,23 @@ export default fp(async (fastify) => {
     });
     fastify.addHook('onClose', async () => {
       rgbppCollector.closeProcess();
+    });
+
+    const utxoSyncer: UTXOSyncer = fastify.container.resolve('utxoSyncer');
+    fastify.addHook('onReady', async () => {
+      utxoSyncer.startProcess({
+        onActive: (job) => {
+          fastify.log.info(`[UTXOSyncer] job active: ${job.id}`);
+        },
+        onCompleted: async (job) => {
+          fastify.log.info(`[UTXOSyncer] job completed: ${job.id}`);
+          const { btcAddress, utxos } = job.returnvalue;
+          await rgbppCollector.enqueueCollectJob(btcAddress, utxos, true);
+        },
+      });
+    });
+    fastify.addHook('onClose', async () => {
+      utxoSyncer.closeProcess();
     });
 
     // processing unlock BTC_TIME_LOCK cells

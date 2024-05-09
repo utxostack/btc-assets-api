@@ -64,6 +64,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     }
     const key = `${this.cacheKeyPrefix}:${btcAddress}`;
     await this.cradle.redis.set(key, JSON.stringify(parsed.data));
+    return parsed.data;
   }
 
   /**
@@ -153,9 +154,16 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    * Enqueue a collect job to the queue
    * @param utxos - the utxos to collect
    */
-  public async enqueueCollectJob(btcAddress: string, utxos: UTXO[]): Promise<Job<IRgbppCollectRequest>> {
-    // use btc address as the job id to prevent duplicate jobs
-    return this.queue.add(btcAddress, { btcAddress, utxos }, { jobId: btcAddress });
+  public async enqueueCollectJob(
+    btcAddress: string,
+    utxos: UTXO[],
+    allowDuplicate?: boolean,
+  ): Promise<Job<IRgbppCollectRequest>> {
+    let jobId = btcAddress;
+    if (allowDuplicate) {
+      jobId = `${btcAddress}:${Date.now()}`;
+    }
+    return this.addJob(jobId, { btcAddress, utxos });
   }
 
   /**

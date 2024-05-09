@@ -56,7 +56,9 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         }
       }
 
-      const utxos = await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
+      const utxosCached = await fastify.utxoSyncer.getUTXOsFromCache(btc_address);
+      const utxos = utxosCached ? utxosCached : await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
+      await fastify.utxoSyncer.enqueueSyncJob(btc_address);
 
       const cached = await fastify.rgbppCollector.getRgbppCellsFromCache(btc_address);
       await fastify.rgbppCollector.enqueueCollectJob(btc_address, utxos);
