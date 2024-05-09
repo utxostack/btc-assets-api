@@ -6,9 +6,10 @@ import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
 import { buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb';
 import * as Sentry from '@sentry/node';
 import { Script } from '@ckb-lumos/lumos';
-import { Job, Queue, Worker } from 'bullmq';
+import { Job } from 'bullmq';
 import { z } from 'zod';
 import { Cell } from '../routes/rgbpp/types';
+import BaseQueueWorker from './base/queue-worker';
 
 type RgbppUtxoCellsPair = {
   utxo: UTXO;
@@ -30,29 +31,25 @@ export interface IProcessCallbacks {
   onFailed?: (job: Job<IRgbppCollectRequest> | undefined, err: Error) => void;
 }
 
-export default class RgbppCollector {
+export const RGBPP_COLLECTOR_QUEUE_NAME = 'rgbpp-collector-queue';
+
+export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest, IRgbppCollectJobReturn> {
   private limit: pLimit.Limit;
-  private queue: Queue<IRgbppCollectRequest>;
-  private worker: Worker<IRgbppCollectRequest>;
 
   private cacheKeyPrefix = 'cache:rgbpp-collector-data';
   private cacheDataSchema = z.record(z.array(Cell));
 
-  public jobQueueName = 'rgbpp-collector-queue';
-
   constructor(private cradle: Cradle) {
+    super({
+      name: RGBPP_COLLECTOR_QUEUE_NAME,
+      connection: cradle.redis,
+      worker: {
+        lockDuration: 60_000,
+        removeOnComplete: { count: 0 },
+        removeOnFail: { count: 0 },
+      },
+    });
     this.limit = pLimit(cradle.env.CKB_RPC_MAX_CONCURRENCY);
-
-    this.queue = new Queue(this.jobQueueName, {
-      connection: cradle.redis,
-    });
-    this.worker = new Worker(this.jobQueueName, this.process.bind(this), {
-      connection: cradle.redis,
-      autorun: false,
-      lockDuration: 60_000,
-      removeOnComplete: { count: 0 },
-      removeOnFail: { count: 0 },
-    });
   }
 
   /**
@@ -176,38 +173,5 @@ export default class RgbppCollector {
     }, {} as IRgbppCollectJobReturn);
     this.setCacheData(btcAddress, data);
     return data;
-  }
-
-  /**
-   * Start the collect process
-   * @param callbacks - the callbacks for the process
-   * - onCompleted: the callback when the job is completed
-   * - onFailed: the callback when the job is failed
-   */
-  public async startProcess(callbacks?: IProcessCallbacks): Promise<void> {
-    if (callbacks?.onActive) {
-      this.worker.on('active', callbacks?.onActive);
-    }
-    if (callbacks?.onCompleted) {
-      this.worker.on('completed', callbacks.onCompleted);
-    }
-    if (callbacks?.onFailed) {
-      this.worker.on('failed', callbacks.onFailed);
-    }
-    await this.worker.run();
-  }
-
-  /**
-   * Pause the collect process
-   */
-  public async pauseProcess(): Promise<void> {
-    await this.worker.pause();
-  }
-
-  /**
-   * Close the collect process
-   */
-  public async closeProcess(): Promise<void> {
-    await this.worker.close();
   }
 }

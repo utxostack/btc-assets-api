@@ -22,7 +22,7 @@ import {
 } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import * as Sentry from '@sentry/node';
 import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
-import { DelayedError, Job, Queue, Worker } from 'bullmq';
+import { DelayedError, Job } from 'bullmq';
 import { Cradle } from '../container';
 import { Transaction } from '../routes/bitcoin/types';
 import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
@@ -35,6 +35,8 @@ import { JwtPayload } from '../plugins/jwt';
 import { serializeCellDep } from '@nervosnetwork/ckb-sdk-utils';
 import { BitcoinClientAPIError } from './bitcoin';
 import { HttpStatusCode } from 'axios';
+import BaseQueueWorker from './base/queue-worker';
+import { Env } from '../env';
 
 export interface ITransactionRequest {
   txid: string;
@@ -95,22 +97,35 @@ class OpReturnNotFoundError extends Error {
  * - add paymaster cell and sign the CKB transaction if needed
  * - sending CKB transaction to the network and waiting for confirmation
  */
-export default class TransactionProcessor implements ITransactionProcessor {
+export default class TransactionProcessor
+  extends BaseQueueWorker<ITransactionRequest, string | undefined>
+  implements ITransactionProcessor
+{
   private cradle: Cradle;
-  private queue: Queue<ITransactionRequest>;
-  private worker: Worker<ITransactionRequest>;
 
   constructor(cradle: Cradle) {
+    const defaultJobOptions = TransactionProcessor.getDefaultJobOptions(cradle.env);
+    super({
+      name: TRANSACTION_QUEUE_NAME,
+      connection: cradle.redis,
+      queue: {
+        defaultJobOptions,
+      },
+      worker: {
+        concurrency: 10,
+      },
+    });
     this.cradle = cradle;
-    this.queue = new Queue(TRANSACTION_QUEUE_NAME, {
-      connection: cradle.redis,
-      defaultJobOptions: this.defaultJobOptions,
-    });
-    this.worker = new Worker(TRANSACTION_QUEUE_NAME, this.process.bind(this), {
-      connection: cradle.redis,
-      autorun: false,
-      concurrency: 10,
-    });
+  }
+
+  public static getDefaultJobOptions(env: Env) {
+    return {
+      attempts: env.TRANSACTION_QUEUE_JOB_ATTEMPTS,
+      backoff: {
+        type: 'exponential',
+        delay: env.TRANSACTION_QUEUE_JOB_DELAY,
+      },
+    };
   }
 
   private get isMainnet() {
@@ -123,16 +138,6 @@ export default class TransactionProcessor implements ITransactionProcessor {
 
   private get btcTimeLockScript() {
     return getBtcTimeLockScript(this.isMainnet);
-  }
-
-  public get defaultJobOptions() {
-    return {
-      attempts: this.cradle.env.TRANSACTION_QUEUE_JOB_ATTEMPTS,
-      backoff: {
-        type: 'exponential',
-        delay: this.cradle.env.TRANSACTION_QUEUE_JOB_DELAY,
-      },
-    };
   }
 
   private isRgbppLock(lock: CKBComponents.Script) {
@@ -541,21 +546,6 @@ export default class TransactionProcessor implements ITransactionProcessor {
   }
 
   /**
-   * Get the queue job counts
-   */
-  public async getQueueJobCounts() {
-    const counts = await this.queue.getJobCounts();
-    return counts;
-  }
-
-  /**
-   * Check if the worker is running
-   */
-  public async isWorkerRunning() {
-    return this.worker.isRunning();
-  }
-
-  /**
    * Enqueue a transaction request to the Queue, waiting for processing
    * @param request - the transaction request
    */
@@ -597,38 +587,5 @@ export default class TransactionProcessor implements ITransactionProcessor {
       }),
     );
     return results;
-  }
-
-  /**
-   * Start the transaction process
-   * @param callbacks - the callbacks for the process
-   * - onCompleted: the callback when the job is completed
-   * - onFailed: the callback when the job is failed
-   */
-  public async startProcess(callbacks?: IProcessCallbacks): Promise<void> {
-    if (callbacks?.onActive) {
-      this.worker.on('active', callbacks?.onActive);
-    }
-    if (callbacks?.onCompleted) {
-      this.worker.on('completed', callbacks.onCompleted);
-    }
-    if (callbacks?.onFailed) {
-      this.worker.on('failed', callbacks.onFailed);
-    }
-    await this.worker.run();
-  }
-
-  /**
-   * Pause the transaction process
-   */
-  public async pauseProcess(): Promise<void> {
-    await this.worker.pause();
-  }
-
-  /**
-   * Close the transaction process
-   */
-  public async closeProcess(): Promise<void> {
-    await this.worker.close();
   }
 }
