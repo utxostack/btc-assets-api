@@ -8,6 +8,7 @@ import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
 import { blockchain } from '@ckb-lumos/base';
 import { UTXO } from '../../services/bitcoin/schema';
 import pLimit from 'p-limit';
+import asyncRetry from 'async-retry';
 import z from 'zod';
 import { Env } from '../../env';
 
@@ -44,8 +45,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       return cells;
     } catch (e) {
       fastify.Sentry.captureException(e);
-      fastify.log.error(`[getRgbppAssetsByUtxo] ${e}`);
-      return [];
+      throw e;
     }
   }
 
@@ -90,7 +90,16 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         }
       }
 
-      const cells = await Promise.all(utxos.map((utxo) => limit(() => getRgbppAssetsByUtxo(utxo, typeScript))));
+      const cells = await Promise.all(
+        utxos.map((utxo) =>
+          limit(() =>
+            asyncRetry(() => getRgbppAssetsByUtxo(utxo, typeScript), {
+              retries: 2,
+              onRetry: (e, attempt) => fastify.log.warn(`[getRgbppAssetsByUtxo] ${e.message} retry ${attempt}`),
+            }),
+          ),
+        ),
+      );
       return cells.flat();
     },
   );
