@@ -4,6 +4,7 @@ import Paymaster from '../../services/paymaster';
 import SPVClient from '../../services/spv';
 import CKBClient from '../../services/ckb';
 import BitcoinClient from '../../services/bitcoin';
+import RgbppCollector from '../../services/rgbpp';
 
 declare module 'fastify' {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -15,5 +16,6 @@ declare module 'fastify' {
     spv: SPVClient;
     paymaster: Paymaster;
     transactionProcessor: TransactionProcessor;
+    rgbppCollector: RgbppCollector;
   }
 }

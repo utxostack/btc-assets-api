@@ -11,6 +11,7 @@ import paymasterRoutes from './paymaster';
 const rgbppRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.decorate('transactionProcessor', container.resolve('transactionProcessor'));
   fastify.decorate('paymaster', container.resolve('paymaster'));
+  fastify.decorate('rgbppCollector', container.resolve('rgbppCollector'));
   fastify.decorate('ckb', container.resolve('ckb'));
   fastify.decorate('bitcoin', container.resolve('bitcoin'));
   fastify.decorate('spv', container.resolve('spv'));
