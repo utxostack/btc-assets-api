@@ -22,7 +22,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
   });
 
   const env: Env = fastify.container.resolve('env');
-  const limit = pLimit(env.CKB_RPC_MAX_ASYNC_CONCURRENCY);
+  const limit = pLimit(env.CKB_RPC_MAX_CONCURRENCY);
 
   async function getRgbppAssetsByUtxo(utxo: UTXO, typeScript?: Script) {
     try {

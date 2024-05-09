@@ -92,7 +92,7 @@ const envSchema = z
     /**
      * The async concurrency size limit for CKB RPC requests.
      */
-    CKB_RPC_MAX_ASYNC_CONCURRENCY: z.coerce.number().default(100),
+    CKB_RPC_MAX_CONCURRENCY: z.coerce.number().default(100),
     /**
      * Paymaster private key, used to sign the transaction with paymaster cell.
      */
