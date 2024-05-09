@@ -88,6 +88,11 @@ const envSchema = z
      * The URL of the CKB JSON-RPC server.
      */
     CKB_RPC_URL: z.string(),
+
+    /**
+     * The async concurrency size limit for CKB RPC requests.
+     */
+    CKB_RPC_MAX_ASYNC_CONCURRENCY: z.coerce.number().default(100),
     /**
      * Paymaster private key, used to sign the transaction with paymaster cell.
      */

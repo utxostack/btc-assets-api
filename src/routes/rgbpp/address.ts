@@ -1,4 +1,3 @@
-import os from 'os';
 import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import validateBitcoinAddress from '../../utils/validators';
@@ -10,6 +9,7 @@ import { blockchain } from '@ckb-lumos/base';
 import { UTXO } from '../../services/bitcoin/schema';
 import pLimit from 'p-limit';
 import z from 'zod';
+import { Env } from '../../env';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.addHook('preHandler', async (request) => {
@@ -20,7 +20,8 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     }
   });
 
-  const limit = pLimit(os.cpus().length * 100);
+  const env: Env = fastify.container.resolve('env');
+  const limit = pLimit(env.CKB_RPC_MAX_ASYNC_CONCURRENCY);
 
   async function getRgbppAssetsByUtxo(utxo: UTXO, typeScript?: Script) {
     try {
@@ -76,7 +77,6 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       },
     },
     async (request) => {
-      console.log(os.cpus().length);
       const { btc_address } = request.params;
       const { type_script } = request.query;
       const utxos = await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
