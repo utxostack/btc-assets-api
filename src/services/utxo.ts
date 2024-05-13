@@ -63,8 +63,8 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
       // For default values (base=10s, max=3600s), the interval will be 10s, 20s, 40s, 80s, 160s, ..., 3600s, 3600s, ...
       const baseDuration = env.UTXO_SYNC_REPEAT_BASE_DURATION;
       const maxDuration = env.UTXO_SYNC_REPEAT_MAX_DURATION;
-      const duration = Math.min(Math.pow(2, count) * baseDuration, maxDuration);
-      console.error('duration', duration);
+      // Add some random delay to avoid all jobs being processed at the same time
+      const duration = Math.min(Math.pow(2, count) * baseDuration, maxDuration) + Math.random() * 1000;
       return millis + duration;
     };
   }
