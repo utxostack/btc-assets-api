@@ -115,7 +115,6 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
       {
         // add a repeatable job to sync utxos every 10 seconds with exponential backoff
         repeat: {
-          startDate: Date.now(),
           pattern: 'exponential',
         },
       },
