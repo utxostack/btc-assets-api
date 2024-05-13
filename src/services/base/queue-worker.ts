@@ -1,4 +1,4 @@
-import { Job, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq';
+import { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq';
 import Redis from 'ioredis';
 
 interface IQueueWorkerOptions {
@@ -38,8 +38,9 @@ export default abstract class BaseQueueWorker<T, R> {
    * @param jobId - the job id
    * @param data - the data for the job
    */
-  public async addJob(jobId: string, data: T) {
+  public async addJob(jobId: string, data: T, options?: Omit<JobsOptions, 'jobId'>) {
     const job = await this.queue.add(jobId, data, {
+      ...options,
       jobId,
     });
     return job;

@@ -161,6 +161,9 @@ const envSchema = z
       .enum(['true', 'false'])
       .default('false')
       .transform((value) => value === 'true'),
+
+    UTXO_SYNC_REPEAT_BASE_DURATION: z.coerce.number().default(10 * 1000),
+    UTXO_SYNC_REPEAT_MAX_DURATION: z.coerce.number().default(60 * 60 * 1000),
   })
   .and(
     z.union([

@@ -3,7 +3,8 @@ import { Cradle } from '../container';
 import BaseQueueWorker from './base/queue-worker';
 import { UTXO } from './bitcoin/schema';
 import { z } from 'zod';
-import { Job } from 'bullmq';
+import { Job, RepeatOptions } from 'bullmq';
+import { Env } from '../env';
 
 interface IUTXOSyncRequest {
   btcAddress: string;
@@ -29,27 +30,43 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
   });
 
   constructor(cradle: Cradle) {
+    const repeatStrategy = UTXOSyncer.getRepeatStrategy(cradle.env);
     super({
       name: UTXO_SYNCER_QUEUE_NAME,
       connection: cradle.redis,
       queue: {
         settings: {
-          repeatStrategy: UTXOSyncer.getRepeatStrategy,
+          repeatStrategy,
         },
       },
       worker: {
         lockDuration: 60_000,
         removeOnComplete: { count: 0 },
         removeOnFail: { count: 0 },
+        settings: {
+          repeatStrategy,
+        },
       },
     });
     this.cradle = cradle;
   }
 
-  public static getRepeatStrategy() {
-    // FIXME: implement the repeat strategy for the queue
-    // exponentially increase the delay time
-    return Date.now() + 1000 * 60;
+  public static getRepeatStrategy(env: Env) {
+    return (millis: number, opts: RepeatOptions) => {
+      const { count = 0 } = opts;
+      if (count === 0) {
+        // immediately process the job when first added
+        return millis;
+      }
+
+      // Exponential increase the repeat interval, with a maximum of maxDuration
+      // For default values (base=10s, max=3600s), the interval will be 10s, 20s, 40s, 80s, 160s, ..., 3600s, 3600s, ...
+      const baseDuration = env.UTXO_SYNC_REPEAT_BASE_DURATION;
+      const maxDuration = env.UTXO_SYNC_REPEAT_MAX_DURATION;
+      const duration = Math.min(Math.pow(2, count) * baseDuration, maxDuration);
+      console.error('duration', duration);
+      return millis + duration;
+    };
   }
 
   // TODO: implement CacheData class to handle cache data
@@ -84,7 +101,25 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
   }
 
   public async enqueueSyncJob(btcAddress: string) {
-    return this.addJob(btcAddress, { btcAddress });
+    const jobs = await this.queue.getRepeatableJobs();
+    const repeatableJob = jobs.find((job) => job.name === btcAddress);
+    if (repeatableJob) {
+      // remove the existing repeatable job to update the start date
+      // so the job will be processed immediately
+      await this.queue.removeRepeatableByKey(repeatableJob.key);
+    }
+
+    return this.addJob(
+      btcAddress,
+      { btcAddress },
+      {
+        // add a repeatable job to sync utxos every 10 seconds with exponential backoff
+        repeat: {
+          startDate: Date.now(),
+          pattern: 'exponential',
+        },
+      },
+    );
   }
 
   public async process(job: Job<IUTXOSyncRequest>): Promise<IUTXOSyncJobReturn> {
