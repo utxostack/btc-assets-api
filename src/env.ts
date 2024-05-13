@@ -122,6 +122,14 @@ const envSchema = z
     PAYMASTER_BTC_CONTAINER_FEE_SATS: z.coerce.number().default(7000),
 
     /**
+     * Enable BTCTimeLock cell unlock cron task
+     * set to false to disable the BTCTimeLock cell unlock cron task
+     */
+    UNLOCKER_CRON_TASK_ENABLE: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((value) => value === 'true'),
+    /**
      * BTCTimeLock cell unlock batch size
      */
     UNLOCKER_CRON_SCHEDULE: z.string().default('*/5 * * * *'),
