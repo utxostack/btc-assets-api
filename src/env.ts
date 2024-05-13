@@ -162,8 +162,21 @@ const envSchema = z
       .default('false')
       .transform((value) => value === 'true'),
 
+    /**
+     * UTXO sync repeat base duration, used to set the UTXO sync repeat interval
+     * repeat job start interval is 10 seconds by default
+     */
     UTXO_SYNC_REPEAT_BASE_DURATION: z.coerce.number().default(10 * 1000),
+    /**
+     * UTXO sync repeat max duration, used to maximum the UTXO sync repeat interval
+     * 1 hour by default
+     */
     UTXO_SYNC_REPEAT_MAX_DURATION: z.coerce.number().default(60 * 60 * 1000),
+    /**
+     * UTXO sync repeat expired duration, used to remove the expired UTXO sync job
+     * 336 hours by default
+     */
+    UTXO_SYNC_REPEAT_EXPRIED_DURATION: z.coerce.number().default(336 * 60 * 60 * 1000),
   })
   .and(
     z.union([

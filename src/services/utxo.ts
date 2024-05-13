@@ -75,10 +75,15 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
 
   public static getRepeatStrategy(cradle: Cradle) {
     return (millis: number, opts: RepeatOptions) => {
-      const { count = 0 } = opts;
+      const { count = 0, endDate } = opts;
       if (count === 0) {
         // immediately process the job when first added
         return millis;
+      }
+      if (endDate && Date.now() > new Date(endDate).getTime()) {
+        // stop repeating when the end date is reached
+        cradle.logger.info(`[UTXOSyncer] Stop repeating job ${opts.jobId}`);
+        return undefined;
       }
 
       // Exponential increase the repeat interval, with a maximum of maxDuration
@@ -87,7 +92,7 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
       const maxDuration = cradle.env.UTXO_SYNC_REPEAT_MAX_DURATION;
       // Add some random delay to avoid all jobs being processed at the same time
       const duration = Math.min(Math.pow(2, count) * baseDuration, maxDuration) + Math.random() * 1000;
-      cradle.logger.debug(`[UTXOSyncer] Repeat job ${opts.jobId} in ${duration}ms`);
+      cradle.logger.info(`[UTXOSyncer] Repeat job ${opts.jobId} in ${duration}ms`);
       return millis + duration;
     };
   }
@@ -125,6 +130,7 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
       {
         repeat: {
           pattern: 'exponential',
+          endDate: Date.now() + this.cradle.env.UTXO_SYNC_REPEAT_EXPRIED_DURATION,
         },
       },
     );
