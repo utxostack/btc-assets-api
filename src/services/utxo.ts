@@ -4,7 +4,8 @@ import BaseQueueWorker from './base/queue-worker';
 import { UTXO } from './bitcoin/schema';
 import { z } from 'zod';
 import { Job, RepeatOptions } from 'bullmq';
-import { Env } from '../env';
+import * as Sentry from '@sentry/node';
+import DataCache from './base/data-cache';
 
 interface IUTXOSyncRequest {
   btcAddress: string;
@@ -19,22 +20,25 @@ interface IUTXOSyncJobReturn {
 
 export const UTXO_SYNCER_QUEUE_NAME = 'utxo-syncer-queue';
 
+class UTXOSyncerError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UTXOSyncerError';
+  }
+}
+
 export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOSyncJobReturn> {
   private cradle: Cradle;
-
-  private cacheKeyPrefix = 'cache:utxo-syncer-data';
-  private cacheDataSchema = z.object({
-    btcAddress: z.string(),
-    utxos: z.array(UTXO),
-    key: z.string(),
-  });
+  private dataCache: DataCache<IUTXOSyncJobReturn>;
 
   constructor(cradle: Cradle) {
-    const repeatStrategy = UTXOSyncer.getRepeatStrategy(cradle.env);
+    const defaultJobOptions = UTXOSyncer.getDefaultJobOptions(cradle);
+    const repeatStrategy = UTXOSyncer.getRepeatStrategy(cradle);
     super({
       name: UTXO_SYNCER_QUEUE_NAME,
       connection: cradle.redis,
       queue: {
+        defaultJobOptions,
         settings: {
           repeatStrategy,
         },
@@ -49,9 +53,27 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
       },
     });
     this.cradle = cradle;
+    this.dataCache = new DataCache(cradle.redis, {
+      prefix: 'utxo-syncer-data',
+      schema: z.object({
+        btcAddress: z.string(),
+        utxos: z.array(UTXO),
+        key: z.string(),
+      }),
+    });
   }
 
-  public static getRepeatStrategy(env: Env) {
+  public static getDefaultJobOptions(cradle: Cradle) {
+    return {
+      attempts: 2,
+      backoff: {
+        type: 'exponential',
+        delay: cradle.env.UTXO_SYNC_REPEAT_BASE_DURATION,
+      },
+    };
+  }
+
+  public static getRepeatStrategy(cradle: Cradle) {
     return (millis: number, opts: RepeatOptions) => {
       const { count = 0 } = opts;
       if (count === 0) {
@@ -61,39 +83,26 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
 
       // Exponential increase the repeat interval, with a maximum of maxDuration
       // For default values (base=10s, max=3600s), the interval will be 10s, 20s, 40s, 80s, 160s, ..., 3600s, 3600s, ...
-      const baseDuration = env.UTXO_SYNC_REPEAT_BASE_DURATION;
-      const maxDuration = env.UTXO_SYNC_REPEAT_MAX_DURATION;
+      const baseDuration = cradle.env.UTXO_SYNC_REPEAT_BASE_DURATION;
+      const maxDuration = cradle.env.UTXO_SYNC_REPEAT_MAX_DURATION;
       // Add some random delay to avoid all jobs being processed at the same time
       const duration = Math.min(Math.pow(2, count) * baseDuration, maxDuration) + Math.random() * 1000;
+      cradle.logger.debug(`[UTXOSyncer] Repeat job ${opts.jobId} in ${duration}ms`);
       return millis + duration;
     };
   }
 
-  // TODO: implement CacheData class to handle cache data
-  private async setCacheData(btcAddress: string, data: IUTXOSyncJobReturn) {
-    const parsed = this.cacheDataSchema.safeParse(data);
-    if (!parsed.success) {
-      throw new Error('Invalid data');
-    }
-    const key = `${this.cacheKeyPrefix}:${btcAddress}`;
-    await this.cradle.redis.set(key, JSON.stringify(parsed.data));
-    return parsed.data;
-  }
-
-  private async getCacheData(btcAddress: string): Promise<IUTXOSyncJobReturn | null> {
-    const key = `${this.cacheKeyPrefix}:${btcAddress}`;
-    const data = await this.cradle.redis.get(key);
-    if (data) {
-      const parsed = this.cacheDataSchema.safeParse(JSON.parse(data));
-      if (parsed.success) {
-        return parsed.data;
-      }
-    }
-    return null;
+  private captureJobExceptionToSentryScope(job: Job<IUTXOSyncRequest>, err: Error) {
+    const { btcAddress } = job.data;
+    Sentry.withScope((scope) => {
+      scope.setTag('btcAddress', btcAddress);
+      this.cradle.logger.error(err);
+      scope.captureException(err);
+    });
   }
 
   public async getUTXOsFromCache(btcAddress: string) {
-    const data = await this.getCacheData(btcAddress);
+    const data = await this.dataCache.get(btcAddress);
     if (!data) {
       return null;
     }
@@ -106,6 +115,7 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
     if (repeatableJob) {
       // remove the existing repeatable job to update the start date
       // so the job will be processed immediately
+      this.cradle.logger.info(`[UTXOSyncer] Remove existing repeatable job for ${btcAddress}`);
       await this.queue.removeRepeatableByKey(repeatableJob.key);
     }
 
@@ -113,7 +123,6 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
       btcAddress,
       { btcAddress },
       {
-        // add a repeatable job to sync utxos every 10 seconds with exponential backoff
         repeat: {
           pattern: 'exponential',
         },
@@ -122,19 +131,27 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
   }
 
   public async process(job: Job<IUTXOSyncRequest>): Promise<IUTXOSyncJobReturn> {
-    const { btcAddress } = job.data;
-    const txs = await this.cradle.bitcoin.getAddressTxs({ address: btcAddress });
-    const key = sha256(Buffer.from(txs.map((tx) => tx.txid).join(''))).toString();
+    try {
+      const { btcAddress } = job.data;
+      const txs = await this.cradle.bitcoin.getAddressTxs({ address: btcAddress });
+      const key = sha256(Buffer.from(txs.map((tx) => tx.txid).join(''))).toString();
 
-    // check if the data is updated
-    const cached = await this.getCacheData(btcAddress);
-    if (cached && key === cached.key) {
-      this.cradle.logger.info(`[UTXOSyncer] ${btcAddress} is up to date, skip sync job`);
-      return cached;
+      // check if the data is updated
+      const cached = await this.dataCache.get(btcAddress);
+      if (cached && key === cached.key) {
+        this.cradle.logger.info(`[UTXOSyncer] ${btcAddress} is up to date, skip sync job`);
+        return cached;
+      }
+
+      const utxos = await this.cradle.bitcoin.getAddressTxsUtxo({ address: btcAddress });
+      const data = { btcAddress, utxos, key };
+      return this.dataCache.set(btcAddress, data);
+    } catch (e) {
+      const { message, stack } = e as Error;
+      const error = new UTXOSyncerError(message);
+      error.stack = stack;
+      this.captureJobExceptionToSentryScope(job, error);
+      throw e;
     }
-
-    const utxos = await this.cradle.bitcoin.getAddressTxsUtxo({ address: btcAddress });
-    const data = { btcAddress, utxos, key };
-    return this.setCacheData(btcAddress, data);
   }
 }

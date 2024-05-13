@@ -10,6 +10,7 @@ import { Job } from 'bullmq';
 import { z } from 'zod';
 import { Cell } from '../routes/rgbpp/types';
 import BaseQueueWorker from './base/queue-worker';
+import DataCache from './base/data-cache';
 
 type RgbppUtxoCellsPair = {
   utxo: UTXO;
@@ -35,9 +36,7 @@ export const RGBPP_COLLECTOR_QUEUE_NAME = 'rgbpp-collector-queue';
 
 export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest, IRgbppCollectJobReturn> {
   private limit: pLimit.Limit;
-
-  private cacheKeyPrefix = 'cache:rgbpp-collector-data';
-  private cacheDataSchema = z.record(z.array(Cell));
+  private dataCahe: DataCache<IRgbppCollectJobReturn>;
 
   constructor(private cradle: Cradle) {
     super({
@@ -49,38 +48,11 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         removeOnFail: { count: 0 },
       },
     });
+    this.dataCahe = new DataCache(cradle.redis, {
+      prefix: 'rgbpp-collector-data',
+      schema: z.record(z.array(Cell)),
+    });
     this.limit = pLimit(cradle.env.CKB_RPC_MAX_CONCURRENCY);
-  }
-
-  /**
-   * Set the cache data for the rgbpp collect job data by btc address
-   * @param btcAddress - the btc address
-   * @param data - the data to cache
-   */
-  private async setCacheData(btcAddress: string, data: IRgbppCollectJobReturn) {
-    const parsed = this.cacheDataSchema.safeParse(data);
-    if (!parsed.success) {
-      throw new Error('Invalid data');
-    }
-    const key = `${this.cacheKeyPrefix}:${btcAddress}`;
-    await this.cradle.redis.set(key, JSON.stringify(parsed.data));
-    return parsed.data;
-  }
-
-  /**
-   * Get the cache data for the rgbpp collect job data by btc address
-   * @param btcAddress - the btc address
-   */
-  private async getCacheData(btcAddress: string): Promise<IRgbppCollectJobReturn | null> {
-    const key = `${this.cacheKeyPrefix}:${btcAddress}`;
-    const data = await this.cradle.redis.get(key);
-    if (data) {
-      const parsed = this.cacheDataSchema.safeParse(JSON.parse(data));
-      if (parsed.success) {
-        return parsed.data;
-      }
-    }
-    return null;
   }
 
   /**
@@ -88,7 +60,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    * @param btcAddress - the btc address
    */
   public async getRgbppCellsFromCache(btcAddress: string) {
-    const data = await this.getCacheData(btcAddress);
+    const data = await this.dataCahe.get(btcAddress);
     if (!data) {
       return null;
     }
@@ -179,7 +151,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
       acc[key] = cells;
       return acc;
     }, {} as IRgbppCollectJobReturn);
-    this.setCacheData(btcAddress, data);
+    this.dataCahe.set(btcAddress, data);
     return data;
   }
 }
