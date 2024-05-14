@@ -6,7 +6,11 @@ import { Cell, Script } from './types';
 import { buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
 import { blockchain } from '@ckb-lumos/base';
+import { UTXO } from '../../services/bitcoin/schema';
+import pLimit from 'p-limit';
+import asyncRetry from 'async-retry';
 import z from 'zod';
+import { Env } from '../../env';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.addHook('preHandler', async (request) => {
@@ -16,6 +20,34 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       throw fastify.httpErrors.badRequest('Invalid bitcoin address');
     }
   });
+
+  const env: Env = fastify.container.resolve('env');
+  const limit = pLimit(env.CKB_RPC_MAX_CONCURRENCY);
+
+  async function getRgbppAssetsByUtxo(utxo: UTXO, typeScript?: Script) {
+    try {
+      const { txid, vout } = utxo;
+      const args = buildRgbppLockArgs(vout, txid);
+
+      const query: CKBIndexerQueryOptions = {
+        lock: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
+      };
+
+      if (typeScript) {
+        query.type = typeScript;
+      }
+
+      const collector = fastify.ckb.indexer.collector(query).collect();
+      const cells: Cell[] = [];
+      for await (const cell of collector) {
+        cells.push(cell);
+      }
+      return cells;
+    } catch (e) {
+      fastify.Sentry.captureException(e);
+      throw e;
+    }
+  }
 
   fastify.get(
     '/:btc_address/assets',
@@ -48,30 +80,25 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { btc_address } = request.params;
       const { type_script } = request.query;
       const utxos = await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
+
+      let typeScript: Script | undefined = undefined;
+      if (type_script) {
+        if (typeof type_script === 'string') {
+          typeScript = blockchain.Script.unpack(type_script);
+        } else {
+          typeScript = type_script;
+        }
+      }
+
       const cells = await Promise.all(
-        utxos.map(async (utxo) => {
-          const { txid, vout } = utxo;
-          const args = buildRgbppLockArgs(vout, txid);
-
-          const query: CKBIndexerQueryOptions = {
-            lock: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
-          };
-
-          if (type_script) {
-            if (typeof type_script === 'string') {
-              query.type = blockchain.Script.unpack(type_script);
-            } else {
-              query.type = type_script;
-            }
-          }
-
-          const collector = fastify.ckb.indexer.collector(query).collect();
-          const cells: Cell[] = [];
-          for await (const cell of collector) {
-            cells.push(cell);
-          }
-          return cells;
-        }),
+        utxos.map((utxo) =>
+          limit(() =>
+            asyncRetry(() => getRgbppAssetsByUtxo(utxo, typeScript), {
+              retries: 2,
+              onRetry: (e, attempt) => fastify.log.warn(`[getRgbppAssetsByUtxo] ${e.message} retry ${attempt}`),
+            }),
+          ),
+        ),
       );
       return cells.flat();
     },
