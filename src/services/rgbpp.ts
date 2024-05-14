@@ -68,7 +68,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
       schema: z.record(z.array(Cell)),
       expire: cradle.env.RGBPP_COLLECT_DATA_CACHE_EXPIRE,
     });
-    this.limit = pLimit(Math.floor(cradle.env.CKB_RPC_MAX_CONCURRENCY / 100));
+    this.limit = pLimit(100);
   }
 
   /**
@@ -132,9 +132,11 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    * @param typeScript - the type script to filter the cells
    */
   public async collectRgbppUtxoCellsPairs(utxos: UTXO[], typeScript?: Script): Promise<RgbppUtxoCellsPair[]> {
-    const groups = groupBy(utxos, (utxo: UTXO) => utxo.txid) as Record<number, UTXO[]>;
+    const bucketSize = Math.ceil(utxos.length / this.cradle.env.CKB_RPC_MAX_CONCURRENCY);
+    // split the utxos into buckets, every bucket has almost the same size
+    const buckets = groupBy(utxos, () => Math.floor(Math.random() * bucketSize)) as Record<number, UTXO[]>;
     const data = await Promise.all(
-      Object.values(groups).map((group: UTXO[]) => {
+      Object.values(buckets).map((group: UTXO[]) => {
         return this.limit(() =>
           asyncRetry(
             async () => {
