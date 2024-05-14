@@ -15,7 +15,7 @@ interface IUTXOSyncJobReturn {
   btcAddress: string;
   utxos: UTXO[];
   // use sha256(latest_txs_id) as the key, so we can check if the data is updated
-  key: string;
+  txsHash: string;
 }
 
 export const UTXO_SYNCER_QUEUE_NAME = 'utxo-syncer-queue';
@@ -27,6 +27,11 @@ class UTXOSyncerError extends Error {
   }
 }
 
+/**
+ * UTXOSyncer is used to sync the utxos for the btc address.
+ * The utxos are stored in the cache with the btc address as the key,
+ * will be resync when the btc address txs are updated.
+ */
 export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOSyncJobReturn> {
   private cradle: Cradle;
   private dataCache: DataCache<IUTXOSyncJobReturn>;
@@ -58,7 +63,7 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
       schema: z.object({
         btcAddress: z.string(),
         utxos: z.array(UTXO),
-        key: z.string(),
+        txsHash: z.string(),
       }),
       expire: cradle.env.UTXO_SYNC_DATA_CACHE_EXPIRE,
     });
@@ -92,6 +97,11 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
     };
   }
 
+  /**
+   * Capture the job exception to Sentry with the btcAddress tag
+   * @param job - the job that failed
+   * @param err - the error that caused the job to fail
+   */
   private captureJobExceptionToSentryScope(job: Job<IUTXOSyncRequest>, err: Error) {
     const { btcAddress } = job.data;
     Sentry.withScope((scope) => {
@@ -137,17 +147,17 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
     try {
       const { btcAddress } = job.data;
       const txs = await this.cradle.bitcoin.getAddressTxs({ address: btcAddress });
-      const key = sha256(Buffer.from(txs.map((tx) => tx.txid).join(''))).toString();
+      const txsHash = sha256(Buffer.from(txs.map((tx) => tx.txid).join(','))).toString();
 
       // check if the data is updated
       const cached = await this.dataCache.get(btcAddress);
-      if (cached && key === cached.key) {
+      if (cached && txsHash === cached.txsHash) {
         this.cradle.logger.info(`[UTXOSyncer] ${btcAddress} is up to date, skip sync job`);
         return cached;
       }
 
       const utxos = await this.cradle.bitcoin.getAddressTxsUtxo({ address: btcAddress });
-      const data = { btcAddress, utxos, key };
+      const data = { btcAddress, utxos, txsHash };
       return this.dataCache.set(btcAddress, data);
     } catch (e) {
       const { message, stack } = e as Error;

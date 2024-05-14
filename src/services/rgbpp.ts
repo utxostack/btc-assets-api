@@ -2,15 +2,18 @@ import { UTXO } from './bitcoin/schema';
 import pLimit from 'p-limit';
 import asyncRetry from 'async-retry';
 import { Cradle } from '../container';
-import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
-import { buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb';
+import { IndexerCell, buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb';
 import * as Sentry from '@sentry/node';
-import { Script } from '@ckb-lumos/lumos';
+import { RPC, Script } from '@ckb-lumos/lumos';
 import { Job } from 'bullmq';
 import { z } from 'zod';
 import { Cell } from '../routes/rgbpp/types';
 import BaseQueueWorker from './base/queue-worker';
 import DataCache from './base/data-cache';
+import { groupBy } from 'lodash';
+
+type GetCellsParams = Parameters<RPC['getCells']>;
+type SearchKey = GetCellsParams[0];
 
 type RgbppUtxoCellsPair = {
   utxo: UTXO;
@@ -34,6 +37,18 @@ export interface IProcessCallbacks {
 
 export const RGBPP_COLLECTOR_QUEUE_NAME = 'rgbpp-collector-queue';
 
+class RgbppCollectorError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RgbppCollectorError';
+  }
+}
+
+/**
+ * RgbppCollector is used to collect the cells for the utxos.
+ * The cells are stored in the cache with the btc address as the key,
+ * will be recollect when the utxos are updated or new collect job is enqueued.
+ */
 export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest, IRgbppCollectJobReturn> {
   private limit: pLimit.Limit;
   private dataCahe: DataCache<IRgbppCollectJobReturn>;
@@ -53,7 +68,50 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
       schema: z.record(z.array(Cell)),
       expire: cradle.env.RGBPP_COLLECT_DATA_CACHE_EXPIRE,
     });
-    this.limit = pLimit(cradle.env.CKB_RPC_MAX_CONCURRENCY);
+    this.limit = pLimit(Math.floor(cradle.env.CKB_RPC_MAX_CONCURRENCY / 100));
+  }
+
+  /**
+   * Capture the exception to the sentry scope with the btc address and utxos
+   * @param job - the job that failed
+   * @param err - the error
+   */
+  private captureJobExceptionToSentryScope(job: Job<IRgbppCollectRequest>, err: Error) {
+    const { btcAddress, utxos } = job.data;
+    Sentry.withScope((scope) => {
+      scope.setTag('btcAddress', btcAddress);
+      scope.setContext('utxos', {
+        utxos: JSON.stringify(utxos),
+      });
+      this.cradle.logger.error(err);
+      scope.captureException(err);
+    });
+  }
+
+  /**
+   * Get the rgbpp cells batch request for the utxos
+   * @param utxos - the utxos to collect
+   * @param typeScript - the type script to filter the cells
+   */
+  private getRgbppCellsBatchRequest(utxos: UTXO[], typeScript?: Script) {
+    const batchRequest = this.cradle.ckb.rpc.createBatchRequest(
+      utxos.map((utxo) => {
+        const { txid, vout } = utxo;
+        const args = buildRgbppLockArgs(vout, txid);
+        const searchKey: SearchKey = {
+          script: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
+          scriptType: 'lock',
+        };
+        if (typeScript) {
+          searchKey.filter = {
+            script: typeScript,
+          };
+        }
+        const params: GetCellsParams = [searchKey, 'desc', '0x64'];
+        return ['getCells', ...params];
+      }),
+    );
+    return batchRequest;
   }
 
   /**
@@ -69,58 +127,44 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
   }
 
   /**
-   * Get the cells for the utxo, use ckb indexer to query the cells
-   * @param utxo - the utxo to collect
-   * @param typeScript - the type script to filter the cells
-   */
-  private async getRgbppCellsByUtxo(utxo: UTXO, typeScript?: Script): Promise<Cell[]> {
-    try {
-      const { txid, vout } = utxo;
-      const args = buildRgbppLockArgs(vout, txid);
-
-      const query: CKBIndexerQueryOptions = {
-        lock: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
-      };
-
-      if (typeScript) {
-        query.type = typeScript;
-      }
-
-      const collector = this.cradle.ckb.indexer.collector(query).collect();
-      const cells: Cell[] = [];
-      for await (const cell of collector) {
-        cells.push(cell);
-      }
-      return cells;
-    } catch (e) {
-      Sentry.withScope((scope) => {
-        scope.captureException(e);
-      });
-      throw e;
-    }
-  }
-
-  /**
    * Collect the cells for the utxos, return the utxo and the cells
    * @param utxos - the utxos to collect
    * @param typeScript - the type script to filter the cells
    */
   public async collectRgbppUtxoCellsPairs(utxos: UTXO[], typeScript?: Script): Promise<RgbppUtxoCellsPair[]> {
-    const cells = await Promise.all(
-      utxos.map((utxo) => {
+    const groups = groupBy(utxos, (utxo: UTXO) => utxo.txid) as Record<number, UTXO[]>;
+    const data = await Promise.all(
+      Object.values(groups).map((group: UTXO[]) => {
         return this.limit(() =>
           asyncRetry(
             async () => {
-              const cells = await this.getRgbppCellsByUtxo(utxo, typeScript);
-              return { utxo, cells };
+              const batchRequest = this.getRgbppCellsBatchRequest(group, typeScript);
+              const response = await batchRequest.exec();
+              return response.map(({ objects }: { objects: IndexerCell[] }, index: number) => {
+                const utxo = group[index];
+                const cells = objects.map((obj) => {
+                  const { output, outPoint, outputData, blockNumber, txIndex } = obj;
+                  const cell: Cell = {
+                    outPoint: outPoint,
+                    cellOutput: output,
+                    data: outputData,
+                    blockNumber,
+                    txIndex,
+                  };
+                  return cell;
+                });
+                return { utxo, cells };
+              });
             },
-            { retries: 2 },
+            {
+              retries: 2,
+            },
           ),
         );
       }),
     );
-
-    return cells.filter(({ cells }) => cells.length > 0);
+    const pairs = data.flat().filter(({ cells }) => cells.length > 0);
+    return pairs;
   }
 
   /**
@@ -134,6 +178,8 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
   ): Promise<Job<IRgbppCollectRequest>> {
     let jobId = btcAddress;
     if (allowDuplicate) {
+      // add a timestamp to the job id to allow duplicate jobs
+      // used for the case that the utxos are updated
       jobId = `${btcAddress}:${Date.now()}`;
     }
     return this.addJob(jobId, { btcAddress, utxos });
@@ -145,14 +191,24 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    * retry 2 times if failed, and return the utxo and cells
    */
   public async process(job: Job<IRgbppCollectRequest>) {
-    const { btcAddress, utxos } = job.data;
-    const pairs = await this.collectRgbppUtxoCellsPairs(utxos);
-    const data = pairs.reduce((acc, { utxo, cells }) => {
-      const key = `${utxo.txid}:${utxo.vout}`;
-      acc[key] = cells;
-      return acc;
-    }, {} as IRgbppCollectJobReturn);
-    this.dataCahe.set(btcAddress, data);
-    return data;
+    try {
+      const { btcAddress, utxos } = job.data;
+      const now = performance.now();
+      const pairs = await this.collectRgbppUtxoCellsPairs(utxos);
+      this.cradle.logger.error(`[RgbppCollector] ${performance.now() - now}ms`);
+      const data = pairs.reduce((acc, { utxo, cells }) => {
+        const key = `${utxo.txid}:${utxo.vout}`;
+        acc[key] = cells;
+        return acc;
+      }, {} as IRgbppCollectJobReturn);
+      this.dataCahe.set(btcAddress, data);
+      return data;
+    } catch (e) {
+      const { message, stack } = e as Error;
+      const error = new RgbppCollectorError(message);
+      error.stack = stack;
+      this.captureJobExceptionToSentryScope(job, error);
+      throw e;
+    }
   }
 }
