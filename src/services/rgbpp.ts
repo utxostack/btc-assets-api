@@ -193,9 +193,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
   public async process(job: Job<IRgbppCollectRequest>) {
     try {
       const { btcAddress, utxos } = job.data;
-      const now = performance.now();
       const pairs = await this.collectRgbppUtxoCellsPairs(utxos);
-      this.cradle.logger.error(`[RgbppCollector] ${performance.now() - now}ms`);
       const data = pairs.reduce((acc, { utxo, cells }) => {
         const key = `${utxo.txid}:${utxo.vout}`;
         acc[key] = cells;
