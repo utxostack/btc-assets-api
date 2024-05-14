@@ -163,6 +163,14 @@ const envSchema = z
       .transform((value) => value === 'true'),
 
     /**
+     * UTXO sync data cache enable flag, used to cache the UTXO sync data
+     * enable by default
+     */
+    UTXO_SYNC_DATA_CACHE_ENABLE: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((value) => value === 'true'),
+    /**
      * UTXO sync repeat base duration, used to set the UTXO sync repeat interval
      * repeat job start interval is 10 seconds by default
      */
@@ -183,6 +191,14 @@ const envSchema = z
      */
     UTXO_SYNC_DATA_CACHE_EXPIRE: z.coerce.number().default(30 * 60 * 1000),
 
+    /**
+     * RGB++ collect data cache enable flag, used to cache the RGB++ collect data
+     * enable by default
+     */
+    RGBPP_COLLECT_DATA_CACHE_ENABLE: z
+      .enum(['true', 'false'])
+      .default('true')
+      .transform((value) => value === 'true'),
     /**
      * RGB++ collect data cache expire duration, used to cache the RGB++ collect data
      */

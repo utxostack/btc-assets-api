@@ -80,37 +80,44 @@ export default fp(async (fastify) => {
       },
     };
 
-    const rgbppCollector: RgbppCollector = fastify.container.resolve('rgbppCollector');
-    fastify.addHook('onReady', async () => {
-      rgbppCollector.startProcess({
-        onActive: (job) => {
-          fastify.log.info(`[RgbppCollector] job active: ${job.id}`);
-        },
-        onCompleted: (job) => {
-          fastify.log.info(`[RgbppCollector] job completed: ${job.id}`);
-        },
+    if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
+      const utxoSyncer: UTXOSyncer = fastify.container.resolve('utxoSyncer');
+      fastify.addHook('onReady', async () => {
+        utxoSyncer.startProcess({
+          onActive: (job) => {
+            fastify.log.info(`[UTXOSyncer] job active: ${job.id}`);
+          },
+          onCompleted: async (job) => {
+            fastify.log.info(`[UTXOSyncer] job completed: ${job.id}`);
+            if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
+              const { btcAddress, utxos } = job.returnvalue;
+              const rgbppCollector: RgbppCollector = fastify.container.resolve('rgbppCollector');
+              await rgbppCollector.enqueueCollectJob(btcAddress, utxos, true);
+            }
+          },
+        });
       });
-    });
-    fastify.addHook('onClose', async () => {
-      rgbppCollector.closeProcess();
-    });
+      fastify.addHook('onClose', async () => {
+        utxoSyncer.closeProcess();
+      });
+    }
 
-    const utxoSyncer: UTXOSyncer = fastify.container.resolve('utxoSyncer');
-    fastify.addHook('onReady', async () => {
-      utxoSyncer.startProcess({
-        onActive: (job) => {
-          fastify.log.info(`[UTXOSyncer] job active: ${job.id}`);
-        },
-        onCompleted: async (job) => {
-          fastify.log.info(`[UTXOSyncer] job completed: ${job.id}`);
-          const { btcAddress, utxos } = job.returnvalue;
-          await rgbppCollector.enqueueCollectJob(btcAddress, utxos, true);
-        },
+    if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
+      const rgbppCollector: RgbppCollector = fastify.container.resolve('rgbppCollector');
+      fastify.addHook('onReady', async () => {
+        rgbppCollector.startProcess({
+          onActive: (job) => {
+            fastify.log.info(`[RgbppCollector] job active: ${job.id}`);
+          },
+          onCompleted: (job) => {
+            fastify.log.info(`[RgbppCollector] job completed: ${job.id}`);
+          },
+        });
       });
-    });
-    fastify.addHook('onClose', async () => {
-      utxoSyncer.closeProcess();
-    });
+      fastify.addHook('onClose', async () => {
+        rgbppCollector.closeProcess();
+      });
+    }
 
     // processing unlock BTC_TIME_LOCK cells
     const unlocker: Unlocker = fastify.container.resolve('unlocker');

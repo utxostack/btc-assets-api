@@ -6,8 +6,11 @@ import { Cell, Script } from './types';
 import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
 import { serializeScript } from '@nervosnetwork/ckb-sdk-utils';
+import { Env } from '../../env';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
+  const env: Env = fastify.container.resolve('env');
+
   fastify.addHook('preHandler', async (request) => {
     const { btc_address } = request.params as { btc_address: string };
     const valid = validateBitcoinAddress(btc_address);
@@ -56,18 +59,25 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         }
       }
 
-      const utxosCached = await fastify.utxoSyncer.getUTXOsFromCache(btc_address);
-      const utxos = utxosCached ? utxosCached : await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
-      await fastify.utxoSyncer.enqueueSyncJob(btc_address);
+      let utxosCache = null;
+      if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
+        utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(btc_address);
+        await fastify.utxoSyncer.enqueueSyncJob(btc_address);
+      }
+      const utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
 
-      const cached = await fastify.rgbppCollector.getRgbppCellsFromCache(btc_address);
-      await fastify.rgbppCollector.enqueueCollectJob(btc_address, utxos);
-      if (cached) {
+      let rgbppCache = null;
+      if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
+        rgbppCache = await fastify.rgbppCollector.getRgbppCellsFromCache(btc_address);
+        await fastify.rgbppCollector.enqueueCollectJob(btc_address, utxos);
+      }
+
+      if (rgbppCache) {
         fastify.log.debug(`[RGB++] get cells from cache: ${btc_address}`);
         if (typeScript) {
-          return cached.filter((cell) => serializeScript(cell.cellOutput.type!) === serializeScript(typeScript!));
+          return rgbppCache.filter((cell) => serializeScript(cell.cellOutput.type!) === serializeScript(typeScript!));
         }
-        return cached;
+        return rgbppCache;
       }
 
       const rgbppUtxoCellsParis = await fastify.rgbppCollector.collectRgbppUtxoCellsPairs(utxos, typeScript);
