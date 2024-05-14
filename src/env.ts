@@ -177,6 +177,16 @@ const envSchema = z
      * 336 hours by default
      */
     UTXO_SYNC_REPEAT_EXPRIED_DURATION: z.coerce.number().default(336 * 60 * 60 * 1000),
+    /**
+     * UTXO sync data cache expire duration, used to cache the UTXO sync data
+     * 30 minutes by default
+     */
+    UTXO_SYNC_DATA_CACHE_EXPIRE: z.coerce.number().default(30 * 60 * 1000),
+
+    /**
+     * RGB++ collect data cache expire duration, used to cache the RGB++ collect data
+     */
+    RGBPP_COLLECT_DATA_CACHE_EXPIRE: z.coerce.number().default(30 * 60 * 1000),
   })
   .and(
     z.union([

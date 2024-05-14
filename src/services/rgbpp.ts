@@ -51,6 +51,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     this.dataCahe = new DataCache(cradle.redis, {
       prefix: 'rgbpp-collector-data',
       schema: z.record(z.array(Cell)),
+      expire: cradle.env.RGBPP_COLLECT_DATA_CACHE_EXPIRE,
     });
     this.limit = pLimit(cradle.env.CKB_RPC_MAX_CONCURRENCY);
   }

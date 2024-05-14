@@ -60,6 +60,7 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
         utxos: z.array(UTXO),
         key: z.string(),
       }),
+      expire: cradle.env.UTXO_SYNC_DATA_CACHE_EXPIRE,
     });
   }
 
@@ -75,17 +76,11 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
 
   public static getRepeatStrategy(cradle: Cradle) {
     return (millis: number, opts: RepeatOptions) => {
-      const { count = 0, endDate } = opts;
+      const { count = 0 } = opts;
       if (count === 0) {
         // immediately process the job when first added
         return millis;
       }
-      if (endDate && Date.now() > new Date(endDate).getTime()) {
-        // stop repeating when the end date is reached
-        cradle.logger.info(`[UTXOSyncer] Stop repeating job ${opts.jobId}`);
-        return undefined;
-      }
-
       // Exponential increase the repeat interval, with a maximum of maxDuration
       // For default values (base=10s, max=3600s), the interval will be 10s, 20s, 40s, 80s, 160s, ..., 3600s, 3600s, ...
       const baseDuration = cradle.env.UTXO_SYNC_REPEAT_BASE_DURATION;
@@ -130,6 +125,8 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
       {
         repeat: {
           pattern: 'exponential',
+          // bullmq will end the repeat job when the end date is reached
+          // https://github.com/taskforcesh/bullmq/blob/cce0774cffcee591407eee4d4530daa37aab3eca/src/classes/repeat.ts#L51
           endDate: Date.now() + this.cradle.env.UTXO_SYNC_REPEAT_EXPRIED_DURATION,
         },
       },
