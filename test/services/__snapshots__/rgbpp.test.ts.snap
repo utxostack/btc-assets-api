@@ -1,0 +1,150 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`RgbppCollector > collectRgbppUtxoCellsPairs: should return the utxo and the cells 1`] = `
+[
+  {
+    "cells": [
+      {
+        "blockNumber": "0x123",
+        "cellOutput": {
+          "capacity": "0x123",
+          "lock": {
+            "args": "0x0000000009b1c4d969cc25cbbde6f73bf2920b62a00916f1148493ef28bfb677f0a94f2c",
+            "codeHash": "0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248",
+            "hashType": "type",
+          },
+          "type": {
+            "args": "0x",
+            "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+            "hashType": "type",
+          },
+        },
+        "data": "0x",
+        "outPoint": {
+          "index": "0x0",
+          "txHash": "0x",
+        },
+        "txIndex": "0x0",
+      },
+    ],
+    "utxo": {
+      "status": {
+        "confirmed": true,
+      },
+      "txid": "0x2c4fa9f077b6bf28ef938414f11609a0620b92f23bf7e6bdcb25cc69d9c4b109",
+      "value": 100000000,
+      "vout": 0,
+    },
+  },
+  {
+    "cells": [
+      {
+        "blockNumber": "0x456",
+        "cellOutput": {
+          "capacity": "0x123",
+          "lock": {
+            "args": "0x0100000009b1c4d969cc25cbbde6f73bf2920b62a00916f1148493ef28bfb677f0a94f2c",
+            "codeHash": "0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248",
+            "hashType": "type",
+          },
+          "type": {
+            "args": "0x",
+            "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+            "hashType": "type",
+          },
+        },
+        "data": "0x",
+        "outPoint": {
+          "index": "0x0",
+          "txHash": "0x",
+        },
+        "txIndex": "0x0",
+      },
+    ],
+    "utxo": {
+      "status": {
+        "confirmed": true,
+      },
+      "txid": "0x2c4fa9f077b6bf28ef938414f11609a0620b92f23bf7e6bdcb25cc69d9c4b109",
+      "value": 200000000,
+      "vout": 1,
+    },
+  },
+]
+`;
+
+exports[`RgbppCollector > getRgbppCellsBatchRequest: should be filtered by typeScript 1`] = `
+[
+  [
+    "getCells",
+    {
+      "filter": {
+        "script": {
+          "args": "0x",
+          "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+          "hashType": "data",
+        },
+      },
+      "script": {
+        "args": "0x0000000009b1c4d969cc25cbbde6f73bf2920b62a00916f1148493ef28bfb677f0a94f2c",
+        "codeHash": "0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248",
+        "hashType": "type",
+      },
+      "scriptType": "lock",
+    },
+    "desc",
+    "0x64",
+  ],
+  [
+    "getCells",
+    {
+      "filter": {
+        "script": {
+          "args": "0x",
+          "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+          "hashType": "data",
+        },
+      },
+      "script": {
+        "args": "0x0100000009b1c4d969cc25cbbde6f73bf2920b62a00916f1148493ef28bfb677f0a94f2c",
+        "codeHash": "0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248",
+        "hashType": "type",
+      },
+      "scriptType": "lock",
+    },
+    "desc",
+    "0x64",
+  ],
+]
+`;
+
+exports[`RgbppCollector > getRgbppCellsBatchRequest: should return the batch request for the utxos 1`] = `
+[
+  [
+    "getCells",
+    {
+      "script": {
+        "args": "0x0000000009b1c4d969cc25cbbde6f73bf2920b62a00916f1148493ef28bfb677f0a94f2c",
+        "codeHash": "0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248",
+        "hashType": "type",
+      },
+      "scriptType": "lock",
+    },
+    "desc",
+    "0x64",
+  ],
+  [
+    "getCells",
+    {
+      "script": {
+        "args": "0x0100000009b1c4d969cc25cbbde6f73bf2920b62a00916f1148493ef28bfb677f0a94f2c",
+        "codeHash": "0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248",
+        "hashType": "type",
+      },
+      "scriptType": "lock",
+    },
+    "desc",
+    "0x64",
+  ],
+]
+`;

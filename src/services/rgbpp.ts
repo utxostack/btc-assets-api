@@ -14,6 +14,7 @@ import { groupBy } from 'lodash';
 
 type GetCellsParams = Parameters<RPC['getCells']>;
 type SearchKey = GetCellsParams[0];
+type CKBBatchRequest = { exec: () => Promise<{ objects: IndexerCell[] }[]> };
 
 type RgbppUtxoCellsPair = {
   utxo: UTXO;
@@ -93,7 +94,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    * @param utxos - the utxos to collect
    * @param typeScript - the type script to filter the cells
    */
-  private getRgbppCellsBatchRequest(utxos: UTXO[], typeScript?: Script) {
+  public getRgbppCellsBatchRequest(utxos: UTXO[], typeScript?: Script): CKBBatchRequest {
     const batchRequest = this.cradle.ckb.rpc.createBatchRequest(
       utxos.map((utxo) => {
         const { txid, vout } = utxo;
