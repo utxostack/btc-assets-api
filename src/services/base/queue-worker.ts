@@ -1,5 +1,6 @@
 import { Job, JobsOptions, Queue, QueueOptions, Worker, WorkerOptions } from 'bullmq';
 import Redis from 'ioredis';
+import * as Sentry from '@sentry/node';
 
 interface IQueueWorkerOptions {
   name: string;
@@ -24,11 +25,20 @@ export default abstract class BaseQueueWorker<T, R> {
       connection,
       ...queue,
     });
-    this.worker = new Worker(name, this.process.bind(this), {
-      connection,
-      autorun: false,
-      ...worker,
-    });
+    this.worker = new Worker(
+      name,
+      async (job: Job<T>) => {
+        const span = Sentry.startInactiveSpan({ name: this.constructor.name, op: 'process' });
+        const returnvalue = await this.process(job);
+        span?.end();
+        return returnvalue;
+      },
+      {
+        connection,
+        autorun: false,
+        ...worker,
+      },
+    );
   }
 
   abstract process(job: Job<T>): Promise<R>;
