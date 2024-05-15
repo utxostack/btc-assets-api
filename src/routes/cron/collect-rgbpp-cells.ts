@@ -12,7 +12,7 @@ const collectRgbppCellsCronRoute: FastifyPluginCallback<Record<never, never>, Se
   done,
 ) => {
   fastify.get(
-    '/sync-utxo',
+    '/collect-rgbpp-cells',
     {
       schema: {
         tags: ['Cron Task'],
