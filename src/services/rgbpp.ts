@@ -94,8 +94,8 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    * @param utxos - the utxos to collect
    * @param typeScript - the type script to filter the cells
    */
-  public getRgbppCellsBatchRequest(utxos: UTXO[], typeScript?: Script): CKBBatchRequest {
-    const batchRequest = this.cradle.ckb.rpc.createBatchRequest(
+  public async getRgbppCellsByBatchRequest(utxos: UTXO[], typeScript?: Script) {
+    const batchRequest: CKBBatchRequest = this.cradle.ckb.rpc.createBatchRequest(
       utxos.map((utxo) => {
         const { txid, vout } = utxo;
         const args = buildRgbppLockArgs(vout, txid);
@@ -112,7 +112,20 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         return ['getCells', ...params];
       }),
     );
-    return batchRequest;
+    const result = await batchRequest.exec();
+    const cells = result.map(({ objects }) => {
+      return objects.map((indexerCell) => {
+        const { output, outPoint, outputData, blockNumber, txIndex } = indexerCell;
+        return {
+          outPoint,
+          cellOutput: output,
+          data: outputData,
+          blockNumber,
+          txIndex,
+        } as Cell;
+      });
+    });
+    return cells;
   }
 
   /**
@@ -141,21 +154,9 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         return this.limit(() =>
           asyncRetry(
             async () => {
-              const batchRequest = this.getRgbppCellsBatchRequest(group, typeScript);
-              const response = await batchRequest.exec();
-              return response.map(({ objects }: { objects: IndexerCell[] }, index: number) => {
+              const batchCells = await this.getRgbppCellsByBatchRequest(group, typeScript);
+              return batchCells.map((cells, index: number) => {
                 const utxo = group[index];
-                const cells = objects.map((obj) => {
-                  const { output, outPoint, outputData, blockNumber, txIndex } = obj;
-                  const cell: Cell = {
-                    outPoint: outPoint,
-                    cellOutput: output,
-                    data: outputData,
-                    blockNumber,
-                    txIndex,
-                  };
-                  return cell;
-                });
                 return { utxo, cells };
               });
             },

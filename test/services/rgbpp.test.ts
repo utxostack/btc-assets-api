@@ -40,7 +40,7 @@ describe('RgbppCollector', () => {
       },
     ];
 
-    const batchRequest = rgbppCollector['getRgbppCellsBatchRequest'](utxos);
+    const batchRequest = rgbppCollector['getRgbppCellsByBatchRequest'](utxos);
     expect(batchRequest).toMatchSnapshot();
   });
 
@@ -66,7 +66,7 @@ describe('RgbppCollector', () => {
       args: '0x',
     };
 
-    const batchRequest = rgbppCollector['getRgbppCellsBatchRequest'](utxos, typeScript);
+    const batchRequest = rgbppCollector['getRgbppCellsByBatchRequest'](utxos, typeScript);
     expect(batchRequest).toMatchSnapshot();
   });
 

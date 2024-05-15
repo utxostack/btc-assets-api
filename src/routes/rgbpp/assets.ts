@@ -2,9 +2,8 @@ import { FastifyPluginCallback } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Server } from 'http';
 import z from 'zod';
-import { buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import { Cell } from './types';
-import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
+import { UTXO } from '../../services/bitcoin/schema';
 
 const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.get(
@@ -24,18 +23,20 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     async (request) => {
       const { btc_txid } = request.params;
       const transaction = await fastify.bitcoin.getTx({ txid: btc_txid });
-      const cells: Cell[] = [];
-      for (let index = 0; index < transaction.vout.length; index++) {
-        const args = buildRgbppLockArgs(index, btc_txid);
-        const query: CKBIndexerQueryOptions = {
-          lock: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
-        };
-        const collector = fastify.ckb.indexer.collector(query).collect();
-        for await (const cell of collector) {
-          cells.push(cell);
-        }
-      }
-      return cells;
+
+      const utxos = transaction.vout.map((vout, index) => {
+        return {
+          txid: btc_txid,
+          vout: index,
+          value: vout.value,
+          status: {
+            confirmed: true,
+          },
+        } as UTXO;
+      });
+
+      const batchCells = await fastify.rgbppCollector.getRgbppCellsByBatchRequest(utxos);
+      return batchCells.flat();
     },
   );
 
@@ -56,19 +57,18 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     },
     async (request) => {
       const { btc_txid, vout } = request.params;
-      const args = buildRgbppLockArgs(vout, btc_txid);
-      const lockScript = genRgbppLockScript(args, process.env.NETWORK === 'mainnet');
+      const utxo: UTXO = {
+        txid: btc_txid,
+        vout,
+        // We don't need the value here, so we just set it to 0
+        value: 0,
+        status: {
+          confirmed: true,
+        },
+      };
 
-      const collector = fastify.ckb.indexer.collector({
-        lock: lockScript,
-      });
-
-      const collect = collector.collect();
-      const cells: Cell[] = [];
-      for await (const cell of collect) {
-        cells.push(cell);
-      }
-      return cells;
+      const batchCells = await fastify.rgbppCollector.getRgbppCellsByBatchRequest([utxo]);
+      return batchCells.flat();
     },
   );
 
