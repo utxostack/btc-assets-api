@@ -1,4 +1,4 @@
-import container from '../../src/container';
+import container, { Cradle } from '../../src/container';
 import { describe, test, beforeEach, afterEach, vi, expect } from 'vitest';
 import UTXOSyncer from '../../src/services/utxo';
 

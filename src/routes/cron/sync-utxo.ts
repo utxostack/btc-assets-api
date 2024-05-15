@@ -3,39 +3,35 @@ import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import container from '../../container';
-import TransactionProcessor from '../../services/transaction';
 import { VERCEL_MAX_DURATION } from '../../constants';
+import UTXOSyncer from '../../services/utxo';
 
-const processTransactionsCronRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (
-  fastify,
-  _,
-  done,
-) => {
+const syncUTXOCronRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.get(
-    '/process-transactions',
+    '/sync-utxo',
     {
       schema: {
         tags: ['Cron Task'],
-        description: 'Run RGB++ CKB transaction cron task, used for serverless deployment',
+        description: 'Run UTXO sync cron task to update data cache, used for serverless deployment',
       },
     },
     async () => {
       const logger = container.resolve<pino.BaseLogger>('logger');
-      const transactionProcessor: TransactionProcessor = container.resolve('transactionProcessor');
+      const utxoSyncer: UTXOSyncer = container.resolve('utxoSyncer');
       try {
         await new Promise((resolve) => {
           setTimeout(resolve, (VERCEL_MAX_DURATION - 10) * 1000);
-          transactionProcessor.startProcess({
+          utxoSyncer.startProcess({
             onActive: (job) => {
-              logger.info(`[TransactionProcessor] Job active: ${job.id}`);
+              logger.info(`[UTXOSyncer] Job active: ${job.id}`);
             },
             onCompleted: (job) => {
-              logger.info(`[TransactionProcessor] Job completed: ${job.id}`);
+              logger.info(`[UTXOSyncer] Job completed: ${job.id}`);
             },
           });
         });
-        await transactionProcessor.pauseProcess();
-        await transactionProcessor.closeProcess();
+        await utxoSyncer.pauseProcess();
+        await utxoSyncer.closeProcess();
       } catch (err) {
         logger.error(err);
         fastify.Sentry.captureException(err);
@@ -45,4 +41,4 @@ const processTransactionsCronRoute: FastifyPluginCallback<Record<never, never>, 
   done();
 };
 
-export default processTransactionsCronRoute;
+export default syncUTXOCronRoute;
