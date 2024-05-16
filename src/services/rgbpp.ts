@@ -108,6 +108,8 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
             script: typeScript,
           };
         }
+        // TOOD: In extreme cases, the num of search target cells may be more than limit=0x64=100
+        // Priority: Low
         const params: GetCellsParams = [searchKey, 'desc', '0x64'];
         return ['getCells', ...params];
       }),
