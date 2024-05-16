@@ -52,7 +52,7 @@ class RgbppCollectorError extends Error {
  */
 export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest, IRgbppCollectJobReturn> {
   private limit: pLimit.Limit;
-  private dataCahe: DataCache<IRgbppCollectJobReturn>;
+  private dataCache: DataCache<IRgbppCollectJobReturn>;
 
   constructor(private cradle: Cradle) {
     super({
@@ -64,7 +64,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         removeOnFail: { count: 0 },
       },
     });
-    this.dataCahe = new DataCache(cradle.redis, {
+    this.dataCache = new DataCache(cradle.redis, {
       prefix: 'rgbpp-collector-data',
       schema: z.record(z.array(Cell)),
       expire: cradle.env.RGBPP_COLLECT_DATA_CACHE_EXPIRE,
@@ -133,7 +133,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    * @param btcAddress - the btc address
    */
   public async getRgbppCellsFromCache(btcAddress: string) {
-    const data = await this.dataCahe.get(btcAddress);
+    const data = await this.dataCache.get(btcAddress);
     if (!data) {
       return null;
     }
@@ -203,7 +203,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         acc[key] = cells;
         return acc;
       }, {} as IRgbppCollectJobReturn);
-      this.dataCahe.set(btcAddress, data);
+      this.dataCache.set(btcAddress, data);
       return data;
     } catch (e) {
       const { message, stack } = e as Error;
