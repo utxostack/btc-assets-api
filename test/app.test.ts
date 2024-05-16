@@ -38,6 +38,8 @@ test('`/docs/json` - 200', async () => {
     '/rgbpp/v1/paymaster/info',
     '/cron/process-transactions',
     '/cron/unlock-cells',
+    '/cron/sync-utxo',
+    '/cron/collect-rgbpp-cells',
   ]);
 
   await fastify.close();

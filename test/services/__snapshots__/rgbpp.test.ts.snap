@@ -148,3 +148,19 @@ exports[`RgbppCollector > getRgbppCellsBatchRequest: should return the batch req
   ],
 ]
 `;
+
+exports[`RgbppCollector > getRgbppCellsByBatchRequest: should be filtered by typeScript 1`] = `
+[
+  [],
+  [],
+]
+`;
+
+exports[`RgbppCollector > getRgbppCellsByBatchRequest: should return the batch request for the utxos 1`] = `
+[
+  [],
+  [],
+]
+`;
+
+exports[`RgbppCollector > getRgbppCellsByBatchRequest: should return the utxo and the cells 1`] = `[]`;
