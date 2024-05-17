@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Job, RepeatOptions } from 'bullmq';
 import * as Sentry from '@sentry/node';
 import DataCache from './base/data-cache';
+import { throttle } from 'lodash';
 
 interface IUTXOSyncRequest {
   btcAddress: string;
@@ -119,12 +120,12 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
     return data.utxos;
   }
 
-  public async enqueueSyncJob(btcAddress: string) {
+  private async _enqueueSyncJob(btcAddress: string) {
     const jobs = await this.queue.getRepeatableJobs();
     const repeatableJob = jobs.find((job) => job.name === btcAddress);
+
     if (repeatableJob) {
-      // remove the existing repeatable job to update the start date
-      // so the job will be processed immediately
+      // Remove the existing repeatable job to update the start date, let the job be processed immediately
       this.cradle.logger.info(`[UTXOSyncer] Remove existing repeatable job for ${btcAddress}`);
       await this.queue.removeRepeatableByKey(repeatableJob.key);
     }
@@ -141,6 +142,18 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
         },
       },
     );
+  }
+
+  private enqueueSyncJobThrottle = throttle((address) => this._enqueueSyncJob(address), 1000, {
+    leading: true,
+  });
+
+  /**
+   * Enqueue a sync job for the btc address, with a throttle to avoid too many jobs being enqueued at the same time
+   */
+  public enqueueSyncJob(btcAddress: string) {
+    this.cradle.logger.info(`[UTXOSyncer] Enqueue sync job for ${btcAddress}, ${Date.now()}`);
+    return this.enqueueSyncJobThrottle(btcAddress);
   }
 
   public async process(job: Job<IUTXOSyncRequest>): Promise<IUTXOSyncJobReturn> {
