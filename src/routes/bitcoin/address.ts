@@ -28,6 +28,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         }),
         querystring: z.object({
           min_satoshi: z.coerce.number().optional().describe('The minimum value of the UTXO in satoshi'),
+          no_cache: z
+            .enum(['true', 'false'])
+            .default('false')
+            .describe('Whether to disable cache to get utxos, default is false'),
         }),
         response: {
           200: Balance,
@@ -36,8 +40,15 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     },
     async (request) => {
       const { address } = request.params;
-      const { min_satoshi } = request.query;
-      const utxos = await fastify.bitcoin.getAddressTxsUtxo({ address });
+      const { min_satoshi, no_cache } = request.query;
+
+      let utxosCache = null;
+      if (env.UTXO_SYNC_DATA_CACHE_ENABLE && no_cache !== 'true') {
+        utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(address);
+        await fastify.utxoSyncer.enqueueSyncJob(address);
+      }
+      const utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address });
+
       return utxos.reduce(
         (acc: Balance, utxo: UTXO) => {
           if (utxo.status.confirmed) {
