@@ -122,9 +122,14 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
   public async enqueueSyncJob(btcAddress: string) {
     const jobs = await this.queue.getRepeatableJobs();
     const repeatableJob = jobs.find((job) => job.name === btcAddress);
+
     if (repeatableJob) {
-      // remove the existing repeatable job to update the start date
-      // so the job will be processed immediately
+      // Skip adding repeatable job if the next run is too soon
+      if (repeatableJob.next < Date.now() + this.cradle.env.UTXO_SYNC_REPEAT_BASE_DURATION) {
+        this.cradle.logger.info(`[UTXOSyncer] Skip adding repeatable job for ${btcAddress}, next run is too soon`);
+        return repeatableJob;
+      }
+      // Remove the existing repeatable job to update the start date, let the job be processed immediately
       this.cradle.logger.info(`[UTXOSyncer] Remove existing repeatable job for ${btcAddress}`);
       await this.queue.removeRepeatableByKey(repeatableJob.key);
     }
