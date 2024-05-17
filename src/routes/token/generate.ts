@@ -36,8 +36,22 @@ const generateRoute: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async (request) => {
       const { app, domain } = request.body;
       const uuid = randomUUID();
-      const token = fastify.jwt.sign({ sub: app, aud: domain, jti: uuid });
-      return { id: uuid, token };
+
+      try {
+        // Ensure the domain is a valid URL and extract the host
+        const url = domain.startsWith('http') ? domain : `https://${domain}`;
+        const { host, pathname } = new URL(url);
+
+        if (pathname !== '/') {
+          throw new Error('Must be a valid domain without path');
+        }
+
+        const token = fastify.jwt.sign({ sub: app, aud: host, jti: uuid });
+        return { id: uuid, token };
+      } catch (e) {
+        fastify.Sentry.captureException(e);
+        throw new Error('Failed to generate token: ' + (e as Error).message);
+      }
     },
   );
   done();
