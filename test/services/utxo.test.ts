@@ -43,8 +43,16 @@ describe('UTXOSyncer', () => {
     expect(spy).toHaveBeenCalled();
   });
 
+  test('enqueueSyncJob: should not be remove repeat job when enqueued duplicate jobs', async () => {
+    await utxoSyncer.enqueueSyncJob('tb1quqtqsh5jrlr9p5wnpu3rs883lqh4avpwc766x3');
+    const spy = vi.spyOn(utxoSyncer['queue'], 'removeRepeatableByKey');
+    await utxoSyncer.enqueueSyncJob('tb1quqtqsh5jrlr9p5wnpu3rs883lqh4avpwc766x3');
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   test('enqueueSyncJob: should be remove repeat job when is exists', async () => {
     await utxoSyncer.enqueueSyncJob('tb1quqtqsh5jrlr9p5wnpu3rs883lqh4avpwc766x3');
+    await new Promise((resolve) => setTimeout(resolve, 1100));
     const spy = vi.spyOn(utxoSyncer['queue'], 'removeRepeatableByKey');
     await utxoSyncer.enqueueSyncJob('tb1quqtqsh5jrlr9p5wnpu3rs883lqh4avpwc766x3');
     expect(spy).toHaveBeenCalled();
