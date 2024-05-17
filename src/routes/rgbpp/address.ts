@@ -40,6 +40,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
               - as a hex string: '0x...' (You can pack by @ckb-lumos/codec blockchain.Script.pack({ "codeHash": "0x...", ... }))
             `,
             ),
+          no_cache: z
+            .enum(['true', 'false'])
+            .default('false')
+            .describe('Whether to disable cache to get RGB++ assets, default is false'),
         }),
         response: {
           200: z.array(Cell),
@@ -48,7 +52,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     },
     async (request) => {
       const { btc_address } = request.params;
-      const { type_script } = request.query;
+      const { type_script, no_cache } = request.query;
 
       let typeScript: Script | undefined = undefined;
       if (type_script) {
@@ -60,14 +64,14 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       }
 
       let utxosCache = null;
-      if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
+      if (env.UTXO_SYNC_DATA_CACHE_ENABLE && no_cache !== 'true') {
         utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(btc_address);
         await fastify.utxoSyncer.enqueueSyncJob(btc_address);
       }
       const utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
 
       let rgbppCache = null;
-      if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
+      if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE && no_cache !== 'true') {
         rgbppCache = await fastify.rgbppCollector.getRgbppCellsFromCache(btc_address);
         await fastify.rgbppCollector.enqueueCollectJob(btc_address, utxos);
       }
