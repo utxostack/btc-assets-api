@@ -30,7 +30,6 @@ Update the configuration values:
 ```env
 # Bitcoin network, testnet by default
 NETWORK=testnet
-# LOGGER_LEVEL=info
 
 # Set /token/generate default domain param
 # DOMAIN=localhost
@@ -61,9 +60,9 @@ JWT_SECRET=<your_secret>
 # JWT_DENYLIST=
 
 # Bitcoin data provider, support mempool and electrs
-# use mempool.space as default, electrs as fallback
-# change to electrs if you want to use electrs as default and mempool.space as fallback
-BITCOIN_DATA_PROVIDER=mempool
+# use electrs as default, mempool as fallback
+# change to mempool if you want to use mempool.space as default and electrs as fallback
+BITCOIN_DATA_PROVIDER=electrs
 # Bitcoin Mempool.space API URL
 # optinal when BITCOIN_DATA_PROVIDER=electrs
 BITCOIN_MEMPOOL_SPACE_API_URL=https://mempool.space
@@ -81,10 +80,6 @@ CKB_RPC_URL=https://testnet.ckb.dev/rpc
 PAYMASTER_PRIVATE_KEY=
 # Paymaster cell capacity in shannons
 PAYMASTER_CELL_CAPACITY=31600000000
-# Paymaster cell queue preset count, used to refill paymaster cell.
-PAYMASTER_CELL_PRESET_COUNT=500
-# Paymaster cell refill threshold, refill paymaster cell when the balance is less than this threshold.
-PAYMASTER_CELL_REFILL_THRESHOLD=0.3
 # Check the paymaster BTC UTXO when processing rgb++ ckb transaction
 PAYMASTER_RECEIVE_UTXO_CHECK=false
 # Paymaster bitcoin address, used to receive BTC from users
@@ -96,8 +91,6 @@ PAYMASTER_BTC_CONTAINER_FEE_SATS=7000
 UNLOCKER_CRON_SCHEDULE='*/5 * * * *'
 # BTCTimeLock cell unlock batch size
 UNLOCKER_CELL_BATCH_SIZE=100
-# BTCTimeLock cell unlocker monitor slug, used for monitoring unlocker status on sentry
-UNLOCKER_MONITOR_SLUG=btctimelock-cells-unlocker
 
 # RGB++ CKB transaction Queue cron job delay in milliseconds
 # the /rgbpp/v1/transaction/ckb-tx endpoint is called, the transaction will be added to the queue
