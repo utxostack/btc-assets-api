@@ -4,8 +4,11 @@ import { Balance, Transaction, UTXO } from './types';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import z from 'zod';
+import { Env } from '../../env';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
+  const env: Env = fastify.container.resolve('env');
+
   fastify.addHook('preHandler', async (request) => {
     const { address } = request.params as { address: string };
     const valid = validateBitcoinAddress(address);
@@ -83,7 +86,16 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async function (request) {
       const { address } = request.params;
       const { only_confirmed, min_satoshi } = request.query;
-      let utxos = await fastify.bitcoin.getAddressTxsUtxo({ address });
+
+      let utxosCache = null;
+      if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
+        utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(address);
+        await fastify.utxoSyncer.enqueueSyncJob(address);
+      }
+      let utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address });
+      if (utxosCache) {
+        fastify.log.debug(`[UTXO] get utxos from cache: ${address}`);
+      }
 
       // compatible with the case where only_confirmed is undefined
       if (only_confirmed === 'true' || only_confirmed === 'undefined') {

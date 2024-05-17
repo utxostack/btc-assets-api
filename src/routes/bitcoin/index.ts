@@ -8,9 +8,11 @@ import container from '../../container';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import BitcoinClient from '../../services/bitcoin';
 import feesRoutes from './fees';
+import UTXOSyncer from '../../services/utxo';
 
 const bitcoinRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.decorate('bitcoin', container.resolve<BitcoinClient>('bitcoin'));
+  fastify.decorate('utxoSyncer', container.resolve<UTXOSyncer>('utxoSyncer'));
 
   fastify.register(infoRoute);
   fastify.register(blockRoutes, { prefix: '/block' });

@@ -3,16 +3,14 @@ import { Server } from 'http';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Cell, Script } from './types';
-import { buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
-import { CKBIndexerQueryOptions } from '@ckb-lumos/ckb-indexer/lib/type';
 import { blockchain } from '@ckb-lumos/base';
-import { UTXO } from '../../services/bitcoin/schema';
-import pLimit from 'p-limit';
-import asyncRetry from 'async-retry';
 import z from 'zod';
+import { serializeScript } from '@nervosnetwork/ckb-sdk-utils';
 import { Env } from '../../env';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
+  const env: Env = fastify.container.resolve('env');
+
   fastify.addHook('preHandler', async (request) => {
     const { btc_address } = request.params as { btc_address: string };
     const valid = validateBitcoinAddress(btc_address);
@@ -20,34 +18,6 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       throw fastify.httpErrors.badRequest('Invalid bitcoin address');
     }
   });
-
-  const env: Env = fastify.container.resolve('env');
-  const limit = pLimit(env.CKB_RPC_MAX_CONCURRENCY);
-
-  async function getRgbppAssetsByUtxo(utxo: UTXO, typeScript?: Script) {
-    try {
-      const { txid, vout } = utxo;
-      const args = buildRgbppLockArgs(vout, txid);
-
-      const query: CKBIndexerQueryOptions = {
-        lock: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
-      };
-
-      if (typeScript) {
-        query.type = typeScript;
-      }
-
-      const collector = fastify.ckb.indexer.collector(query).collect();
-      const cells: Cell[] = [];
-      for await (const cell of collector) {
-        cells.push(cell);
-      }
-      return cells;
-    } catch (e) {
-      fastify.Sentry.captureException(e);
-      throw e;
-    }
-  }
 
   fastify.get(
     '/:btc_address/assets',
@@ -79,7 +49,6 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async (request) => {
       const { btc_address } = request.params;
       const { type_script } = request.query;
-      const utxos = await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
 
       let typeScript: Script | undefined = undefined;
       if (type_script) {
@@ -90,17 +59,30 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         }
       }
 
-      const cells = await Promise.all(
-        utxos.map((utxo) =>
-          limit(() =>
-            asyncRetry(() => getRgbppAssetsByUtxo(utxo, typeScript), {
-              retries: 2,
-              onRetry: (e, attempt) => fastify.log.warn(`[getRgbppAssetsByUtxo] ${e.message} retry ${attempt}`),
-            }),
-          ),
-        ),
-      );
-      return cells.flat();
+      let utxosCache = null;
+      if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
+        utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(btc_address);
+        await fastify.utxoSyncer.enqueueSyncJob(btc_address);
+      }
+      const utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
+
+      let rgbppCache = null;
+      if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
+        rgbppCache = await fastify.rgbppCollector.getRgbppCellsFromCache(btc_address);
+        await fastify.rgbppCollector.enqueueCollectJob(btc_address, utxos);
+      }
+
+      if (rgbppCache) {
+        fastify.log.debug(`[RGB++] get cells from cache: ${btc_address}`);
+        if (typeScript) {
+          return rgbppCache.filter((cell) => serializeScript(cell.cellOutput.type!) === serializeScript(typeScript!));
+        }
+        return rgbppCache;
+      }
+
+      const rgbppUtxoCellsParis = await fastify.rgbppCollector.collectRgbppUtxoCellsPairs(utxos, typeScript);
+      const cells = rgbppUtxoCellsParis.map((pair) => pair.cells).flat();
+      return cells;
     },
   );
 
