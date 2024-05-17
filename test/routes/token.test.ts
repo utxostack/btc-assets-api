@@ -1,7 +1,27 @@
 import { expect, test } from 'vitest';
 import { buildFastify } from '../../src/app';
 
-test('`/token/generate` - 400', async () => {
+test('`/token/generate` - successfuly', async () => {
+  const fastify = buildFastify();
+  await fastify.ready();
+
+  const response = await fastify.inject({
+    method: 'POST',
+    url: '/token/generate',
+    payload: {
+      app: 'test',
+      domain: 'test.com',
+    },
+  });
+  const data = response.json();
+
+  expect(response.statusCode).toBe(200);
+  expect(data.token).toBeDefined();
+
+  await fastify.close();
+});
+
+test('`/token/generate` - without params', async () => {
   const fastify = buildFastify();
   await fastify.ready();
 
@@ -17,7 +37,7 @@ test('`/token/generate` - 400', async () => {
   await fastify.close();
 });
 
-test('`/token/generate` - 200', async () => {
+test('`/token/generate` - invalid domain', async () => {
   const fastify = buildFastify();
   await fastify.ready();
 
@@ -26,7 +46,47 @@ test('`/token/generate` - 200', async () => {
     url: '/token/generate',
     payload: {
       app: 'test',
-      domain: 'test.com',
+      domain: '\\',
+    },
+  });
+  const data = response.json();
+
+  expect(response.statusCode).toBe(500);
+  expect(data.message).toEqual('Failed to generate token: Invalid URL');
+
+  await fastify.close();
+});
+
+test('`/token/generate` - with protocol', async () => {
+  const fastify = buildFastify();
+  await fastify.ready();
+
+  const response = await fastify.inject({
+    method: 'POST',
+    url: '/token/generate',
+    payload: {
+      app: 'test',
+      domain: 'https://test.com',
+    },
+  });
+  const data = response.json();
+
+  expect(response.statusCode).toBe(200);
+  expect(data.token).toBeDefined();
+
+  await fastify.close();
+});
+
+test('`/token/generate` - with port', async () => {
+  const fastify = buildFastify();
+  await fastify.ready();
+
+  const response = await fastify.inject({
+    method: 'POST',
+    url: '/token/generate',
+    payload: {
+      app: 'test',
+      domain: 'test.com:3000',
     },
   });
   const data = response.json();

@@ -41,6 +41,7 @@ const generateRoute: FastifyPluginCallback<Record<never, never>, Server, ZodType
         // Ensure the domain is a valid URL and extract the host
         const url = domain.startsWith('http') ? domain : `https://${domain}`;
         const { host, pathname } = new URL(url);
+
         if (pathname !== '/') {
           throw new Error('Must be a valid domain without path');
         }
