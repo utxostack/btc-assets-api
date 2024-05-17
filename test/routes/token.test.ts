@@ -57,6 +57,26 @@ test('`/token/generate` - invalid domain', async () => {
   await fastify.close();
 });
 
+test('`/token/generate` - with pathname', async () => {
+  const fastify = buildFastify();
+  await fastify.ready();
+
+  const response = await fastify.inject({
+    method: 'POST',
+    url: '/token/generate',
+    payload: {
+      app: 'test',
+      domain: 'http://test.com/abc',
+    },
+  });
+  const data = response.json();
+
+  expect(response.statusCode).toBe(500);
+  expect(data.message).toEqual('Failed to generate token: Must be a valid domain without path');
+
+  await fastify.close();
+});
+
 test('`/token/generate` - with protocol', async () => {
   const fastify = buildFastify();
   await fastify.ready();
