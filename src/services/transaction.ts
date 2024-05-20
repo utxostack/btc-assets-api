@@ -462,6 +462,18 @@ export default class TransactionProcessor
           this.cradle.logger.info(`[TransactionProcessor] Mark paymaster cell as spent: ${txHash}`);
           await this.cradle.paymaster.markPaymasterCellAsSpent(txid, signedTx!);
         }
+
+        // trigger the UTXO sync job if the cache is enabled
+        // after the transaction is confirmed, the UTXO sync job will be triggered to sync the UTXO data
+        // then the RGB++ cells cache will be updated with the latest UTXO data
+        if (this.cradle.env.UTXO_SYNC_DATA_CACHE_ENABLE) {
+          try {
+            await this.cradle.utxoSyncer.enqueueSyncJob(txid);
+          } catch (err) {
+            // ignore the error if enqueue sync job failed, to avoid the transaction failed
+            // already catch the error inside the utxo syncer
+          }
+        }
         return txHash;
       } catch (err) {
         // fix the pool rejected transaction by increasing the fee rate
