@@ -348,7 +348,7 @@ export default class TransactionProcessor
   private async appendSporeCobuildWitness(signedTx: CKBRawTransaction) {
     const inputs = await Promise.all(
       signedTx.inputs.map(async (input) => {
-        return this.cradle.ckb.rpc.getLiveCell(input.previousOutput!, false);
+        return this.cradle.ckb.rpc.getLiveCell(input.previousOutput!, true);
       }),
     );
     const sporeLiveCells = inputs
