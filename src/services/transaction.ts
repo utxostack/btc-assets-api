@@ -468,7 +468,8 @@ export default class TransactionProcessor
         // then the RGB++ cells cache will be updated with the latest UTXO data
         if (this.cradle.env.UTXO_SYNC_DATA_CACHE_ENABLE) {
           try {
-            await this.cradle.utxoSyncer.enqueueSyncJob(txid);
+            const addresses = btcTx.vout.map((vout) => vout.scriptpubkey_address).filter((address) => address);
+            await Promise.all(addresses.map((address) => this.cradle.utxoSyncer.enqueueSyncJob(address!)));
           } catch (err) {
             // ignore the error if enqueue sync job failed, to avoid the transaction failed
             // already catch the error inside the utxo syncer
