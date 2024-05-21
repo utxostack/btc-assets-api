@@ -1,8 +1,9 @@
-import { Collector, sendCkbTx } from '@rgbpp-sdk/ckb';
+import { Collector, getSporeTypeScript, getUniqueTypeScript, getXudtTypeScript, sendCkbTx } from '@rgbpp-sdk/ckb';
 import { Cradle } from '../container';
-import { Indexer, RPC } from '@ckb-lumos/lumos';
+import { Cell, Indexer, RPC, Script } from '@ckb-lumos/lumos';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
+import { serializeScript } from '@nervosnetwork/ckb-sdk-utils';
 
 // https://github.com/nervosnetwork/ckb/blob/develop/rpc/src/error.rs#L33
 export enum CKBRPCErrorCodes {
@@ -130,6 +131,73 @@ export default class CKBClient {
   constructor(private cradle: Cradle) {
     this.rpc = new RPC(cradle.env.CKB_RPC_URL);
     this.indexer = new Indexer(cradle.env.CKB_RPC_URL);
+  }
+
+  /**
+   * Get the ckb script configs
+   */
+  public getScripts() {
+    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
+    const xudtTypeScript = getXudtTypeScript(isMainnet);
+    const sporeTypeScript = getSporeTypeScript(isMainnet);
+    const uniqueCellTypeScript = getUniqueTypeScript(isMainnet);
+    return {
+      XUDT: xudtTypeScript,
+      SPORE: sporeTypeScript,
+      UNIQUE: uniqueCellTypeScript,
+    };
+  }
+
+  public async getUniqueCellByType(script: Script) {
+    const scripts = this.getScripts();
+    const result = await this.rpc.getTransactions(
+      {
+        script: {
+          codeHash: scripts.UNIQUE.codeHash,
+          hashType: scripts.UNIQUE.hashType,
+          args: '0x',
+        },
+        scriptType: 'type',
+      },
+      'desc',
+      '0xffff', // 0xffff basically means no limit
+    );
+
+    const batchRequest = this.rpc.createBatchRequest(
+      result.objects.filter((tx) => tx.ioType === 'output').map((tx) => ['getTransaction', tx.txHash]),
+    );
+    const txs = (await batchRequest.exec()) as CKBComponents.TransactionWithStatus[];
+    for (const tx of txs) {
+      const xudtCellIndex = tx.transaction.outputs.findIndex(
+        (cell) => cell.type && serializeScript(cell.type) === serializeScript(script),
+      );
+      const uniqueCellIndex = tx.transaction.outputs.findIndex(
+        (cell) =>
+          cell.type &&
+          serializeScript({
+            ...cell.type,
+            args: '',
+          }) === serializeScript(scripts.UNIQUE),
+      );
+      if (xudtCellIndex !== -1 && uniqueCellIndex !== -1) {
+        const output = tx.transaction.outputs[uniqueCellIndex];
+        const data = tx.transaction.outputsData[uniqueCellIndex];
+        const cell: Cell = {
+          outPoint: {
+            txHash: tx.transaction.hash,
+            index: '0x' + uniqueCellIndex.toString(16),
+          },
+          cellOutput: {
+            lock: output.lock,
+            type: output.type!,
+            capacity: output.capacity,
+          },
+          data,
+        };
+        return cell;
+      }
+    }
+    return null;
   }
 
   /**
