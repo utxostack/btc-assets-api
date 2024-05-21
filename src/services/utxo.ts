@@ -7,6 +7,7 @@ import { Job, RepeatOptions } from 'bullmq';
 import * as Sentry from '@sentry/node';
 import DataCache from './base/data-cache';
 import { throttle } from 'lodash';
+import validateBitcoinAddress from '../utils/validators';
 
 interface IUTXOSyncRequest {
   btcAddress: string;
@@ -121,6 +122,10 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
   }
 
   private async _enqueueSyncJob(btcAddress: string) {
+    if (!validateBitcoinAddress(btcAddress)) {
+      throw new UTXOSyncerError(`Invalid btc address: ${btcAddress}`);
+    }
+
     const jobs = await this.queue.getRepeatableJobs();
     const repeatableJob = jobs.find((job) => job.name === btcAddress);
 
@@ -159,6 +164,13 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
   public async process(job: Job<IUTXOSyncRequest>): Promise<IUTXOSyncJobReturn> {
     try {
       const { btcAddress } = job.data;
+      if (!validateBitcoinAddress(btcAddress)) {
+        if (job.repeatJobKey) {
+          await this.queue.removeRepeatableByKey(job.repeatJobKey);
+        }
+        throw new Error(`Invalid btc address: ${btcAddress}`);
+      }
+
       const txs = await this.cradle.bitcoin.getAddressTxs({ address: btcAddress });
       const txsHash = sha256(Buffer.from(txs.map((tx) => tx.txid).join(','))).toString();
 
