@@ -1,9 +1,11 @@
 import { Collector, getSporeTypeScript, getUniqueTypeScript, getXudtTypeScript, sendCkbTx } from '@rgbpp-sdk/ckb';
 import { Cradle } from '../container';
-import { Cell, Indexer, RPC, Script } from '@ckb-lumos/lumos';
+import { Indexer, RPC, Script } from '@ckb-lumos/lumos';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
 import { serializeScript } from '@nervosnetwork/ckb-sdk-utils';
+import { computeScriptHash } from '@ckb-lumos/lumos/utils';
+import { decodeUniqueCellData } from '../utils/xudt';
 
 // https://github.com/nervosnetwork/ckb/blob/develop/rpc/src/error.rs#L33
 export enum CKBRPCErrorCodes {
@@ -133,6 +135,29 @@ export default class CKBClient {
     this.indexer = new Indexer(cradle.env.CKB_RPC_URL);
   }
 
+  private async getAllUniqueCellTxs() {
+    console.log('Fetching all unique cell transactions');
+    const scripts = this.getScripts();
+    const result = await this.rpc.getTransactions(
+      {
+        script: {
+          codeHash: scripts.UNIQUE.codeHash,
+          hashType: scripts.UNIQUE.hashType,
+          args: '0x',
+        },
+        scriptType: 'type',
+      },
+      'desc',
+      '0xffff', // 0xffff basically means no limit
+    );
+    // get all transactions that have the xudt type cell and unique cell
+    const batchRequest = this.rpc.createBatchRequest(
+      result.objects.filter((tx) => tx.ioType === 'output').map((tx) => ['getTransaction', tx.txHash]),
+    );
+    const txs = (await batchRequest.exec()) as CKBComponents.TransactionWithStatus[];
+    return txs;
+  }
+
   /**
    * Get the ckb script configs
    */
@@ -148,25 +173,13 @@ export default class CKBClient {
     };
   }
 
+  /**
+   * Get the unique cell of the given xudt type
+   * @param script - the xudt type script
+   */
   public async getUniqueCellByType(script: Script) {
     const scripts = this.getScripts();
-    const result = await this.rpc.getTransactions(
-      {
-        script: {
-          codeHash: scripts.UNIQUE.codeHash,
-          hashType: scripts.UNIQUE.hashType,
-          args: '0x',
-        },
-        scriptType: 'type',
-      },
-      'desc',
-      '0xffff', // 0xffff basically means no limit
-    );
-
-    const batchRequest = this.rpc.createBatchRequest(
-      result.objects.filter((tx) => tx.ioType === 'output').map((tx) => ['getTransaction', tx.txHash]),
-    );
-    const txs = (await batchRequest.exec()) as CKBComponents.TransactionWithStatus[];
+    const txs = await this.getAllUniqueCellTxs();
     for (const tx of txs) {
       const xudtCellIndex = tx.transaction.outputs.findIndex(
         (cell) => cell.type && serializeScript(cell.type) === serializeScript(script),
@@ -180,21 +193,13 @@ export default class CKBClient {
           }) === serializeScript(scripts.UNIQUE),
       );
       if (xudtCellIndex !== -1 && uniqueCellIndex !== -1) {
-        const output = tx.transaction.outputs[uniqueCellIndex];
-        const data = tx.transaction.outputsData[uniqueCellIndex];
-        const cell: Cell = {
-          outPoint: {
-            txHash: tx.transaction.hash,
-            index: '0x' + uniqueCellIndex.toString(16),
-          },
-          cellOutput: {
-            lock: output.lock,
-            type: output.type!,
-            capacity: output.capacity,
-          },
-          data,
+        const encodeData = tx.transaction.outputsData[uniqueCellIndex];
+        const typeHash = computeScriptHash(tx.transaction.outputs[xudtCellIndex].type!);
+        const data = decodeUniqueCellData(encodeData);
+        return {
+          ...data,
+          typeHash,
         };
-        return cell;
       }
     }
     return null;

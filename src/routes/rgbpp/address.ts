@@ -8,7 +8,6 @@ import z from 'zod';
 import { serializeScript } from '@nervosnetwork/ckb-sdk-utils';
 import { Env } from '../../env';
 import { getXudtTypeScript, isTypeAssetSupported, leToU128 } from '@rgbpp-sdk/ckb';
-import { decodeUniqueCellData } from '../../utils/xudt';
 import { BI } from '@ckb-lumos/lumos';
 import { groupBy } from 'lodash';
 
@@ -174,21 +173,13 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         const type = cell.cellOutput.type!;
         const serializedType = serializeScript(type);
         if (!uniqueCellDataMap.has(serializedType)) {
-          const cell = await fastify.ckb.getUniqueCellByType(type);
-          if (!cell) {
-            // skip if not found unique cell for the type
-            continue;
-          }
-          uniqueCellDataMap.set(serializedType, {
-            ...decodeUniqueCellData(cell.data),
-            // TODO: calculate the xudt type hash
-            typeHash: serializeScript(cell.cellOutput.type!),
-          });
+          const uniqueCellInfo = await fastify.ckb.getUniqueCellByType(type);
+          uniqueCellDataMap.set(serializedType, uniqueCellInfo);
         }
-        const uniqueCellData = uniqueCellDataMap.get(serializedType);
+        const uniqueCellInfo = uniqueCellDataMap.get(serializedType);
         const amount = BI.from(leToU128(cell.data)).toHexString();
         balances.push({
-          ...uniqueCellData,
+          ...uniqueCellInfo,
           amount,
         });
       }
