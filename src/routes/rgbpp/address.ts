@@ -169,11 +169,12 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
 
       let balances: XUDTBalances = [];
       const uniqueCellDataMap = new Map();
-      for await (const cell of cells) {
+      const allUniqueCellTxs = await fastify.ckb.getAllUniqueCellTxs();
+      for (const cell of cells) {
         const type = cell.cellOutput.type!;
         const serializedType = serializeScript(type);
         if (!uniqueCellDataMap.has(serializedType)) {
-          const uniqueCellInfo = await fastify.ckb.getUniqueCellByType(type);
+          const uniqueCellInfo = fastify.ckb.getUniqueCellData(allUniqueCellTxs, type);
           uniqueCellDataMap.set(serializedType, uniqueCellInfo);
         }
         const uniqueCellInfo = uniqueCellDataMap.get(serializedType);
@@ -183,6 +184,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           amount,
         });
       }
+
       const balanceGroups = groupBy(balances, 'typeHash');
       balances = Object.keys(balanceGroups).map((typeHash) => {
         const group = balanceGroups[typeHash];

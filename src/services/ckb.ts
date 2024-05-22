@@ -135,7 +135,7 @@ export default class CKBClient {
     this.indexer = new Indexer(cradle.env.CKB_RPC_URL);
   }
 
-  private async getAllUniqueCellTxs() {
+  public async getAllUniqueCellTxs() {
     console.log('Fetching all unique cell transactions');
     const scripts = this.getScripts();
     const result = await this.rpc.getTransactions(
@@ -175,22 +175,17 @@ export default class CKBClient {
 
   /**
    * Get the unique cell of the given xudt type
+   * @param txs - the transactions that have the xudt type cell and unique cell
    * @param script - the xudt type script
    */
-  public async getUniqueCellByType(script: Script) {
+  public getUniqueCellData(txs: CKBComponents.TransactionWithStatus[], script: Script) {
     const scripts = this.getScripts();
-    const txs = await this.getAllUniqueCellTxs();
     for (const tx of txs) {
       const xudtCellIndex = tx.transaction.outputs.findIndex(
         (cell) => cell.type && serializeScript(cell.type) === serializeScript(script),
       );
       const uniqueCellIndex = tx.transaction.outputs.findIndex(
-        (cell) =>
-          cell.type &&
-          serializeScript({
-            ...cell.type,
-            args: '',
-          }) === serializeScript(scripts.UNIQUE),
+        (cell) => cell.type?.codeHash === scripts.UNIQUE.codeHash && cell.type?.hashType === scripts.UNIQUE.hashType,
       );
       if (xudtCellIndex !== -1 && uniqueCellIndex !== -1) {
         const encodeData = tx.transaction.outputsData[uniqueCellIndex];
