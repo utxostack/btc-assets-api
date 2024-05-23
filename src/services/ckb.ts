@@ -1,11 +1,23 @@
-import { Collector, getSporeTypeScript, getUniqueTypeScript, getXudtTypeScript, sendCkbTx } from '@rgbpp-sdk/ckb';
+import {
+  Collector,
+  generateUniqueTypeArgs,
+  getSporeTypeScript,
+  getUniqueTypeScript,
+  getXudtTypeScript,
+  sendCkbTx,
+} from '@rgbpp-sdk/ckb';
 import { Cradle } from '../container';
-import { Indexer, RPC, Script } from '@ckb-lumos/lumos';
+import { BI, Cell, Indexer, RPC, Script } from '@ckb-lumos/lumos';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
-import { serializeScript } from '@nervosnetwork/ckb-sdk-utils';
+import { scriptToHash, serializeScript } from '@nervosnetwork/ckb-sdk-utils';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
-import { decodeUniqueCellData } from '../utils/xudt';
+import {
+  decodeUniqueCellData as decodeInfoCellData,
+  getInscriptionTypeScript,
+  isInscriptionTypeScript,
+  isUniqueCellTypeScript,
+} from '../utils/xudt';
 
 // https://github.com/nervosnetwork/ckb/blob/develop/rpc/src/error.rs#L33
 export enum CKBRPCErrorCodes {
@@ -135,29 +147,6 @@ export default class CKBClient {
     this.indexer = new Indexer(cradle.env.CKB_RPC_URL);
   }
 
-  public async getAllUniqueCellTxs() {
-    console.log('Fetching all unique cell transactions');
-    const scripts = this.getScripts();
-    const result = await this.rpc.getTransactions(
-      {
-        script: {
-          codeHash: scripts.UNIQUE.codeHash,
-          hashType: scripts.UNIQUE.hashType,
-          args: '0x',
-        },
-        scriptType: 'type',
-      },
-      'desc',
-      '0xffff', // 0xffff basically means no limit
-    );
-    // get all transactions that have the xudt type cell and unique cell
-    const batchRequest = this.rpc.createBatchRequest(
-      result.objects.filter((tx) => tx.ioType === 'output').map((tx) => ['getTransaction', tx.txHash]),
-    );
-    const txs = (await batchRequest.exec()) as CKBComponents.TransactionWithStatus[];
-    return txs;
-  }
-
   /**
    * Get the ckb script configs
    */
@@ -166,11 +155,46 @@ export default class CKBClient {
     const xudtTypeScript = getXudtTypeScript(isMainnet);
     const sporeTypeScript = getSporeTypeScript(isMainnet);
     const uniqueCellTypeScript = getUniqueTypeScript(isMainnet);
+    const inscriptionTypeScript = getInscriptionTypeScript(isMainnet);
     return {
       XUDT: xudtTypeScript,
       SPORE: sporeTypeScript,
       UNIQUE: uniqueCellTypeScript,
+      INSCRIPTION: inscriptionTypeScript,
     };
+  }
+
+  public async getAllInfoCellTxs() {
+    const scripts = this.getScripts();
+    let batchRequest = this.rpc.createBatchRequest();
+
+    // info cell script could be unique cell or inscription cell
+    [scripts.UNIQUE, scripts.INSCRIPTION].forEach((script) => {
+      const searchScript = { ...script, args: '0x' };
+      batchRequest.add(
+        'getTransactions',
+        {
+          script: searchScript,
+          scriptType: 'type',
+        },
+        'desc',
+        '0xffff', // 0xffff basically means no limit
+      );
+    });
+    type getTransactionsResult = ReturnType<typeof this.rpc.getTransactions<false>>;
+    const infoCellTxs = (await batchRequest.exec()) as Awaited<getTransactionsResult>[];
+
+    // get all transactions that have the xudt type cell and info cell
+    batchRequest = this.rpc.createBatchRequest();
+    infoCellTxs.forEach((txs) => {
+      txs.objects
+        .filter(({ ioType }) => ioType === 'output')
+        .forEach((tx) => {
+          batchRequest.add('getTransaction', tx.txHash);
+        });
+    });
+    const txs = (await batchRequest.exec()) as CKBComponents.TransactionWithStatus[];
+    return txs;
   }
 
   /**
@@ -178,23 +202,53 @@ export default class CKBClient {
    * @param txs - the transactions that have the xudt type cell and unique cell
    * @param script - the xudt type script
    */
-  public getUniqueCellData(txs: CKBComponents.TransactionWithStatus[], script: Script) {
-    const scripts = this.getScripts();
+  public getInfoCellData(txs: CKBComponents.TransactionWithStatus[], script: Script) {
+    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
     for (const tx of txs) {
-      const xudtCellIndex = tx.transaction.outputs.findIndex(
-        (cell) => cell.type && serializeScript(cell.type) === serializeScript(script),
+      const infoCellIndex = tx.transaction.outputs.findIndex(
+        (cell) =>
+          cell.type && (isUniqueCellTypeScript(cell.type, isMainnet) || isInscriptionTypeScript(cell.type, isMainnet)),
       );
-      const uniqueCellIndex = tx.transaction.outputs.findIndex(
-        (cell) => cell.type?.codeHash === scripts.UNIQUE.codeHash && cell.type?.hashType === scripts.UNIQUE.hashType,
-      );
-      if (xudtCellIndex !== -1 && uniqueCellIndex !== -1) {
-        const encodeData = tx.transaction.outputsData[uniqueCellIndex];
-        const typeHash = computeScriptHash(tx.transaction.outputs[xudtCellIndex].type!);
-        const data = decodeUniqueCellData(encodeData);
-        return {
-          ...data,
-          typeHash,
-        };
+      if (infoCellIndex !== -1) {
+        const cellOutput = tx.transaction.outputs[infoCellIndex];
+        const typeHash = computeScriptHash(script);
+
+        const encodeData = tx.transaction.outputsData[infoCellIndex];
+        if (!encodeData) {
+          continue;
+        }
+        try {
+          const data = decodeInfoCellData(encodeData);
+          console.log('data', data);
+        } catch (e) {
+          // console.error('decodeInfoCellData error', e);
+          // console.error('encodeData', encodeData);
+        }
+
+        console.log(
+          scriptToHash({
+            codeHash: '0xd23761b364210735c19c60561d213fb3beae2fd6172743719eff6920e020baac',
+            args: '0x000171d1c2c21fbd12d9ead8d3a1ccf33dd912e49023',
+            hashType: 'type',
+          }),
+        );
+
+        // const infoCell: Cell = {
+        //   cellOutput: {
+        //     ...cellOutput,
+        //     type: cellOutput.type || undefined,
+        //   },
+        //   data: encodeData,
+        //   outPoint: {
+        //     txHash: tx.transaction.hash,
+        //     index: BI.from(infoCellIndex).toHexString(),
+        //   },
+        // };
+        // return {
+        //   ...data,
+        //   typeHash,
+        //   infoCell,
+        // };
       }
     }
     return null;

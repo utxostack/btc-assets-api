@@ -88,8 +88,9 @@ export const XUDTBalances = z.array(
     name: z.string(),
     decimal: z.number(),
     symbol: z.string(),
-    typeHash: z.string(),
     amount: z.string(),
+    typeHash: z.string(),
+    infoCell: Cell,
   }),
 );
 export type XUDTBalances = z.infer<typeof XUDTBalances>;

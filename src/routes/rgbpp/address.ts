@@ -122,7 +122,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     '/:btc_address/balance',
     {
       schema: {
-        description: 'Get RGB++ balance by btc address',
+        description: 'Get RGB++ balance by btc address, support xUDT only for now',
         tags: ['RGB++'],
         params: z.object({
           btc_address: z.string(),
@@ -168,19 +168,23 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       }
 
       let balances: XUDTBalances = [];
-      const uniqueCellDataMap = new Map();
-      const allUniqueCellTxs = await fastify.ckb.getAllUniqueCellTxs();
+      const infoCellDataMap = new Map();
+      const allInfoCellTxs = await fastify.ckb.getAllInfoCellTxs();
       for (const cell of cells) {
         const type = cell.cellOutput.type!;
         const serializedType = serializeScript(type);
-        if (!uniqueCellDataMap.has(serializedType)) {
-          const uniqueCellInfo = fastify.ckb.getUniqueCellData(allUniqueCellTxs, type);
-          uniqueCellDataMap.set(serializedType, uniqueCellInfo);
+        if (!infoCellDataMap.has(serializedType)) {
+          const infoCellData = fastify.ckb.getInfoCellData(allInfoCellTxs, type);
+          infoCellDataMap.set(serializedType, infoCellData);
         }
-        const uniqueCellInfo = uniqueCellDataMap.get(serializedType);
+        const infoCellData = infoCellDataMap.get(serializedType);
         const amount = BI.from(leToU128(cell.data)).toHexString();
+
+        if (!infoCellData) {
+          continue;
+        }
         balances.push({
-          ...uniqueCellInfo,
+          ...infoCellData,
           amount,
         });
       }
@@ -194,6 +198,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           amount: BI.from(sum).toHexString(),
         };
       });
+      console.log(balances);
       return {
         address: btc_address,
         xudt: balances,
