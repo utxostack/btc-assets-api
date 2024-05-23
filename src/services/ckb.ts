@@ -1,21 +1,14 @@
-import {
-  Collector,
-  generateUniqueTypeArgs,
-  getSporeTypeScript,
-  getUniqueTypeScript,
-  getXudtTypeScript,
-  sendCkbTx,
-} from '@rgbpp-sdk/ckb';
+import { Collector, getSporeTypeScript, getUniqueTypeScript, getXudtTypeScript, sendCkbTx } from '@rgbpp-sdk/ckb';
 import { Cradle } from '../container';
 import { BI, Cell, Indexer, RPC, Script } from '@ckb-lumos/lumos';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
 import { scriptToHash, serializeScript } from '@nervosnetwork/ckb-sdk-utils';
-import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import {
-  decodeUniqueCellData as decodeInfoCellData,
-  getInscriptionTypeScript,
-  isInscriptionTypeScript,
+  decodeInfoCellData as decodeInfoCellData,
+  getInscriptionInfoTypeScript,
+  getXUDTTypeScriptArgs,
+  isInscriptionInfoTypeScript,
   isUniqueCellTypeScript,
 } from '../utils/xudt';
 
@@ -147,6 +140,74 @@ export default class CKBClient {
     this.indexer = new Indexer(cradle.env.CKB_RPC_URL);
   }
 
+  private getUniqueCellData(tx: CKBComponents.TransactionWithStatus, index: number, typeScript: Script) {
+    const typeHash = scriptToHash(typeScript);
+    const xudtCellIndex = tx.transaction.outputs.findIndex((cell) => {
+      return cell.type && serializeScript(cell.type) === serializeScript(typeScript);
+    });
+    if (xudtCellIndex === -1) {
+      return null;
+    }
+
+    const encodeData = tx.transaction.outputsData[index];
+    const cellOutput = tx.transaction.outputs[index];
+    if (!encodeData) {
+      return null;
+    }
+
+    const data = decodeInfoCellData(encodeData);
+    const infoCell: Cell = {
+      cellOutput: {
+        ...cellOutput,
+        type: cellOutput.type || undefined,
+      },
+      data: encodeData,
+      outPoint: {
+        txHash: tx.transaction.hash,
+        index: BI.from(xudtCellIndex).toHexString(),
+      },
+    };
+    return {
+      ...data,
+      typeHash,
+      infoCell,
+    };
+  }
+
+  private getInscriptionInfoCellData(tx: CKBComponents.TransactionWithStatus, index: number, xudtTypeScript: Script) {
+    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
+    const typeHash = scriptToHash(xudtTypeScript);
+    const cellOutput = tx.transaction.outputs[index];
+    const args = getXUDTTypeScriptArgs(cellOutput.type!, isMainnet);
+    if (args !== xudtTypeScript.args) {
+      return null;
+    }
+
+    const encodeData = tx.transaction.outputsData[index];
+    if (!encodeData) {
+      return null;
+    }
+
+    const data = decodeInfoCellData(encodeData);
+
+    const infoCell: Cell = {
+      cellOutput: {
+        ...cellOutput,
+        type: cellOutput.type || undefined,
+      },
+      data: encodeData,
+      outPoint: {
+        txHash: tx.transaction.hash,
+        index: BI.from(index).toHexString(),
+      },
+    };
+    return {
+      ...data,
+      typeHash,
+      infoCell,
+    };
+  }
+
   /**
    * Get the ckb script configs
    */
@@ -155,7 +216,7 @@ export default class CKBClient {
     const xudtTypeScript = getXudtTypeScript(isMainnet);
     const sporeTypeScript = getSporeTypeScript(isMainnet);
     const uniqueCellTypeScript = getUniqueTypeScript(isMainnet);
-    const inscriptionTypeScript = getInscriptionTypeScript(isMainnet);
+    const inscriptionTypeScript = getInscriptionInfoTypeScript(isMainnet);
     return {
       XUDT: xudtTypeScript,
       SPORE: sporeTypeScript,
@@ -204,51 +265,27 @@ export default class CKBClient {
    */
   public getInfoCellData(txs: CKBComponents.TransactionWithStatus[], script: Script) {
     const isMainnet = this.cradle.env.NETWORK === 'mainnet';
+
     for (const tx of txs) {
-      const infoCellIndex = tx.transaction.outputs.findIndex(
-        (cell) =>
-          cell.type && (isUniqueCellTypeScript(cell.type, isMainnet) || isInscriptionTypeScript(cell.type, isMainnet)),
-      );
-      if (infoCellIndex !== -1) {
-        const cellOutput = tx.transaction.outputs[infoCellIndex];
-        const typeHash = computeScriptHash(script);
-
-        const encodeData = tx.transaction.outputsData[infoCellIndex];
-        if (!encodeData) {
-          continue;
+      // check if the unique cell is the info cell of the xudt type
+      const uniqueCellIndex = tx.transaction.outputs.findIndex((cell) => {
+        return cell.type && isUniqueCellTypeScript(cell.type, isMainnet);
+      });
+      if (uniqueCellIndex !== -1) {
+        const infoCellData = this.getUniqueCellData(tx, uniqueCellIndex, script);
+        if (infoCellData) {
+          return infoCellData;
         }
-        try {
-          const data = decodeInfoCellData(encodeData);
-          console.log('data', data);
-        } catch (e) {
-          // console.error('decodeInfoCellData error', e);
-          // console.error('encodeData', encodeData);
+      }
+      // check if the inscription cell is the info cell of the xudt type
+      const inscriptionCellIndex = tx.transaction.outputs.findIndex((cell) => {
+        return cell.type && isInscriptionInfoTypeScript(cell.type, isMainnet);
+      });
+      if (inscriptionCellIndex !== -1) {
+        const infoCellData = this.getInscriptionInfoCellData(tx, inscriptionCellIndex, script);
+        if (infoCellData) {
+          return infoCellData;
         }
-
-        console.log(
-          scriptToHash({
-            codeHash: '0xd23761b364210735c19c60561d213fb3beae2fd6172743719eff6920e020baac',
-            args: '0x000171d1c2c21fbd12d9ead8d3a1ccf33dd912e49023',
-            hashType: 'type',
-          }),
-        );
-
-        // const infoCell: Cell = {
-        //   cellOutput: {
-        //     ...cellOutput,
-        //     type: cellOutput.type || undefined,
-        //   },
-        //   data: encodeData,
-        //   outPoint: {
-        //     txHash: tx.transaction.hash,
-        //     index: BI.from(infoCellIndex).toHexString(),
-        //   },
-        // };
-        // return {
-        //   ...data,
-        //   typeHash,
-        //   infoCell,
-        // };
       }
     }
     return null;
