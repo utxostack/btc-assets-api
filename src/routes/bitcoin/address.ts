@@ -43,8 +43,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { min_satoshi, no_cache } = request.query;
 
       let utxosCache = null;
-      if (env.UTXO_SYNC_DATA_CACHE_ENABLE && no_cache !== 'true') {
-        utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(address);
+      if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
+        if (no_cache !== 'true') {
+          utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(address);
+        }
         await fastify.utxoSyncer.enqueueSyncJob(address);
       }
       const utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address });
@@ -103,8 +105,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { only_confirmed, min_satoshi, no_cache } = request.query;
 
       let utxosCache = null;
-      if (env.UTXO_SYNC_DATA_CACHE_ENABLE && no_cache !== 'true') {
-        utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(address);
+      if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
+        if (no_cache !== 'true') {
+          utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(address);
+        }
         await fastify.utxoSyncer.enqueueSyncJob(address);
       }
       let utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address });
