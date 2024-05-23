@@ -11,3 +11,15 @@ exports[`\`/token/generate\` - 400 1`] = `
   }
 ]"
 `;
+
+exports[`\`/token/generate\` - without params 1`] = `
+"[
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "null",
+    "path": [],
+    "message": "Expected object, received null"
+  }
+]"
+`;

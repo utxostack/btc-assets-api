@@ -4,8 +4,11 @@ import { Balance, Transaction, UTXO } from './types';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import z from 'zod';
+import { Env } from '../../env';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
+  const env: Env = fastify.container.resolve('env');
+
   fastify.addHook('preHandler', async (request) => {
     const { address } = request.params as { address: string };
     const valid = validateBitcoinAddress(address);
@@ -25,6 +28,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         }),
         querystring: z.object({
           min_satoshi: z.coerce.number().optional().describe('The minimum value of the UTXO in satoshi'),
+          no_cache: z
+            .enum(['true', 'false'])
+            .default('false')
+            .describe('Whether to disable cache to get utxos, default is false'),
         }),
         response: {
           200: Balance,
@@ -33,8 +40,15 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     },
     async (request) => {
       const { address } = request.params;
-      const { min_satoshi } = request.query;
-      const utxos = await fastify.bitcoin.getAddressTxsUtxo({ address });
+      const { min_satoshi, no_cache } = request.query;
+
+      let utxosCache = null;
+      if (env.UTXO_SYNC_DATA_CACHE_ENABLE && no_cache !== 'true') {
+        utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(address);
+        await fastify.utxoSyncer.enqueueSyncJob(address);
+      }
+      const utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address });
+
       return utxos.reduce(
         (acc: Balance, utxo: UTXO) => {
           if (utxo.status.confirmed) {
@@ -74,6 +88,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             .default('true')
             .describe('Only return confirmed UTXOs'),
           min_satoshi: z.coerce.number().optional().describe('The minimum value of the UTXO in satoshi'),
+          no_cache: z
+            .enum(['true', 'false'])
+            .default('false')
+            .describe('Whether to disable cache to get utxos, default is false'),
         }),
         response: {
           200: z.array(UTXO),
@@ -82,8 +100,17 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     },
     async function (request) {
       const { address } = request.params;
-      const { only_confirmed, min_satoshi } = request.query;
-      let utxos = await fastify.bitcoin.getAddressTxsUtxo({ address });
+      const { only_confirmed, min_satoshi, no_cache } = request.query;
+
+      let utxosCache = null;
+      if (env.UTXO_SYNC_DATA_CACHE_ENABLE && no_cache !== 'true') {
+        utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(address);
+        await fastify.utxoSyncer.enqueueSyncJob(address);
+      }
+      let utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address });
+      if (utxosCache) {
+        fastify.log.debug(`[UTXO] get utxos from cache: ${address}`);
+      }
 
       // compatible with the case where only_confirmed is undefined
       if (only_confirmed === 'true' || only_confirmed === 'undefined') {

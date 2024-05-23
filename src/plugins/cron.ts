@@ -3,6 +3,8 @@ import TransactionProcessor from '../services/transaction';
 import cron from 'fastify-cron';
 import { Env } from '../env';
 import Unlocker from '../services/unlocker';
+import RgbppCollector from '../services/rgbpp';
+import UTXOSyncer from '../services/utxo';
 
 export default fp(async (fastify) => {
   try {
@@ -48,10 +50,10 @@ export default fp(async (fastify) => {
     fastify.addHook('onReady', async () => {
       transactionProcessor.startProcess({
         onActive: (job) => {
-          fastify.log.info(`Job active: ${job.id}`);
+          fastify.log.info(`[TransactionProcessor] job active: ${job.id}`);
         },
         onCompleted: (job) => {
-          fastify.log.info(`Job completed: ${job.id}`);
+          fastify.log.info(`[TransactionProcessor] job completed: ${job.id}`);
         },
       });
     });
@@ -77,6 +79,45 @@ export default fp(async (fastify) => {
         });
       },
     };
+
+    if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
+      const utxoSyncer: UTXOSyncer = fastify.container.resolve('utxoSyncer');
+      fastify.addHook('onReady', async () => {
+        utxoSyncer.startProcess({
+          onActive: (job) => {
+            fastify.log.info(`[UTXOSyncer] job active: ${job.id}`);
+          },
+          onCompleted: async (job) => {
+            fastify.log.info(`[UTXOSyncer] job completed: ${job.id}`);
+            if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
+              const { btcAddress, utxos } = job.returnvalue;
+              const rgbppCollector: RgbppCollector = fastify.container.resolve('rgbppCollector');
+              await rgbppCollector.enqueueCollectJob(btcAddress, utxos, true);
+            }
+          },
+        });
+      });
+      fastify.addHook('onClose', async () => {
+        utxoSyncer.closeProcess();
+      });
+    }
+
+    if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
+      const rgbppCollector: RgbppCollector = fastify.container.resolve('rgbppCollector');
+      fastify.addHook('onReady', async () => {
+        rgbppCollector.startProcess({
+          onActive: (job) => {
+            fastify.log.info(`[RgbppCollector] job active: ${job.id}`);
+          },
+          onCompleted: (job) => {
+            fastify.log.info(`[RgbppCollector] job completed: ${job.id}`);
+          },
+        });
+      });
+      fastify.addHook('onClose', async () => {
+        rgbppCollector.closeProcess();
+      });
+    }
 
     // processing unlock BTC_TIME_LOCK cells
     const unlocker: Unlocker = fastify.container.resolve('unlocker');
