@@ -41,7 +41,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
   /**
    * Get RGB++ assets by btc address
    */
-  async function getRgbppAssetsCell(btc_address: string, typeScript?: Script, no_cache?: string) {
+  async function getRgbppAssetsCells(btc_address: string, typeScript?: Script, no_cache?: string) {
     let utxosCache = null;
     if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
       if (no_cache !== 'true') {
