@@ -172,7 +172,7 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
       }
 
       const txs = await this.cradle.bitcoin.getAddressTxs({ address: btcAddress });
-      const txsHash = sha256(Buffer.from(txs.map((tx) => tx.txid).join(','))).toString();
+      const txsHash = sha256(Buffer.from(txs.map((tx) => tx.txid + JSON.stringify(tx.status)).join(','))).toString();
 
       // check if the data is updated
       const cached = await this.dataCache.get(btcAddress);
