@@ -64,15 +64,19 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       }
 
       let utxosCache = null;
-      if (env.UTXO_SYNC_DATA_CACHE_ENABLE && no_cache !== 'true') {
-        utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(btc_address);
+      if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
+        if (no_cache !== 'true') {
+          utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(btc_address);
+        }
         await fastify.utxoSyncer.enqueueSyncJob(btc_address);
       }
       const utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
 
       let rgbppCache = null;
-      if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE && no_cache !== 'true') {
-        rgbppCache = await fastify.rgbppCollector.getRgbppCellsFromCache(btc_address);
+      if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
+        if (no_cache !== 'true') {
+          rgbppCache = await fastify.rgbppCollector.getRgbppCellsFromCache(btc_address);
+        }
         await fastify.rgbppCollector.enqueueCollectJob(btc_address, utxos);
       }
 
