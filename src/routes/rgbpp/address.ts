@@ -2,14 +2,13 @@ import { FastifyPluginCallback, FastifyRequest } from 'fastify';
 import { Server } from 'http';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { Cell, Script, XUDTBalances } from './types';
+import { Cell, Script, XUDTBalance } from './types';
 import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
 import { serializeScript } from '@nervosnetwork/ckb-sdk-utils';
 import { Env } from '../../env';
 import { getXudtTypeScript, isTypeAssetSupported, leToU128 } from '@rgbpp-sdk/ckb';
 import { BI } from '@ckb-lumos/lumos';
-import { groupBy } from 'lodash';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   const env: Env = fastify.container.resolve('env');
@@ -114,7 +113,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { btc_address } = request.params;
       const { no_cache } = request.query;
       const typeScript = getTypeScript(request);
-      return getRgbppAssetsCell(btc_address, typeScript, no_cache);
+      return getRgbppAssetsCells(btc_address, typeScript, no_cache);
     },
   );
 
@@ -147,7 +146,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         response: {
           200: z.object({
             address: z.string(),
-            xudt: XUDTBalances,
+            xudt: z.array(XUDTBalance),
           }),
         },
       },
@@ -160,48 +159,44 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       if (!typeScript || !isTypeAssetSupported(typeScript, env.NETWORK === 'mainnet')) {
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
-      const cells = await getRgbppAssetsCell(btc_address, typeScript, no_cache);
+      const cells = await getRgbppAssetsCells(btc_address, typeScript, no_cache);
 
       const scripts = fastify.ckb.getScripts();
       if (serializeScript({ ...typeScript, args: '' }) !== serializeScript(scripts.XUDT)) {
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
 
-      let balances: XUDTBalances = [];
       const infoCellDataMap = new Map();
       const allInfoCellTxs = await fastify.ckb.getAllInfoCellTxs();
-      for (const cell of cells) {
-        const type = cell.cellOutput.type!;
-        const serializedType = serializeScript(type);
-        if (!infoCellDataMap.has(serializedType)) {
-          const infoCellData = fastify.ckb.getInfoCellData(allInfoCellTxs, type);
-          infoCellDataMap.set(serializedType, infoCellData);
-        }
-        const infoCellData = infoCellDataMap.get(serializedType);
-        const amount = BI.from(leToU128(cell.data)).toHexString();
+      const xudtBalances = cells.reduce(
+        (balances, cell) => {
+          const type = cell.cellOutput.type!;
+          const typeHash = serializeScript(type);
+          if (!infoCellDataMap.has(typeHash)) {
+            const infoCellData = fastify.ckb.getInfoCellData(allInfoCellTxs, type);
+            infoCellDataMap.set(typeHash, infoCellData);
+          }
+          const infoCellData = infoCellDataMap.get(typeHash);
+          const amount = BI.from(leToU128(cell.data)).toHexString();
+          if (infoCellData) {
+            if (!balances[typeHash]) {
+              balances[typeHash] = {
+                ...infoCellData,
+                typeHash,
+                amount,
+              };
+            } else {
+              balances[typeHash].amount = BI.from(balances[typeHash].amount).add(BI.from(amount)).toHexString();
+            }
+          }
+          return balances;
+        },
+        {} as Record<string, XUDTBalance>,
+      );
 
-        if (!infoCellData) {
-          continue;
-        }
-        balances.push({
-          ...infoCellData,
-          amount,
-        });
-      }
-
-      const balanceGroups = groupBy(balances, 'typeHash');
-      balances = Object.keys(balanceGroups).map((typeHash) => {
-        const group = balanceGroups[typeHash];
-        const sum = group.reduce((sum, { amount }) => sum.add(BI.from(amount)), BI.from(0));
-        return {
-          ...group[0],
-          amount: BI.from(sum).toHexString(),
-        };
-      });
-      console.log(balances);
       return {
         address: btc_address,
-        xudt: balances,
+        xudt: Object.values(xudtBalances),
       };
     },
   );

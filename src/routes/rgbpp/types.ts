@@ -83,14 +83,12 @@ export const CKBVirtualResult = z.object({
 });
 export type CKBVirtualResult = z.infer<typeof CKBVirtualResult>;
 
-export const XUDTBalances = z.array(
-  z.object({
-    name: z.string(),
-    decimal: z.number(),
-    symbol: z.string(),
-    amount: z.string(),
-    typeHash: z.string(),
-    infoCell: Cell,
-  }),
-);
-export type XUDTBalances = z.infer<typeof XUDTBalances>;
+export const XUDTBalance = z.object({
+  name: z.string(),
+  decimal: z.number(),
+  symbol: z.string(),
+  amount: z.string(),
+  typeHash: z.string(),
+  infoCell: Cell,
+});
+export type XUDTBalance = z.infer<typeof XUDTBalance>;
