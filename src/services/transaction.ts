@@ -292,6 +292,7 @@ export default class TransactionProcessor
     const { ckbVirtualResult, txid, context } = job.data;
     Sentry.withScope((scope) => {
       if (context?.jwt) {
+        scope.setTag('token.id', context?.jwt.jti);
         scope.setTag('token.app', context?.jwt.sub);
         scope.setTag('token.domain', context?.jwt.aud);
       }
