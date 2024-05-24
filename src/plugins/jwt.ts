@@ -34,6 +34,7 @@ export default fp(async (fastify) => {
     },
   });
   fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
+    fastify.Sentry.setTag('request.url', request.url);
     if (
       request.method.toLowerCase() === 'options' ||
       JWT_IGNORE_URLS.some((prefix) => request.url.startsWith(prefix))
@@ -44,9 +45,11 @@ export default fp(async (fastify) => {
       await request.jwtVerify();
       const jwt = (await request.jwtDecode()) as JwtPayload;
       if (jwt) {
-        reply.sentryTransaction?.setAttribute('token.id', jwt.jti);
-        reply.sentryTransaction?.setAttribute('token.app', jwt.sub);
-        reply.sentryTransaction?.setAttribute('token.domain', jwt.aud);
+        fastify.Sentry.setTags({
+          'token.id': jwt.jti,
+          'token.app': jwt.sub,
+          'token.domain': jwt.aud,
+        });
       }
       if (!jwt.aud) {
         reply.status(HttpStatusCode.Unauthorized).send('Invalid audience');
