@@ -62,12 +62,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       fastify.log.debug(`[RGB++] get cells from cache: ${btc_address}`);
       if (typeScript) {
         return rgbppCache.filter(
-          (cell) =>
-            cell.cellOutput.type &&
-            serializeScript({
-              ...cell.cellOutput.type,
-              args: '',
-            }) === serializeScript(typeScript!),
+          (cell) => cell.cellOutput.type && serializeScript(cell.cellOutput.type) === serializeScript(typeScript!),
         );
       }
       return rgbppCache;
