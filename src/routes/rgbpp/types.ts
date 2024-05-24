@@ -89,6 +89,5 @@ export const XUDTBalance = z.object({
   symbol: z.string(),
   amount: z.string(),
   typeHash: z.string(),
-  infoCell: Cell,
 });
 export type XUDTBalance = z.infer<typeof XUDTBalance>;

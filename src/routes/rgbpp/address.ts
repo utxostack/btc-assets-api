@@ -9,6 +9,7 @@ import { serializeScript } from '@nervosnetwork/ckb-sdk-utils';
 import { Env } from '../../env';
 import { getXudtTypeScript, isTypeAssetSupported, leToU128 } from '@rgbpp-sdk/ckb';
 import { BI } from '@ckb-lumos/lumos';
+import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   const env: Env = fastify.container.resolve('env');
@@ -61,9 +62,17 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     if (rgbppCache) {
       fastify.log.debug(`[RGB++] get cells from cache: ${btc_address}`);
       if (typeScript) {
-        return rgbppCache.filter(
-          (cell) => cell.cellOutput.type && serializeScript(cell.cellOutput.type) === serializeScript(typeScript!),
-        );
+        return rgbppCache.filter((cell) => {
+          if (!cell.cellOutput.type) {
+            return false;
+          }
+          // if typeScript.args is empty, only compare codeHash and hashType
+          if (!typeScript.args) {
+            const script = { ...cell.cellOutput.type, args: '' };
+            return serializeScript(script) === serializeScript(typeScript);
+          }
+          return serializeScript(cell.cellOutput.type) === serializeScript(typeScript);
+        });
       }
       return rgbppCache;
     }
@@ -166,7 +175,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const xudtBalances = cells.reduce(
         (balances, cell) => {
           const type = cell.cellOutput.type!;
-          const typeHash = serializeScript(type);
+          const typeHash = computeScriptHash(type);
           if (!infoCellDataMap.has(typeHash)) {
             const infoCellData = fastify.ckb.getInfoCellData(allInfoCellTxs, type);
             infoCellDataMap.set(typeHash, infoCellData);

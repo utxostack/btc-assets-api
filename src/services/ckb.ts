@@ -1,6 +1,6 @@
 import { Collector, getSporeTypeScript, getUniqueTypeScript, getXudtTypeScript, sendCkbTx } from '@rgbpp-sdk/ckb';
 import { Cradle } from '../container';
-import { BI, Cell, Indexer, RPC, Script } from '@ckb-lumos/lumos';
+import { Indexer, RPC, Script } from '@ckb-lumos/lumos';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
 import {
@@ -11,6 +11,7 @@ import {
   isUniqueCellTypeScript,
 } from '../utils/xudt';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
+import DataCache from './base/data-cache';
 
 // https://github.com/nervosnetwork/ckb/blob/develop/rpc/src/error.rs#L33
 export enum CKBRPCErrorCodes {
@@ -134,10 +135,15 @@ export class CKBRpcError extends Error {
 export default class CKBClient {
   public rpc: RPC;
   public indexer: Indexer;
+  private dataCahe: DataCache<CKBComponents.TransactionWithStatus[]>;
 
   constructor(private cradle: Cradle) {
     this.rpc = new RPC(cradle.env.CKB_RPC_URL);
     this.indexer = new Indexer(cradle.env.CKB_RPC_URL);
+    this.dataCahe = new DataCache(cradle.redis, {
+      prefix: 'ckb-info-cell-txs',
+      expire: 60 * 1000,
+    });
   }
 
   /**
@@ -161,24 +167,8 @@ export default class CKBClient {
     if (!encodeData) {
       return null;
     }
-
-    const cellOutput = tx.transaction.outputs[index];
     const data = decodeInfoCellData(encodeData);
-    const infoCell: Cell = {
-      cellOutput: {
-        ...cellOutput,
-        type: cellOutput.type || undefined,
-      },
-      data: encodeData,
-      outPoint: {
-        txHash: tx.transaction.hash,
-        index: BI.from(xudtCellIndex).toHexString(),
-      },
-    };
-    return {
-      ...data,
-      infoCell,
-    };
+    return data;
   }
 
   /**
@@ -204,21 +194,7 @@ export default class CKBClient {
       return null;
     }
     const data = decodeInfoCellData(encodeData);
-    const infoCell: Cell = {
-      cellOutput: {
-        ...cellOutput,
-        type: cellOutput.type || undefined,
-      },
-      data: encodeData,
-      outPoint: {
-        txHash: tx.transaction.hash,
-        index: BI.from(index).toHexString(),
-      },
-    };
-    return {
-      ...data,
-      infoCell,
-    };
+    return data;
   }
 
   /**
@@ -242,6 +218,11 @@ export default class CKBClient {
    * Get all transactions that have the xudt type cell and info cell
    */
   public async getAllInfoCellTxs() {
+    const cachedTxs = await this.dataCahe.get('all');
+    if (cachedTxs) {
+      return cachedTxs;
+    }
+
     const scripts = this.getScripts();
     let batchRequest = this.rpc.createBatchRequest();
 
@@ -271,6 +252,7 @@ export default class CKBClient {
         });
     });
     const txs = (await batchRequest.exec()) as CKBComponents.TransactionWithStatus[];
+    await this.dataCahe.set('all', txs);
     return txs;
   }
 
