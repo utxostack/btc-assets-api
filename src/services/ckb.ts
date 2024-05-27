@@ -5,13 +5,14 @@ import { z } from 'zod';
 import * as Sentry from '@sentry/node';
 import {
   decodeInfoCellData as decodeInfoCellData,
+  decodeUDTHashFromInscriptionData,
   getInscriptionInfoTypeScript,
-  getXUDTTypeScriptArgs,
   isInscriptionInfoTypeScript,
   isUniqueCellTypeScript,
 } from '../utils/xudt';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import DataCache from './base/data-cache';
+import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils';
 
 // https://github.com/nervosnetwork/ckb/blob/develop/rpc/src/error.rs#L33
 export enum CKBRPCErrorCodes {
@@ -147,18 +148,35 @@ export default class CKBClient {
   }
 
   /**
+   * Get the ckb script configs
+   */
+  public getScripts() {
+    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
+    const xudtTypeScript = getXudtTypeScript(isMainnet);
+    const sporeTypeScript = getSporeTypeScript(isMainnet);
+    const uniqueCellTypeScript = getUniqueTypeScript(isMainnet);
+    const inscriptionTypeScript = getInscriptionInfoTypeScript(isMainnet);
+    return {
+      XUDT: xudtTypeScript,
+      SPORE: sporeTypeScript,
+      UNIQUE: uniqueCellTypeScript,
+      INSCRIPTION: inscriptionTypeScript,
+    };
+  }
+
+  /**
    * Get the unique cell data of the given xudt type script from the transaction
    * @param tx - the ckb transaction that contains the unique cell
    * @param index - the index of the unique cell in the transaction
-   * @param typeScript - the xudt type script
+   * @param xudtTypeScript - the xudt type script
    * reference:
    * - https://github.com/ckb-cell/unique-cell
    */
-  private getUniqueCellData(tx: CKBComponents.TransactionWithStatus, index: number, typeScript: Script) {
+  public getUniqueCellData(tx: CKBComponents.TransactionWithStatus, index: number, xudtTypeScript: Script) {
     // find the xudt cell index in the transaction
     // generally, the xudt cell and unique cell are in the same transaction
     const xudtCellIndex = tx.transaction.outputs.findIndex((cell) => {
-      return cell.type && computeScriptHash(cell.type) === computeScriptHash(typeScript);
+      return cell.type && computeScriptHash(cell.type) === computeScriptHash(xudtTypeScript);
     });
     if (xudtCellIndex === -1) {
       return null;
@@ -180,38 +198,22 @@ export default class CKBClient {
    * - https://omiga-core.notion.site/Omiga-Inscritption-885f9073c1a6499db08f5815b7de20d7
    * - https://github.com/duanyytop/ckb-omiga/blob/master/src/inscription/helper.ts#L96-L109
    */
-  private getInscriptionInfoCellData(tx: CKBComponents.TransactionWithStatus, index: number, xudtTypeScript: Script) {
-    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
-    const cellOutput = tx.transaction.outputs[index];
-    // check if the cell is the inscription cell of the xudt type
-    // by comparing the type script args
-    const args = getXUDTTypeScriptArgs(cellOutput.type!, isMainnet);
-    if (args !== xudtTypeScript.args) {
-      return null;
-    }
+  public async getInscriptionInfoCellData(
+    tx: CKBComponents.TransactionWithStatus,
+    index: number,
+    xudtTypeScript: Script,
+  ) {
     const encodeData = tx.transaction.outputsData[index];
     if (!encodeData) {
       return null;
     }
+    const xudtTypeHash = scriptToHash(xudtTypeScript);
+    if (decodeUDTHashFromInscriptionData(encodeData) !== xudtTypeHash) {
+      return null;
+    }
+    console.log(tx);
     const data = decodeInfoCellData(encodeData);
     return data;
-  }
-
-  /**
-   * Get the ckb script configs
-   */
-  public getScripts() {
-    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
-    const xudtTypeScript = getXudtTypeScript(isMainnet);
-    const sporeTypeScript = getSporeTypeScript(isMainnet);
-    const uniqueCellTypeScript = getUniqueTypeScript(isMainnet);
-    const inscriptionTypeScript = getInscriptionInfoTypeScript(isMainnet);
-    return {
-      XUDT: xudtTypeScript,
-      SPORE: sporeTypeScript,
-      UNIQUE: uniqueCellTypeScript,
-      INSCRIPTION: inscriptionTypeScript,
-    };
   }
 
   /**
@@ -261,7 +263,7 @@ export default class CKBClient {
    * @param txs - the transactions that have the xudt type cell and unique cell
    * @param script - the xudt type script
    */
-  public getInfoCellData(txs: CKBComponents.TransactionWithStatus[], script: Script) {
+  public async getInfoCellData(txs: CKBComponents.TransactionWithStatus[], script: Script) {
     const isMainnet = this.cradle.env.NETWORK === 'mainnet';
 
     for (const tx of txs) {
@@ -280,7 +282,7 @@ export default class CKBClient {
         return cell.type && isInscriptionInfoTypeScript(cell.type, isMainnet);
       });
       if (inscriptionCellIndex !== -1) {
-        const infoCellData = this.getInscriptionInfoCellData(tx, inscriptionCellIndex, script);
+        const infoCellData = await this.getInscriptionInfoCellData(tx, inscriptionCellIndex, script);
         if (infoCellData) {
           return infoCellData;
         }

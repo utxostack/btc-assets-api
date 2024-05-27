@@ -172,31 +172,29 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
 
       const infoCellDataMap = new Map();
       const allInfoCellTxs = await fastify.ckb.getAllInfoCellTxs();
-      const xudtBalances = cells.reduce(
-        (balances, cell) => {
-          const type = cell.cellOutput.type!;
-          const typeHash = computeScriptHash(type);
-          if (!infoCellDataMap.has(typeHash)) {
-            const infoCellData = fastify.ckb.getInfoCellData(allInfoCellTxs, type);
-            infoCellDataMap.set(typeHash, infoCellData);
+      const xudtBalances: Record<string, XUDTBalance> = {};
+
+      for await (const cell of cells) {
+        const type = cell.cellOutput.type!;
+        const typeHash = computeScriptHash(type);
+        if (!infoCellDataMap.has(typeHash)) {
+          const infoCellData = await fastify.ckb.getInfoCellData(allInfoCellTxs, type);
+          infoCellDataMap.set(typeHash, infoCellData);
+        }
+        const infoCellData = infoCellDataMap.get(typeHash);
+        const amount = BI.from(leToU128(cell.data)).toHexString();
+        if (infoCellData) {
+          if (!xudtBalances[typeHash]) {
+            xudtBalances[typeHash] = {
+              ...infoCellData,
+              typeHash,
+              amount,
+            };
+          } else {
+            xudtBalances[typeHash].amount = BI.from(xudtBalances[typeHash].amount).add(BI.from(amount)).toHexString();
           }
-          const infoCellData = infoCellDataMap.get(typeHash);
-          const amount = BI.from(leToU128(cell.data)).toHexString();
-          if (infoCellData) {
-            if (!balances[typeHash]) {
-              balances[typeHash] = {
-                ...infoCellData,
-                typeHash,
-                amount,
-              };
-            } else {
-              balances[typeHash].amount = BI.from(balances[typeHash].amount).add(BI.from(amount)).toHexString();
-            }
-          }
-          return balances;
-        },
-        {} as Record<string, XUDTBalance>,
-      );
+        }
+      }
 
       return {
         address: btc_address,
