@@ -4,7 +4,7 @@ import { Indexer, RPC, Script } from '@ckb-lumos/lumos';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
 import {
-  decodeInfoCellData as decodeInfoCellData,
+  decodeInfoCellData,
   decodeUDTHashFromInscriptionData,
   getInscriptionInfoTypeScript,
   isInscriptionInfoTypeScript,
