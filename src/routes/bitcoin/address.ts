@@ -144,17 +144,20 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       }
       const rgbppUtxoSet = new Set(rgbppUtxoCellsPairs.map((pair) => pair.utxo.txid + ':' + pair.utxo.vout));
 
+      const conditions: ((utxo: UTXO) => boolean)[] = [];
+      if (only_confirmed === 'true') {
+        conditions.push((utxo: UTXO) => utxo.status.confirmed);
+      }
+      if (min_satoshi !== undefined) {
+        conditions.push((utxo: UTXO) => utxo.value >= min_satoshi);
+      }
+      if (only_non_rgbpp_utxos === 'true') {
+        conditions.push((utxo: UTXO) => !rgbppUtxoSet.has(utxo.txid + ':' + utxo.vout));
+      }
+
       return utxos.filter((utxo) => {
-        if (only_confirmed === 'true') {
-          return utxo.status.confirmed;
-        }
-        if (min_satoshi !== undefined) {
-          return utxo.value >= min_satoshi;
-        }
-        if (only_non_rgbpp_utxos === 'true') {
-          return !rgbppUtxoSet.has(utxo.txid + ':' + utxo.vout);
-        }
-        return true;
+        const pass = conditions.every((condition) => condition(utxo));
+        return pass;
       });
     },
   );

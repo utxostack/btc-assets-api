@@ -16,7 +16,7 @@ type GetCellsParams = Parameters<RPC['getCells']>;
 type SearchKey = GetCellsParams[0];
 type CKBBatchRequest = { exec: () => Promise<{ objects: IndexerCell[] }[]> };
 
-type RgbppUtxoCellsPair = {
+export type RgbppUtxoCellsPair = {
   utxo: UTXO;
   cells: Cell[];
 };
