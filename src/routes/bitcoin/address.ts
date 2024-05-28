@@ -155,6 +155,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         conditions.push((utxo: UTXO) => !rgbppUtxoSet.has(utxo.txid + ':' + utxo.vout));
       }
 
+      if (conditions.length === 0) {
+        return utxos;
+      }
+
       return utxos.filter((utxo) => {
         const pass = conditions.every((condition) => condition(utxo));
         return pass;
