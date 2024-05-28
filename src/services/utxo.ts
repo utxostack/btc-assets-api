@@ -113,12 +113,18 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
     });
   }
 
-  public async getUTXOsFromCache(btcAddress: string) {
-    const data = await this.dataCache.get(btcAddress);
-    if (!data) {
-      return null;
+  /**
+   * Get the utxos by btc address
+   */
+  public async getUtxosByAddress(btcAddress: string, noCache?: boolean) {
+    if (this.cradle.env.UTXO_SYNC_DATA_CACHE_ENABLE && !noCache) {
+      const cached = await this.dataCache.get(btcAddress);
+      if (cached) {
+        return cached.utxos;
+      }
     }
-    return data.utxos;
+    const utxos = await this.cradle.bitcoin.getAddressTxsUtxo({ address: btcAddress });
+    return utxos;
   }
 
   private async _enqueueSyncJob(btcAddress: string) {

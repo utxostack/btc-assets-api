@@ -131,15 +131,24 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
   }
 
   /**
-   * Get the rgbpp cells from cache
-   * @param btcAddress - the btc address
+   * Get the rgbpp utxo cells pairs
    */
-  public async getRgbppCellsFromCache(btcAddress: string) {
-    const data = await this.dataCache.get(btcAddress);
-    if (!data) {
-      return null;
+  public async getRgbppUtxoCellsPairs(btcAddress: string, utxos: UTXO[], noCache?: boolean) {
+    if (this.cradle.env.RGBPP_COLLECT_DATA_CACHE_ENABLE && !noCache) {
+      const cached = await this.dataCache.get(btcAddress);
+      if (cached) {
+        const pairs = utxos
+          .map((utxo) => {
+            const key = `${utxo.txid}:${utxo.vout}`;
+            return { utxo, cells: cached[key] || [] };
+          })
+          .filter(({ cells }) => cells.length > 0);
+        return pairs;
+      }
     }
-    return Object.values(data).flat();
+    const pairs = await this.collectRgbppUtxoCellsPairs(utxos);
+    this.dataCache.set(btcAddress, pairs);
+    return pairs;
   }
 
   /**

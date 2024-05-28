@@ -42,36 +42,52 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { address } = request.params;
       const { min_satoshi, no_cache } = request.query;
 
-      let utxosCache = null;
+      const utxos = await fastify.utxoSyncer.getUtxosByAddress(address, no_cache === 'true');
       if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
-        if (no_cache !== 'true') {
-          utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(address);
-        }
         await fastify.utxoSyncer.enqueueSyncJob(address);
       }
-      const utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address });
 
-      return utxos.reduce(
-        (acc: Balance, utxo: UTXO) => {
-          if (utxo.status.confirmed) {
-            if (min_satoshi && utxo.value < min_satoshi) {
-              acc.dust_satoshi += utxo.value;
-            } else {
-              acc.satoshi += utxo.value;
-            }
-            return acc;
-          }
-          acc.pending_satoshi += utxo.value;
-          return acc;
-        },
-        {
-          address,
-          satoshi: 0,
-          pending_satoshi: 0,
-          dust_satoshi: 0,
-          utxo_count: utxos.length,
-        },
+      const rgbppUtxoCellsPairs = await fastify.rgbppCollector.getRgbppUtxoCellsPairs(
+        address,
+        utxos,
+        no_cache === 'true',
       );
+      const rgbppUtxoMap = rgbppUtxoCellsPairs.reduce((map, { utxo }) => {
+        map.set(utxo.txid + ':' + utxo.vout, utxo);
+        return map;
+      }, new Map<string, UTXO>());
+
+      const balance: Balance = {
+        address,
+        satoshi: 0,
+        available_satoshi: 0,
+        pending_satoshi: 0,
+        dust_satoshi: 0,
+        rgbpp_satoshi: 0,
+        utxo_count: utxos.length,
+      };
+
+      const rules = {
+        dust: (utxo: UTXO) => min_satoshi !== undefined && utxo.value < min_satoshi,
+        rgbpp: (utxo: UTXO) => rgbppUtxoMap.has(utxo.txid + ':' + utxo.vout),
+      };
+      for (const utxo of utxos) {
+        if (utxo.status.confirmed) {
+          balance.satoshi += utxo.value;
+          if (!rules.dust(utxo) && !rules.rgbpp(utxo)) {
+            balance.available_satoshi += utxo.value;
+          }
+          if (rules.dust(utxo)) {
+            balance.dust_satoshi += utxo.value;
+          }
+          if (rules.rgbpp(utxo)) {
+            balance.rgbpp_satoshi += utxo.value;
+          }
+        } else {
+          balance.pending_satoshi += utxo.value;
+        }
+      }
+      return balance;
     },
   );
 
@@ -90,6 +106,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             .default('true')
             .describe('Only return confirmed UTXOs'),
           min_satoshi: z.coerce.number().optional().describe('The minimum value of the UTXO in satoshi'),
+          only_non_rgbpp_utxos: z
+            .enum(['true', 'false', 'undefined'])
+            .default('false')
+            .describe('Only return non-RGBPP UTXOs'),
           no_cache: z
             .enum(['true', 'false'])
             .default('false')
@@ -102,28 +122,31 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     },
     async function (request) {
       const { address } = request.params;
-      const { only_confirmed, min_satoshi, no_cache } = request.query;
+      const { only_confirmed, min_satoshi, only_non_rgbpp_utxos, no_cache } = request.query;
 
-      let utxosCache = null;
+      const utxos = await fastify.utxoSyncer.getUtxosByAddress(address, no_cache === 'true');
       if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
-        if (no_cache !== 'true') {
-          utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(address);
-        }
         await fastify.utxoSyncer.enqueueSyncJob(address);
       }
-      let utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address });
-      if (utxosCache) {
-        fastify.log.debug(`[UTXO] get utxos from cache: ${address}`);
-      }
 
-      // compatible with the case where only_confirmed is undefined
-      if (only_confirmed === 'true' || only_confirmed === 'undefined') {
-        utxos = utxos.filter((utxo) => utxo.status.confirmed);
-      }
-      if (min_satoshi) {
-        utxos = utxos.filter((utxo) => utxo.value >= min_satoshi);
-      }
-      return utxos;
+      const rgbppUtxoCellsPairs =
+        only_non_rgbpp_utxos === 'true'
+          ? await fastify.rgbppCollector.getRgbppUtxoCellsPairs(address, utxos, no_cache === 'true')
+          : [];
+      const rgbppUtxoSet = new Set(rgbppUtxoCellsPairs.map((pair) => pair.utxo.txid + ':' + pair.utxo.vout));
+
+      return utxos.filter((utxo) => {
+        if (only_confirmed === 'true') {
+          return utxo.status.confirmed;
+        }
+        if (min_satoshi !== undefined) {
+          return utxo.value >= min_satoshi;
+        }
+        if (only_non_rgbpp_utxos === 'true') {
+          return !rgbppUtxoSet.has(utxo.txid + ':' + utxo.vout);
+        }
+        return true;
+      });
     },
   );
 

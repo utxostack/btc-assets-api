@@ -33,9 +33,11 @@ export const Status = z.object({
 
 export const Balance = z.object({
   address: z.string(),
-  satoshi: z.number(),
-  pending_satoshi: z.number(),
-  dust_satoshi: z.number(),
+  satoshi: z.number(), // total
+  available_satoshi: z.number(), // available (excludes pending/dust/rgbpp)
+  pending_satoshi: z.number(), // pending
+  dust_satoshi: z.number(), // dust
+  rgbpp_satoshi: z.number(), // rgbpp bound
   utxo_count: z.number(),
 });
 
