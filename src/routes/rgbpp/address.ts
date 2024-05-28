@@ -42,43 +42,34 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
    * Get RGB++ assets by btc address
    */
   async function getRgbppAssetsCells(btc_address: string, typeScript?: Script, no_cache?: string) {
-    let utxosCache = null;
+    const utxos = await fastify.utxoSyncer.getUtxosByAddress(btc_address, no_cache === 'true');
     if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
-      if (no_cache !== 'true') {
-        utxosCache = await fastify.utxoSyncer.getUTXOsFromCache(btc_address);
-      }
       await fastify.utxoSyncer.enqueueSyncJob(btc_address);
     }
-    const utxos = utxosCache ? utxosCache : await fastify.bitcoin.getAddressTxsUtxo({ address: btc_address });
 
-    let rgbppCache = null;
+    const rgbppUtxoCellsPairs = await fastify.rgbppCollector.getRgbppUtxoCellsPairs(
+      btc_address,
+      utxos,
+      no_cache === 'true',
+    );
     if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
-      if (no_cache !== 'true') {
-        rgbppCache = await fastify.rgbppCollector.getRgbppCellsFromCache(btc_address);
-      }
       await fastify.rgbppCollector.enqueueCollectJob(btc_address, utxos);
     }
+    const cells = rgbppUtxoCellsPairs.map((pair) => pair.cells).flat();
 
-    if (rgbppCache) {
-      fastify.log.debug(`[RGB++] get cells from cache: ${btc_address}`);
-      if (typeScript) {
-        return rgbppCache.filter((cell) => {
-          if (!cell.cellOutput.type) {
-            return false;
-          }
-          // if typeScript.args is empty, only compare codeHash and hashType
-          if (!typeScript.args) {
-            const script = { ...cell.cellOutput.type, args: '' };
-            return serializeScript(script) === serializeScript(typeScript);
-          }
-          return serializeScript(cell.cellOutput.type) === serializeScript(typeScript);
-        });
-      }
-      return rgbppCache;
+    if (typeScript) {
+      return cells.filter((cell) => {
+        if (!cell.cellOutput.type) {
+          return false;
+        }
+        // if typeScript.args is empty, only compare codeHash and hashType
+        if (!typeScript.args) {
+          const script = { ...cell.cellOutput.type, args: '' };
+          return serializeScript(script) === serializeScript(typeScript);
+        }
+        return serializeScript(cell.cellOutput.type) === serializeScript(typeScript);
+      });
     }
-
-    const rgbppUtxoCellsParis = await fastify.rgbppCollector.collectRgbppUtxoCellsPairs(utxos, typeScript);
-    const cells = rgbppUtxoCellsParis.map((pair) => pair.cells).flat();
     return cells;
   }
 

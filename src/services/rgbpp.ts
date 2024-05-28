@@ -89,6 +89,16 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     });
   }
 
+  private async saveRgbppUtxoCellsPairsToCache(btcAddress: string, pairs: RgbppUtxoCellsPair[]) {
+    const data = pairs.reduce((acc, { utxo, cells }) => {
+      const key = `${utxo.txid}:${utxo.vout}`;
+      acc[key] = cells;
+      return acc;
+    }, {} as IRgbppCollectJobReturn);
+    this.dataCache.set(btcAddress, data);
+    return data;
+  }
+
   /**
    * Get the rgbpp cells batch request for the utxos
    * @param utxos - the utxos to collect
@@ -147,7 +157,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
       }
     }
     const pairs = await this.collectRgbppUtxoCellsPairs(utxos);
-    this.dataCache.set(btcAddress, pairs);
+    await this.saveRgbppUtxoCellsPairsToCache(btcAddress, pairs);
     return pairs;
   }
 
@@ -209,12 +219,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     try {
       const { btcAddress, utxos } = job.data;
       const pairs = await this.collectRgbppUtxoCellsPairs(utxos);
-      const data = pairs.reduce((acc, { utxo, cells }) => {
-        const key = `${utxo.txid}:${utxo.vout}`;
-        acc[key] = cells;
-        return acc;
-      }, {} as IRgbppCollectJobReturn);
-      this.dataCache.set(btcAddress, data);
+      const data = await this.saveRgbppUtxoCellsPairsToCache(btcAddress, pairs);
       return data;
     } catch (e) {
       const { message, stack } = e as Error;
