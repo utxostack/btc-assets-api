@@ -59,6 +59,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
 
       const balance: Balance = {
         address,
+        total_satoshi: 0,
         satoshi: 0,
         available_satoshi: 0,
         pending_satoshi: 0,
@@ -72,8 +73,8 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         rgbpp: (utxo: UTXO) => rgbppUtxoMap.has(utxo.txid + ':' + utxo.vout),
       };
       for (const utxo of utxos) {
+        balance.total_satoshi += utxo.value;
         if (utxo.status.confirmed) {
-          balance.satoshi += utxo.value;
           if (!rules.dust(utxo) && !rules.rgbpp(utxo)) {
             balance.available_satoshi += utxo.value;
           }
@@ -87,6 +88,8 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           balance.pending_satoshi += utxo.value;
         }
       }
+      // @deprecated for compatibility
+      balance.satoshi = balance.available_satoshi;
       return balance;
     },
   );
