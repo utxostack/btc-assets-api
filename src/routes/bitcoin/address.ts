@@ -68,20 +68,19 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         utxo_count: utxos.length,
       };
 
-      const rules = {
-        dust: (utxo: UTXO) => min_satoshi !== undefined && utxo.value < min_satoshi,
-        rgbpp: (utxo: UTXO) => rgbppUtxoMap.has(utxo.txid + ':' + utxo.vout),
-      };
       for (const utxo of utxos) {
+        const isDustUTXO = min_satoshi !== undefined && utxo.value < min_satoshi;
+        const isRgbppBound = rgbppUtxoMap.has(utxo.txid + ':' + utxo.vout);
+
         balance.total_satoshi += utxo.value;
         if (utxo.status.confirmed) {
-          if (!rules.dust(utxo) && !rules.rgbpp(utxo)) {
+          if (!isDustUTXO && !isRgbppBound) {
             balance.available_satoshi += utxo.value;
           }
-          if (rules.dust(utxo)) {
+          if (isDustUTXO) {
             balance.dust_satoshi += utxo.value;
           }
-          if (rules.rgbpp(utxo)) {
+          if (isRgbppBound) {
             balance.rgbpp_satoshi += utxo.value;
           }
         } else {
