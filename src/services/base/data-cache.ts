@@ -3,8 +3,8 @@ import { z } from 'zod';
 
 interface IDataCacheOptions<T> {
   prefix: string;
-  schema: z.ZodType<T>;
   expire: number;
+  schema?: z.ZodType<T>;
 }
 
 class DataCacheError extends Error {
@@ -23,7 +23,7 @@ export default class DataCache<T> {
   constructor(redis: Redis, options: IDataCacheOptions<T>) {
     this.redis = redis;
     this.prefix = options.prefix;
-    this.schema = options.schema;
+    this.schema = options.schema ?? z.any();
     this.expire = options.expire;
   }
 
