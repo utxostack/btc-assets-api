@@ -198,11 +198,7 @@ export default class CKBClient {
    * - https://omiga-core.notion.site/Omiga-Inscritption-885f9073c1a6499db08f5815b7de20d7
    * - https://github.com/duanyytop/ckb-omiga/blob/master/src/inscription/helper.ts#L96-L109
    */
-  public async getInscriptionInfoCellData(
-    tx: CKBComponents.TransactionWithStatus,
-    index: number,
-    xudtTypeScript: Script,
-  ) {
+  public getInscriptionInfoCellData(tx: CKBComponents.TransactionWithStatus, index: number, xudtTypeScript: Script) {
     const encodeData = tx.transaction.outputsData[index];
     if (!encodeData) {
       return null;
@@ -211,7 +207,6 @@ export default class CKBClient {
     if (decodeUDTHashFromInscriptionData(encodeData) !== xudtTypeHash) {
       return null;
     }
-    console.log(tx);
     const data = decodeInfoCellData(encodeData);
     return data;
   }
@@ -242,7 +237,7 @@ export default class CKBClient {
       );
     });
     type getTransactionsResult = ReturnType<typeof this.rpc.getTransactions<false>>;
-    const infoCellTxs = (await batchRequest.exec()) as Awaited<getTransactionsResult>[];
+    const infoCellTxs: Awaited<getTransactionsResult>[] = await batchRequest.exec();
 
     // get all transactions that have the xudt type cell and info cell
     batchRequest = this.rpc.createBatchRequest();
@@ -253,7 +248,7 @@ export default class CKBClient {
           batchRequest.add('getTransaction', tx.txHash);
         });
     });
-    const txs = (await batchRequest.exec()) as CKBComponents.TransactionWithStatus[];
+    const txs: CKBComponents.TransactionWithStatus[] = await batchRequest.exec();
     await this.dataCahe.set('all', txs);
     return txs;
   }
@@ -263,7 +258,7 @@ export default class CKBClient {
    * @param txs - the transactions that have the xudt type cell and unique cell
    * @param script - the xudt type script
    */
-  public async getInfoCellData(txs: CKBComponents.TransactionWithStatus[], script: Script) {
+  public getInfoCellData(txs: CKBComponents.TransactionWithStatus[], script: Script) {
     const isMainnet = this.cradle.env.NETWORK === 'mainnet';
 
     for (const tx of txs) {
@@ -282,7 +277,7 @@ export default class CKBClient {
         return cell.type && isInscriptionInfoTypeScript(cell.type, isMainnet);
       });
       if (inscriptionCellIndex !== -1) {
-        const infoCellData = await this.getInscriptionInfoCellData(tx, inscriptionCellIndex, script);
+        const infoCellData = this.getInscriptionInfoCellData(tx, inscriptionCellIndex, script);
         if (infoCellData) {
           return infoCellData;
         }

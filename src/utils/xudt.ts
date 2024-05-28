@@ -4,7 +4,6 @@ import { getUniqueTypeScript, hexToUtf8 } from '@rgbpp-sdk/ckb';
 
 // https://github.com/ckb-cell/unique-cell?tab=readme-ov-file#xudt-information
 export function decodeInfoCellData(data: string) {
-  console.log('data:', data);
   const hex = remove0x(data);
   const info = {
     decimal: BI.from(`0x${hex.slice(0, 2)}`).toNumber(),
@@ -21,7 +20,6 @@ export function decodeInfoCellData(data: string) {
   if (symbolSize > 0) {
     info.symbol = hexToUtf8(`0x${hex.slice(4 + nameSize + 2, 4 + nameSize + 2 + symbolSize)}`);
   }
-  console.log('info:', info);
   return info;
 }
 

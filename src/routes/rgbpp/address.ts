@@ -178,7 +178,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         const type = cell.cellOutput.type!;
         const typeHash = computeScriptHash(type);
         if (!infoCellDataMap.has(typeHash)) {
-          const infoCellData = await fastify.ckb.getInfoCellData(allInfoCellTxs, type);
+          const infoCellData = fastify.ckb.getInfoCellData(allInfoCellTxs, type);
           infoCellDataMap.set(typeHash, infoCellData);
         }
         const infoCellData = infoCellDataMap.get(typeHash);

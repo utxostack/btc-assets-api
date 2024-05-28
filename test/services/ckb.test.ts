@@ -57,7 +57,7 @@ describe('CKBClient', () => {
     const index = tx.transaction.outputs.findIndex(
       (output) => output.type && isInscriptionInfoTypeScript(output.type, false),
     );
-    const data = await ckb.getInscriptionInfoCellData(
+    const data = ckb.getInscriptionInfoCellData(
       tx as CKBComponents.TransactionWithStatus,
       index,
       inscriptionTypeScript,
@@ -75,7 +75,7 @@ describe('CKBClient', () => {
     const index = tx.transaction.outputs.findIndex(
       (output) => output.type && isInscriptionInfoTypeScript(output.type, false),
     );
-    const data = await ckb.getInscriptionInfoCellData(
+    const data = ckb.getInscriptionInfoCellData(
       tx as CKBComponents.TransactionWithStatus,
       index,
       inscriptionRebaseTypeScript,
@@ -93,7 +93,7 @@ describe('CKBClient', () => {
     const index = tx.transaction.outputs.findIndex(
       (output) => output.type && isInscriptionInfoTypeScript(output.type, false),
     );
-    const data = await ckb.getInscriptionInfoCellData(
+    const data = ckb.getInscriptionInfoCellData(
       tx as CKBComponents.TransactionWithStatus,
       index,
       inscriptionRebaseTypeScript,
