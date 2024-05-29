@@ -106,7 +106,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    */
   public async getRgbppCellsByBatchRequest(utxos: UTXO[], typeScript?: Script) {
     const batchRequest: CKBBatchRequest = this.cradle.ckb.rpc.createBatchRequest(
-      utxos.map((utxo) => {
+      utxos.map((utxo: UTXO) => {
         const { txid, vout } = utxo;
         const args = buildRgbppLockArgs(vout, txid);
         const searchKey: SearchKey = {
@@ -176,7 +176,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
           asyncRetry(
             async () => {
               const batchCells = await this.getRgbppCellsByBatchRequest(group, typeScript);
-              return batchCells.map((cells, index: number) => {
+              return batchCells.map((cells: Cell[], index: number) => {
                 const utxo = group[index];
                 return { utxo, cells };
               });
@@ -188,7 +188,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         );
       }),
     );
-    const pairs = data.flat().filter(({ cells }) => cells.length > 0);
+    const pairs = data.flat().filter(({ cells }: RgbppUtxoCellsPair) => cells.length > 0);
     return pairs;
   }
 

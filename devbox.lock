@@ -2,63 +2,64 @@
   "lockfile_version": "1",
   "packages": {
     "nodePackages.pnpm@latest": {
-      "last_modified": "2024-03-08T13:51:52Z",
-      "resolved": "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b#nodePackages.pnpm",
+      "last_modified": "2024-05-22T06:18:38Z",
+      "resolved": "github:NixOS/nixpkgs/3f316d2a50699a78afe5e77ca486ad553169061e#nodePackages.pnpm",
       "source": "devbox-search",
-      "version": "8.15.3",
+      "version": "8.15.5",
       "systems": {
         "aarch64-darwin": {
-          "store_path": "/nix/store/m9p6q42njy1k33fdzf2axqyhy8vh4vn5-pnpm-8.15.3"
+          "store_path": "/nix/store/98b2ljlansqmkpkd5pqfgwhcwr5kvsha-pnpm-8.15.5"
         },
         "aarch64-linux": {
-          "store_path": "/nix/store/war7jm6ka7afc2v8a78hlq8v9m4pg38m-pnpm-8.15.3"
+          "store_path": "/nix/store/b0h4xyqwdk2zhyhw42bprjnj2i518sxn-pnpm-8.15.5"
         },
         "x86_64-darwin": {
-          "store_path": "/nix/store/3w3bs2cdqx7sivcldcf6drwrhilv511m-pnpm-8.15.3"
+          "store_path": "/nix/store/7xyc072k4g6430vijvylidqacjxy5dbb-pnpm-8.15.5"
         },
         "x86_64-linux": {
-          "store_path": "/nix/store/hcq09j80njlfghy65qmwhn5nq20nk8kl-pnpm-8.15.3"
+          "store_path": "/nix/store/77wblnm5dnmgnan3695j3mk4r7j75s5j-pnpm-8.15.5"
         }
       }
     },
     "nodejs@latest": {
-      "last_modified": "2024-03-09T07:11:56Z",
-      "resolved": "github:NixOS/nixpkgs/0e7f98a5f30166cbed344569426850b21e4091d4#nodejs_21",
+      "last_modified": "2024-05-22T06:18:38Z",
+      "plugin_version": "0.0.2",
+      "resolved": "github:NixOS/nixpkgs/3f316d2a50699a78afe5e77ca486ad553169061e#nodejs_22",
       "source": "devbox-search",
-      "version": "21.7.1",
+      "version": "22.2.0",
       "systems": {
         "aarch64-darwin": {
-          "store_path": "/nix/store/mh1db6rni4mlcr473sh3fy6jg2m38jvg-nodejs-21.7.1"
+          "store_path": "/nix/store/rz5da1id31jgyax1yb6dms0mzpxkywds-nodejs-22.2.0"
         },
         "aarch64-linux": {
-          "store_path": "/nix/store/ziyb3ny5f9hcwp0lsb9gwdv1pqsn03x1-nodejs-21.7.1"
+          "store_path": "/nix/store/dkg3sm7j61sfkpvg0bpi0hbjcccbg2wy-nodejs-22.2.0"
         },
         "x86_64-darwin": {
-          "store_path": "/nix/store/0zaa3aarbsj38g62ihv94gz2hgvgh6bc-nodejs-21.7.1"
+          "store_path": "/nix/store/y8ns070yvn6ffbwzhmvk03lw7lh4ly02-nodejs-22.2.0"
         },
         "x86_64-linux": {
-          "store_path": "/nix/store/4arhczh30ychpx6h2wpj5nhx39wm0nla-nodejs-21.7.1"
+          "store_path": "/nix/store/72m3szv59j74b12dmicmayvvlikh65qc-nodejs-22.2.0"
         }
       }
     },
     "redis@latest": {
-      "last_modified": "2024-03-08T13:51:52Z",
+      "last_modified": "2024-05-22T06:18:38Z",
       "plugin_version": "0.0.2",
-      "resolved": "github:NixOS/nixpkgs/a343533bccc62400e8a9560423486a3b6c11a23b#redis",
+      "resolved": "github:NixOS/nixpkgs/3f316d2a50699a78afe5e77ca486ad553169061e#redis",
       "source": "devbox-search",
       "version": "7.2.4",
       "systems": {
         "aarch64-darwin": {
-          "store_path": "/nix/store/700kyznxcmlkqqabhwa64vmyg4aj6igj-redis-7.2.4"
+          "store_path": "/nix/store/f1hmasfrq0s1yag27kmdwv97cjxv85rm-redis-7.2.4"
         },
         "aarch64-linux": {
-          "store_path": "/nix/store/xlc976dh4nb2aa0gzs0jfgld4cc3x8si-redis-7.2.4"
+          "store_path": "/nix/store/5ay0vkvk8l2n8fgxnmxdci1y1ldafnx8-redis-7.2.4"
         },
         "x86_64-darwin": {
-          "store_path": "/nix/store/5v58fadclljqa2fmwq281bx5wma9cslb-redis-7.2.4"
+          "store_path": "/nix/store/5l40xjgzqsd56dx5zfwr2v6sfpk12lkl-redis-7.2.4"
         },
         "x86_64-linux": {
-          "store_path": "/nix/store/zp1lapdicjxnjhiz8l6j2j4nn6sa9fg5-redis-7.2.4"
+          "store_path": "/nix/store/xlvzg81dgimxfjxpxwr2w3q1ca3l5lwa-redis-7.2.4"
         }
       }
     }
