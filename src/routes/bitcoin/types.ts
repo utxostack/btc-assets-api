@@ -33,9 +33,12 @@ export const Status = z.object({
 
 export const Balance = z.object({
   address: z.string(),
-  satoshi: z.number(),
-  pending_satoshi: z.number(),
-  dust_satoshi: z.number(),
+  total_satoshi: z.number().describe('Total balance in satoshi (available + pending + dust/rgbpp-bound)'),
+  pending_satoshi: z.number().describe('Pending balance in satoshi (unconfirmed)'),
+  satoshi: z.number().describe('@deprecated Use available_satoshi'),
+  available_satoshi: z.number().describe('Available balance in satoshi (confirmed and not dust/rgbpp-bound)'),
+  dust_satoshi: z.number().describe('Dust balance in satoshi (confirmed and below min_satoshi threshold)'),
+  rgbpp_satoshi: z.number().describe('RGB++ bound balance in satoshi (confirmed and RGB++ bound)'),
   utxo_count: z.number(),
 });
 

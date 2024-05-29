@@ -16,7 +16,7 @@ type GetCellsParams = Parameters<RPC['getCells']>;
 type SearchKey = GetCellsParams[0];
 type CKBBatchRequest = { exec: () => Promise<{ objects: IndexerCell[] }[]> };
 
-type RgbppUtxoCellsPair = {
+export type RgbppUtxoCellsPair = {
   utxo: UTXO;
   cells: Cell[];
 };
@@ -89,6 +89,16 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     });
   }
 
+  private async saveRgbppUtxoCellsPairsToCache(btcAddress: string, pairs: RgbppUtxoCellsPair[]) {
+    const data = pairs.reduce((acc, { utxo, cells }) => {
+      const key = `${utxo.txid}:${utxo.vout}`;
+      acc[key] = cells;
+      return acc;
+    }, {} as IRgbppCollectJobReturn);
+    this.dataCache.set(btcAddress, data);
+    return data;
+  }
+
   /**
    * Get the rgbpp cells batch request for the utxos
    * @param utxos - the utxos to collect
@@ -131,15 +141,24 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
   }
 
   /**
-   * Get the rgbpp cells from cache
-   * @param btcAddress - the btc address
+   * Get the rgbpp utxo cells pairs
    */
-  public async getRgbppCellsFromCache(btcAddress: string) {
-    const data = await this.dataCache.get(btcAddress);
-    if (!data) {
-      return null;
+  public async getRgbppUtxoCellsPairs(btcAddress: string, utxos: UTXO[], noCache?: boolean) {
+    if (this.cradle.env.RGBPP_COLLECT_DATA_CACHE_ENABLE && !noCache) {
+      const cached = await this.dataCache.get(btcAddress);
+      if (cached) {
+        const pairs = utxos
+          .map((utxo) => {
+            const key = `${utxo.txid}:${utxo.vout}`;
+            return { utxo, cells: cached[key] || [] };
+          })
+          .filter(({ cells }) => cells.length > 0);
+        return pairs;
+      }
     }
-    return Object.values(data).flat();
+    const pairs = await this.collectRgbppUtxoCellsPairs(utxos);
+    await this.saveRgbppUtxoCellsPairsToCache(btcAddress, pairs);
+    return pairs;
   }
 
   /**
@@ -200,12 +219,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     try {
       const { btcAddress, utxos } = job.data;
       const pairs = await this.collectRgbppUtxoCellsPairs(utxos);
-      const data = pairs.reduce((acc, { utxo, cells }) => {
-        const key = `${utxo.txid}:${utxo.vout}`;
-        acc[key] = cells;
-        return acc;
-      }, {} as IRgbppCollectJobReturn);
-      this.dataCache.set(btcAddress, data);
+      const data = await this.saveRgbppUtxoCellsPairsToCache(btcAddress, pairs);
       return data;
     } catch (e) {
       const { message, stack } = e as Error;
