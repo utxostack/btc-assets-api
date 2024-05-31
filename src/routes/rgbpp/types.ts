@@ -87,7 +87,9 @@ export const XUDTBalance = z.object({
   name: z.string(),
   decimal: z.number(),
   symbol: z.string(),
-  amount: z.string(),
+  total_amount: z.string(),
+  avaliable_amount: z.string(),
+  pending_amount: z.string(),
   typeHash: z.string(),
 });
 export type XUDTBalance = z.infer<typeof XUDTBalance>;
