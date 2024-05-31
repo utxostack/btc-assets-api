@@ -176,24 +176,11 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
 
-      const infoCellDataMap = new Map();
-      const getInfoCellData = async (type: Script) => {
-        const typeHash = computeScriptHash(type);
-        if (!infoCellDataMap.has(typeHash)) {
-          const infoCellData = fastify.ckb.getInfoCellData(allInfoCellTxs, type);
-          infoCellDataMap.set(typeHash, infoCellData);
-        }
-        const infoCellData = infoCellDataMap.get(typeHash);
-        return infoCellData;
-      };
-
-      const allInfoCellTxs = await fastify.ckb.getAllInfoCellTxs();
       const xudtBalances: Record<string, XUDTBalance> = {};
-
       for await (const cell of cells) {
         const type = cell.cellOutput.type!;
         const typeHash = computeScriptHash(type);
-        const infoCellData = await getInfoCellData(type);
+        const infoCellData = await fastify.ckb.getInfoCellData(type);
         const amount = BI.from(leToU128(cell.data)).toHexString();
         if (infoCellData) {
           if (!xudtBalances[typeHash]) {
