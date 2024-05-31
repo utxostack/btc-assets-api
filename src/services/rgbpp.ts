@@ -2,15 +2,16 @@ import { UTXO } from './bitcoin/schema';
 import pLimit from 'p-limit';
 import asyncRetry from 'async-retry';
 import { Cradle } from '../container';
-import { IndexerCell, buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb';
+import { IndexerCell, buildRgbppLockArgs, genRgbppLockScript, leToU128 } from '@rgbpp-sdk/ckb';
 import * as Sentry from '@sentry/node';
-import { RPC, Script } from '@ckb-lumos/lumos';
+import { BI, RPC, Script } from '@ckb-lumos/lumos';
 import { Job } from 'bullmq';
 import { z } from 'zod';
-import { Cell } from '../routes/rgbpp/types';
+import { Cell, XUDTBalance } from '../routes/rgbpp/types';
 import BaseQueueWorker from './base/queue-worker';
 import DataCache from './base/data-cache';
 import { groupBy } from 'lodash';
+import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 
 type GetCellsParams = Parameters<RPC['getCells']>;
 type SearchKey = GetCellsParams[0];
@@ -89,6 +90,11 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     });
   }
 
+  /**
+   * Save the rgbpp utxo cells pairs to the cache
+   * @param btcAddress - the btc address
+   * @param pairs - the rgbpp utxo cells pairs
+   */
   private async saveRgbppUtxoCellsPairsToCache(btcAddress: string, pairs: RgbppUtxoCellsPair[]) {
     const data = pairs.reduce((acc, { utxo, cells }) => {
       const key = `${utxo.txid}:${utxo.vout}`;
@@ -97,6 +103,37 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     }, {} as IRgbppCollectJobReturn);
     this.dataCache.set(btcAddress, data);
     return data;
+  }
+
+  /**
+   * Get the rgbpp balance by cells
+   * @param cells - the cells to calculate the balance
+   */
+  public async getRgbppBalanceByCells(cells: Cell[]) {
+    const xudtBalances: Record<
+      string,
+      Omit<XUDTBalance, 'total_amount' | 'available_amount' | 'pending_amount'> & {
+        amount: string;
+      }
+    > = {};
+    for await (const cell of cells) {
+      const type = cell.cellOutput.type!;
+      const typeHash = computeScriptHash(type);
+      const infoCellData = await this.cradle.ckb.getInfoCellData(type);
+      const amount = BI.from(leToU128(cell.data)).toHexString();
+      if (infoCellData) {
+        if (!xudtBalances[typeHash]) {
+          xudtBalances[typeHash] = {
+            ...infoCellData,
+            typeHash,
+            amount: amount,
+          };
+        } else {
+          xudtBalances[typeHash].amount = BI.from(xudtBalances[typeHash].amount).add(BI.from(amount)).toHexString();
+        }
+      }
+    }
+    return xudtBalances;
   }
 
   /**

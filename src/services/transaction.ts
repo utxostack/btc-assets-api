@@ -25,7 +25,7 @@ import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
 import { DelayedError, Job } from 'bullmq';
 import { Cradle } from '../container';
 import { Transaction } from '../routes/bitcoin/types';
-import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
+import { CKBRawTransaction, CKBVirtualResult, Cell } from '../routes/rgbpp/types';
 import { BitcoinSPVError } from './spv';
 import { BloomFilter } from 'bloom-filters';
 import { BI } from '@ckb-lumos/lumos';
@@ -578,6 +578,38 @@ export default class TransactionProcessor
   public async getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined> {
     const job = await this.queue.getJob(txid);
     return job;
+  }
+
+  public async getPendingOuputCellsByTxids(txids: string[]) {
+    const pendingOutputCells = await Promise.all(
+      txids.map(async (txid) => {
+        const job = await this.getTransactionRequest(txid);
+        if (!job) {
+          return [];
+        }
+
+        // get ckb output cells from the uncompleted job only
+        const state = await job.getState();
+        if (state === 'completed') {
+          return [];
+        }
+
+        const { ckbVirtualResult } = job.data;
+        const outputs = ckbVirtualResult.ckbRawTx.outputs;
+        return outputs.map((output, index) => {
+          const cell: Cell = {
+            outPoint: {
+              txHash: txid,
+              index: BI.from(index).toHexString(),
+            },
+            cellOutput: output,
+            data: ckbVirtualResult.ckbRawTx.outputsData[index],
+          };
+          return cell;
+        });
+      }),
+    );
+    return pendingOutputCells.flat();
   }
 
   /**

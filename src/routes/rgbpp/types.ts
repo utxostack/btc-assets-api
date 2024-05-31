@@ -88,7 +88,7 @@ export const XUDTBalance = z.object({
   decimal: z.number(),
   symbol: z.string(),
   total_amount: z.string(),
-  avaliable_amount: z.string(),
+  available_amount: z.string(),
   pending_amount: z.string(),
   typeHash: z.string(),
 });
