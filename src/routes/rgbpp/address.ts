@@ -187,7 +187,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       });
 
       const pendingUtxos = utxos.filter((utxo) => !utxo.status.confirmed);
-      const pendingTxids = Array.from(new Set(...pendingUtxos.map((utxo) => utxo.txid)));
+      const pendingTxids = Array.from(new Set(pendingUtxos.map((utxo) => utxo.txid)));
       let pendingOutputCells = await fastify.transactionProcessor.getPendingOuputCellsByTxids(pendingTxids);
       pendingOutputCells = typeScript
         ? await filterCellsByTypeScript(pendingOutputCells, typeScript)

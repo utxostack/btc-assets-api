@@ -7,7 +7,7 @@ import { Job } from 'bullmq';
 
 let token: string;
 
-describe('/bitcoin/v1/transaction', () => {
+describe('/rgbpp/v1/transaction', () => {
   beforeEach(async () => {
     const fastify = buildFastify();
     await fastify.ready();
