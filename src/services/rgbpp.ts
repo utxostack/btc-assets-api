@@ -116,7 +116,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         amount: string;
       }
     > = {};
-    for await (const cell of cells) {
+    for (const cell of cells) {
       const type = cell.cellOutput.type!;
       const typeHash = computeScriptHash(type);
       const infoCellData = await this.cradle.ckb.getInfoCellData(type);
