@@ -30,7 +30,11 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     let typeScript: Script | undefined = undefined;
     if (type_script) {
       if (typeof type_script === 'string') {
-        typeScript = blockchain.Script.unpack(type_script);
+        if (type_script.startsWith('0x')) {
+          typeScript = blockchain.Script.unpack(type_script);
+        } else {
+          typeScript = JSON.parse(decodeURIComponent(type_script));
+        }
       } else {
         typeScript = type_script;
       }
