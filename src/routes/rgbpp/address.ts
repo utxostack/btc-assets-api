@@ -196,7 +196,17 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         ? await filterCellsByTypeScript(pendingOutputCells, typeScript)
         : pendingOutputCells;
       const pendingXudtBalances = await fastify.rgbppCollector.getRgbppBalanceByCells(pendingOutputCells);
-      Object.values(pendingXudtBalances).forEach(({ amount, typeHash }) => {
+      Object.values(pendingXudtBalances).forEach(({ amount, typeHash, ...xudtInfo }) => {
+        if (!xudtBalances[typeHash]) {
+          xudtBalances[typeHash] = {
+            ...xudtInfo,
+            typeHash,
+            total_amount: '0x0',
+            available_amount: '0x0',
+            pending_amount: '0x0',
+          };
+        }
+
         xudtBalances[typeHash].pending_amount = BI.from(xudtBalances[typeHash].pending_amount)
           .add(BI.from(amount))
           .toHexString();
