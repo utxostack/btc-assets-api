@@ -5,9 +5,8 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Cell, Script, XUDTBalance } from './types';
 import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
-import { serializeScript } from '@nervosnetwork/ckb-sdk-utils';
 import { Env } from '../../env';
-import { getXudtTypeScript, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
+import { getXudtTypeScript, isScriptEqual, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
 
@@ -76,9 +75,9 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       // if typeScript.args is empty, only compare codeHash and hashType
       if (!typeScript.args) {
         const script = { ...cell.cellOutput.type, args: '' };
-        return serializeScript(script) === serializeScript(typeScript);
+        return isScriptEqual(script, typeScript);
       }
-      return serializeScript(cell.cellOutput.type) === serializeScript(typeScript);
+      return isScriptEqual(cell.cellOutput.type, typeScript);
     });
   }
 
@@ -166,7 +165,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
       const scripts = fastify.ckb.getScripts();
-      if (serializeScript({ ...typeScript, args: '' }) !== serializeScript(scripts.XUDT)) {
+      if (isScriptEqual({ ...typeScript, args: '' }, scripts.XUDT)) {
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
 
