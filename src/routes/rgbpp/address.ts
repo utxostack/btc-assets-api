@@ -165,7 +165,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
       const scripts = fastify.ckb.getScripts();
-      if (isScriptEqual({ ...typeScript, args: '' }, scripts.XUDT)) {
+      if (!isScriptEqual({ ...typeScript, args: '' }, scripts.XUDT)) {
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
 

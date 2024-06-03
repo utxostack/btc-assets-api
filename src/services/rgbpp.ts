@@ -12,6 +12,7 @@ import BaseQueueWorker from './base/queue-worker';
 import DataCache from './base/data-cache';
 import { groupBy } from 'lodash';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
+import { remove0x } from '@rgbpp-sdk/btc';
 
 type GetCellsParams = Parameters<RPC['getCells']>;
 type SearchKey = GetCellsParams[0];
@@ -120,7 +121,8 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
       const type = cell.cellOutput.type!;
       const typeHash = computeScriptHash(type);
       const infoCellData = await this.cradle.ckb.getInfoCellData(type);
-      const amount = BI.from(leToU128(cell.data)).toHexString();
+      // https://blog.cryptape.com/enhance-sudts-programmability-with-xudt#heading-xudt-data-structures
+      const amount = BI.from(leToU128(remove0x(cell.data).slice(0, 32))).toHexString();
       if (infoCellData) {
         if (!xudtBalances[typeHash]) {
           xudtBalances[typeHash] = {
