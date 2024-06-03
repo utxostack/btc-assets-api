@@ -594,7 +594,7 @@ export default class TransactionProcessor
 
         // get ckb output cells from the uncompleted job only
         const state = await job.getState();
-        if (state === 'completed') {
+        if (state === 'completed' || state === 'failed') {
           return [];
         }
 
