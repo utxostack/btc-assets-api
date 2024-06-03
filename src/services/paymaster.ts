@@ -184,7 +184,6 @@ export default class Paymaster implements IPaymaster {
         this.refilling = true;
         const filled = await this.refillCellQueue();
         if (filled + count < this.presetCount) {
-          // XXX: consider to send an alert email or other notifications
           this.cradle.logger.warn('Filled paymaster cells less than the preset count');
           const error = new PaymasterCellNotEnoughError('Filled paymaster cells less than the preset count');
           this.captureExceptionToSentryScope(error, {

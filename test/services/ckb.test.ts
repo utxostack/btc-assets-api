@@ -16,7 +16,7 @@ describe('CKBClient', () => {
     vi.clearAllMocks();
   });
 
-  // XTT
+  // PDD
   const xudtTypeScript: Script = {
     codeHash: '0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb',
     args: '0x8c556e92974a8dd8237719020a259d606359ac2cc958cb8bda77a1c3bb3cd93b',
@@ -38,8 +38,8 @@ describe('CKBClient', () => {
   };
 
   test('getUniqueCellData: should return the unique cell data', async () => {
-    // XTT (Unique cell transaction)
-    const tx = await ckb.rpc.getTransaction('0xe6e23718e45a9c36136367dfb1c47397a7b3db2ff130a1c062f40c795f0b103d');
+    // PDD (Unique cell transaction)
+    const tx = await ckb.rpc.getTransaction('0x6a35da16ab1198008545c78b91abe22999f0dc823055553a13d7de29f3063111');
     const index = tx.transaction.outputs.findIndex(
       (output) => output.type && isUniqueCellTypeScript(output.type, false),
     );
@@ -47,7 +47,7 @@ describe('CKBClient', () => {
     expect(data).toEqual({
       decimal: 8,
       name: 'XUDT Test Token',
-      symbol: 'XTT',
+      symbol: 'PDD',
     });
   });
 

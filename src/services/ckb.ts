@@ -136,12 +136,12 @@ export class CKBRpcError extends Error {
 export default class CKBClient {
   public rpc: RPC;
   public indexer: Indexer;
-  private dataCahe: DataCache<CKBComponents.TransactionWithStatus[]>;
+  private dataCache: DataCache<unknown>;
 
   constructor(private cradle: Cradle) {
     this.rpc = new RPC(cradle.env.CKB_RPC_URL);
     this.indexer = new Indexer(cradle.env.CKB_RPC_URL);
-    this.dataCahe = new DataCache(cradle.redis, {
+    this.dataCache = new DataCache(cradle.redis, {
       prefix: 'ckb-info-cell-txs',
       expire: 60 * 1000,
     });
@@ -215,9 +215,9 @@ export default class CKBClient {
    * Get all transactions that have the xudt type cell and info cell
    */
   public async getAllInfoCellTxs() {
-    const cachedTxs = await this.dataCahe.get('all');
+    const cachedTxs = await this.dataCache.get('all');
     if (cachedTxs) {
-      return cachedTxs;
+      return cachedTxs as CKBComponents.TransactionWithStatus[];
     }
 
     const scripts = this.getScripts();
@@ -249,18 +249,23 @@ export default class CKBClient {
         });
     });
     const txs: CKBComponents.TransactionWithStatus[] = await batchRequest.exec();
-    await this.dataCahe.set('all', txs);
+    await this.dataCache.set('all', txs);
     return txs;
   }
 
   /**
    * Get the unique cell of the given xudt type
-   * @param txs - the transactions that have the xudt type cell and unique cell
    * @param script - the xudt type script
    */
-  public getInfoCellData(txs: CKBComponents.TransactionWithStatus[], script: Script) {
-    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
+  public async getInfoCellData(script: Script) {
+    const typeHash = computeScriptHash(script);
+    const cachedData = await this.dataCache.get(`type:${typeHash}`);
+    if (cachedData) {
+      return cachedData as ReturnType<typeof decodeInfoCellData>;
+    }
 
+    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
+    const txs = await this.getAllInfoCellTxs();
     for (const tx of txs) {
       // check if the unique cell is the info cell of the xudt type
       const uniqueCellIndex = tx.transaction.outputs.findIndex((cell) => {
@@ -269,6 +274,7 @@ export default class CKBClient {
       if (uniqueCellIndex !== -1) {
         const infoCellData = this.getUniqueCellData(tx, uniqueCellIndex, script);
         if (infoCellData) {
+          await this.dataCache.set(`type:${typeHash}`, infoCellData);
           return infoCellData;
         }
       }
@@ -279,6 +285,7 @@ export default class CKBClient {
       if (inscriptionCellIndex !== -1) {
         const infoCellData = this.getInscriptionInfoCellData(tx, inscriptionCellIndex, script);
         if (infoCellData) {
+          await this.dataCache.set(`type:${typeHash}`, infoCellData);
           return infoCellData;
         }
       }
