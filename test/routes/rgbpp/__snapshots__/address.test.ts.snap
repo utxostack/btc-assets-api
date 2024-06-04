@@ -300,6 +300,15 @@ exports[`/:btc_address/balance - with pending_amount 1`] = `
       "total_amount": "0xbebc200",
       "typeHash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
     },
+    {
+      "available_amount": "0x0",
+      "decimal": 8,
+      "name": "XUDT Test Token",
+      "pending_amount": "0x5f5e100",
+      "symbol": "XTT",
+      "total_amount": "0x5f5e100",
+      "typeHash": "0x10f511f2efb0027191b97ac5b4bd77374ffdac7399e8527d76f5f9bd32e7d35b",
+    },
   ],
 }
 `;
