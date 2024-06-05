@@ -6,7 +6,7 @@ import { Cell, Script, XUDTBalance } from './types';
 import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
 import { Env } from '../../env';
-import { getXudtTypeScript, isScriptEqual, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
+import { buildRgbppLockArgs, getXudtTypeScript, isScriptEqual, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
 
@@ -131,7 +131,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     {
       schema: {
         description: 'Get RGB++ balance by btc address, support xUDT only for now',
-        tags: ['RGB++'],
+        tags: ['RGB++@Beta'],
         params: z.object({
           btc_address: z.string(),
         }),
@@ -190,11 +190,19 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       });
 
       const pendingUtxos = utxos.filter((utxo) => !utxo.status.confirmed);
+      const pendingLockArgsSet = new Set(pendingUtxos.map((utxo) => buildRgbppLockArgs(utxo.vout, utxo.txid)));
       const pendingTxids = Array.from(new Set(pendingUtxos.map((utxo) => utxo.txid)));
-      let pendingOutputCells = await fastify.transactionProcessor.getPendingOuputCellsByTxids(pendingTxids);
-      pendingOutputCells = typeScript
-        ? await filterCellsByTypeScript(pendingOutputCells, typeScript)
-        : pendingOutputCells;
+
+      const pendingOutputCellsGroup = await Promise.all(
+        pendingTxids.map((txid) => fastify.transactionProcessor.getPendingOuputCellsByTxid(txid)),
+      );
+      let pendingOutputCells = pendingOutputCellsGroup
+        .flat()
+        .filter((cell) => pendingLockArgsSet.has(cell.cellOutput.lock.args));
+      if (typeScript) {
+        pendingOutputCells = await filterCellsByTypeScript(pendingOutputCells, typeScript);
+      }
+
       const pendingXudtBalances = await fastify.rgbppCollector.getRgbppBalanceByCells(pendingOutputCells);
       Object.values(pendingXudtBalances).forEach(({ amount, typeHash, ...xudtInfo }) => {
         if (!xudtBalances[typeHash]) {
