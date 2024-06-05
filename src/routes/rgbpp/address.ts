@@ -6,7 +6,8 @@ import { Cell, Script, XUDTBalance } from './types';
 import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
 import { Env } from '../../env';
-import { buildRgbppLockArgs, getXudtTypeScript, isScriptEqual, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
+import { buildPreLockArgs, getXudtTypeScript, isScriptEqual, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
+import { groupBy } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
 
@@ -190,15 +191,17 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       });
 
       const pendingUtxos = utxos.filter((utxo) => !utxo.status.confirmed);
-      const pendingLockArgsSet = new Set(pendingUtxos.map((utxo) => buildRgbppLockArgs(utxo.vout, utxo.txid)));
-      const pendingTxids = Array.from(new Set(pendingUtxos.map((utxo) => utxo.txid)));
+      const pendingUtxosGroup = groupBy(pendingUtxos, (utxo) => utxo.txid);
+      const pendingTxids = Object.keys(pendingUtxosGroup);
 
       const pendingOutputCellsGroup = await Promise.all(
-        pendingTxids.map((txid) => fastify.transactionProcessor.getPendingOuputCellsByTxid(txid)),
+        pendingTxids.map(async (txid) => {
+          const cells = await fastify.transactionProcessor.getPendingOuputCellsByTxid(txid);
+          const lockArgsSet = new Set(pendingUtxosGroup[txid].map((utxo) => buildPreLockArgs(utxo.vout)));
+          return cells.filter((cell) => lockArgsSet.has(cell.cellOutput.lock.args));
+        }),
       );
-      let pendingOutputCells = pendingOutputCellsGroup
-        .flat()
-        .filter((cell) => pendingLockArgsSet.has(cell.cellOutput.lock.args));
+      let pendingOutputCells = pendingOutputCellsGroup.flat();
       if (typeScript) {
         pendingOutputCells = await filterCellsByTypeScript(pendingOutputCells, typeScript);
       }
