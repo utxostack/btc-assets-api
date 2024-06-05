@@ -127,7 +127,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         if (!xudtBalances[typeHash]) {
           xudtBalances[typeHash] = {
             ...infoCellData,
-            typeHash,
+            type_hash: typeHash,
             amount: amount,
           };
         } else {

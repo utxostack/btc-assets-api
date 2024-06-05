@@ -1,4 +1,11 @@
-import { Collector, getSporeTypeScript, getUniqueTypeScript, getXudtTypeScript, sendCkbTx } from '@rgbpp-sdk/ckb';
+import {
+  Collector,
+  getSporeTypeScript,
+  getUniqueTypeScript,
+  getXudtTypeScript,
+  isScriptEqual,
+  sendCkbTx,
+} from '@rgbpp-sdk/ckb';
 import { Cradle } from '../container';
 import { Indexer, RPC, Script } from '@ckb-lumos/lumos';
 import { z } from 'zod';
@@ -173,14 +180,20 @@ export default class CKBClient {
    * - https://github.com/ckb-cell/unique-cell
    */
   public getUniqueCellData(tx: CKBComponents.TransactionWithStatus, index: number, xudtTypeScript: Script) {
-    // find the xudt cell index in the transaction
     // generally, the xudt cell and unique cell are in the same transaction
-    const xudtCellIndex = tx.transaction.outputs.findIndex((cell) => {
-      return cell.type && computeScriptHash(cell.type) === computeScriptHash(xudtTypeScript);
+    // and only one xudt cell and one unique cell in the transaction
+    const xudtCells = tx.transaction.outputs.filter((cell) => {
+      return cell.type && isScriptEqual({ ...cell.type, args: '' }, { ...xudtTypeScript, args: '' });
     });
-    if (xudtCellIndex === -1) {
+    if (xudtCells.length !== 1) {
       return null;
     }
+
+    const [xudtCell] = xudtCells;
+    if (computeScriptHash(xudtCell.type!) !== computeScriptHash(xudtTypeScript)) {
+      return null;
+    }
+
     const encodeData = tx.transaction.outputsData[index];
     if (!encodeData) {
       return null;
