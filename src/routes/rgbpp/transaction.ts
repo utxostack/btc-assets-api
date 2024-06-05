@@ -24,7 +24,16 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         tags: ['RGB++'],
         body: z.object({
           btc_txid: z.string(),
-          ckb_virtual_result: CKBVirtualResult,
+          ckb_virtual_result: CKBVirtualResult.or(z.string()).transform((value) => {
+            if (typeof value === 'string') {
+              value = JSON.parse(value);
+            }
+            const parsed = CKBVirtualResult.safeParse(value);
+            if (!parsed.success) {
+              throw new Error(`Invalid CKB virtual result: ${JSON.stringify(parsed.error.flatten())}`);
+            }
+            return parsed.data;
+          }),
         }),
         response: {
           200: z.object({
