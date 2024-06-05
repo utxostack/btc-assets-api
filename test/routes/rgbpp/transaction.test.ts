@@ -90,7 +90,7 @@ describe('/rgbpp/v1/transaction', () => {
     await fastify.ready();
 
     const response = await fastify.inject({
-      method: 'GET',
+      method: 'POST',
       url: '/rgbpp/v1/transaction/ckb-tx',
       headers: {
         Authorization: `Bearer ${token}`,
