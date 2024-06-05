@@ -43,7 +43,7 @@ describe('CKBClient', () => {
     const index = tx.transaction.outputs.findIndex(
       (output) => output.type && isUniqueCellTypeScript(output.type, false),
     );
-    const data = ckb.getUniqueCellData(tx as CKBComponents.TransactionWithStatus, index, xudtTypeScript);
+    const data = ckb.getUniqueCellData(tx, index, xudtTypeScript);
     expect(data).toEqual({
       decimal: 8,
       name: 'XUDT Test Token',
@@ -57,11 +57,7 @@ describe('CKBClient', () => {
     const index = tx.transaction.outputs.findIndex(
       (output) => output.type && isInscriptionInfoTypeScript(output.type, false),
     );
-    const data = ckb.getInscriptionInfoCellData(
-      tx as CKBComponents.TransactionWithStatus,
-      index,
-      inscriptionTypeScript,
-    );
+    const data = ckb.getInscriptionInfoCellData(tx, index, inscriptionTypeScript);
     expect(data).toEqual({
       decimal: 8,
       name: 'CKB Fist Inscription',
@@ -75,11 +71,7 @@ describe('CKBClient', () => {
     const index = tx.transaction.outputs.findIndex(
       (output) => output.type && isInscriptionInfoTypeScript(output.type, false),
     );
-    const data = ckb.getInscriptionInfoCellData(
-      tx as CKBComponents.TransactionWithStatus,
-      index,
-      inscriptionRebaseTypeScript,
-    );
+    const data = ckb.getInscriptionInfoCellData(tx, index, inscriptionRebaseTypeScript);
     expect(data).toEqual({
       decimal: 8,
       name: 'MemesCoin',
@@ -93,11 +85,7 @@ describe('CKBClient', () => {
     const index = tx.transaction.outputs.findIndex(
       (output) => output.type && isInscriptionInfoTypeScript(output.type, false),
     );
-    const data = ckb.getInscriptionInfoCellData(
-      tx as CKBComponents.TransactionWithStatus,
-      index,
-      inscriptionRebaseTypeScript,
-    );
+    const data = ckb.getInscriptionInfoCellData(tx, index, inscriptionRebaseTypeScript);
     expect(data).toBeNull();
   });
 });

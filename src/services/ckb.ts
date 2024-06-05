@@ -1,6 +1,14 @@
-import { Collector, getSporeTypeScript, getUniqueTypeScript, getXudtTypeScript, sendCkbTx } from '@rgbpp-sdk/ckb';
+import {
+  Collector,
+  getSporeTypeScript,
+  getUniqueTypeScript,
+  getXudtTypeScript,
+  isScriptEqual,
+  sendCkbTx,
+} from '@rgbpp-sdk/ckb';
 import { Cradle } from '../container';
 import { Indexer, RPC, Script } from '@ckb-lumos/lumos';
+import { CKBRPC } from '@ckb-lumos/rpc';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
 import {
@@ -13,6 +21,8 @@ import {
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import DataCache from './base/data-cache';
 import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils';
+
+export type TransactionWithStatus = Awaited<ReturnType<CKBRPC['getTransaction']>>;
 
 // https://github.com/nervosnetwork/ckb/blob/develop/rpc/src/error.rs#L33
 export enum CKBRPCErrorCodes {
@@ -172,15 +182,16 @@ export default class CKBClient {
    * reference:
    * - https://github.com/ckb-cell/unique-cell
    */
-  public getUniqueCellData(tx: CKBComponents.TransactionWithStatus, index: number, xudtTypeScript: Script) {
+  public getUniqueCellData(tx: TransactionWithStatus, index: number, xudtTypeScript: Script) {
     // find the xudt cell index in the transaction
     // generally, the xudt cell and unique cell are in the same transaction
     const xudtCellIndex = tx.transaction.outputs.findIndex((cell) => {
-      return cell.type && computeScriptHash(cell.type) === computeScriptHash(xudtTypeScript);
+      return cell.type && isScriptEqual(cell.type, xudtTypeScript);
     });
     if (xudtCellIndex === -1) {
       return null;
     }
+
     const encodeData = tx.transaction.outputsData[index];
     if (!encodeData) {
       return null;
@@ -198,7 +209,7 @@ export default class CKBClient {
    * - https://omiga-core.notion.site/Omiga-Inscritption-885f9073c1a6499db08f5815b7de20d7
    * - https://github.com/duanyytop/ckb-omiga/blob/master/src/inscription/helper.ts#L96-L109
    */
-  public getInscriptionInfoCellData(tx: CKBComponents.TransactionWithStatus, index: number, xudtTypeScript: Script) {
+  public getInscriptionInfoCellData(tx: TransactionWithStatus, index: number, xudtTypeScript: Script) {
     const encodeData = tx.transaction.outputsData[index];
     if (!encodeData) {
       return null;
@@ -217,7 +228,7 @@ export default class CKBClient {
   public async getAllInfoCellTxs() {
     const cachedTxs = await this.dataCache.get('all');
     if (cachedTxs) {
-      return cachedTxs as CKBComponents.TransactionWithStatus[];
+      return cachedTxs as TransactionWithStatus[];
     }
 
     const scripts = this.getScripts();
@@ -232,7 +243,7 @@ export default class CKBClient {
           script: searchScript,
           scriptType: 'type',
         },
-        'desc',
+        'asc',
         '0xffff', // 0xffff basically means no limit
       );
     });
@@ -248,7 +259,7 @@ export default class CKBClient {
           batchRequest.add('getTransaction', tx.txHash);
         });
     });
-    const txs: CKBComponents.TransactionWithStatus[] = await batchRequest.exec();
+    const txs: TransactionWithStatus[] = await batchRequest.exec();
     await this.dataCache.set('all', txs);
     return txs;
   }

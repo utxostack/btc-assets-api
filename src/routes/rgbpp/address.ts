@@ -207,21 +207,21 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       }
 
       const pendingXudtBalances = await fastify.rgbppCollector.getRgbppBalanceByCells(pendingOutputCells);
-      Object.values(pendingXudtBalances).forEach(({ amount, typeHash, ...xudtInfo }) => {
-        if (!xudtBalances[typeHash]) {
-          xudtBalances[typeHash] = {
+      Object.values(pendingXudtBalances).forEach(({ amount, type_hash, ...xudtInfo }) => {
+        if (!xudtBalances[type_hash]) {
+          xudtBalances[type_hash] = {
             ...xudtInfo,
-            typeHash,
+            type_hash,
             total_amount: '0x0',
             available_amount: '0x0',
             pending_amount: '0x0',
           };
         }
 
-        xudtBalances[typeHash].pending_amount = BI.from(xudtBalances[typeHash].pending_amount)
+        xudtBalances[type_hash].pending_amount = BI.from(xudtBalances[type_hash].pending_amount)
           .add(BI.from(amount))
           .toHexString();
-        xudtBalances[typeHash].total_amount = BI.from(xudtBalances[typeHash].total_amount)
+        xudtBalances[type_hash].total_amount = BI.from(xudtBalances[type_hash].total_amount)
           .add(BI.from(amount))
           .toHexString();
       });

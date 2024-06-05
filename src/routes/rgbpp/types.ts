@@ -90,6 +90,6 @@ export const XUDTBalance = z.object({
   total_amount: z.string(),
   available_amount: z.string(),
   pending_amount: z.string(),
-  typeHash: z.string(),
+  type_hash: z.string(),
 });
 export type XUDTBalance = z.infer<typeof XUDTBalance>;

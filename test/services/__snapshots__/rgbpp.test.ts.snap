@@ -7,21 +7,21 @@ exports[`RgbppCollector > getRgbppBalanceByCells: should return the rgbpp balanc
     "decimal": 8,
     "name": "JoyID Dex Test Inscription",
     "symbol": "JDI",
-    "typeHash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
+    "type_hash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
   },
   "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2": {
     "amount": "0x624eee61",
     "decimal": 8,
     "name": "",
     "symbol": "LP-UTXOSwap V1",
-    "typeHash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
+    "type_hash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
   },
   "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202": {
     "amount": "0x5f5e100",
     "decimal": 8,
-    "name": "",
-    "symbol": "LP-UTXOSwap V1",
-    "typeHash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
+    "name": "Unique BBQ",
+    "symbol": "UBBQ",
+    "type_hash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
   },
 }
 `;
