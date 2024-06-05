@@ -152,7 +152,7 @@ describe('/rgbpp/v1/transaction', () => {
 
     expect(response.statusCode).toBe(400);
     expect(data).toEqual({
-      message: 'Invalid CKB virtual result',
+      message: 'Invalid CKB virtual result: {"formErrors":[],"fieldErrors":{"commitment":["Required"]}}',
     });
 
     await fastify.close();
