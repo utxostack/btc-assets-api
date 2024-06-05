@@ -581,39 +581,30 @@ export default class TransactionProcessor
   }
 
   /**
-   * get pending output cells by txids, get ckb output cells from the uncompleted job
-   * @param txids - the transaction ids
+   * get pending output cells by txid, get ckb output cells from the uncompleted job
+   * @param txid - the transaction id
    */
-  public async getPendingOuputCellsByTxids(txids: string[]) {
-    const pendingOutputCells = await Promise.all(
-      txids.map(async (txid) => {
-        const job = await this.getTransactionRequest(txid);
-        if (!job) {
-          return [];
-        }
+  public async getPendingOuputCellsByTxid(txid: string) {
+    const job = await this.getTransactionRequest(txid);
+    if (!job) {
+      return [];
+    }
 
-        // get ckb output cells from the uncompleted job only
-        const state = await job.getState();
-        if (state === 'completed' || state === 'failed') {
-          return [];
-        }
+    // get ckb output cells from the uncompleted job only
+    const state = await job.getState();
+    if (state === 'completed' || state === 'failed') {
+      return [];
+    }
 
-        const { ckbVirtualResult } = job.data;
-        const outputs = ckbVirtualResult.ckbRawTx.outputs;
-        return outputs.map((output, index) => {
-          const cell: Cell = {
-            outPoint: {
-              txHash: txid,
-              index: BI.from(index).toHexString(),
-            },
-            cellOutput: output,
-            data: ckbVirtualResult.ckbRawTx.outputsData[index],
-          };
-          return cell;
-        });
-      }),
-    );
-    return pendingOutputCells.flat();
+    const { ckbVirtualResult } = job.data;
+    const outputs = ckbVirtualResult.ckbRawTx.outputs;
+    return outputs.map((output, index) => {
+      const cell: Cell = {
+        cellOutput: output,
+        data: ckbVirtualResult.ckbRawTx.outputsData[index],
+      };
+      return cell;
+    });
   }
 
   /**

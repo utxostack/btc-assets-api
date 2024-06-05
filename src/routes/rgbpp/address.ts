@@ -6,7 +6,8 @@ import { Cell, Script, XUDTBalance } from './types';
 import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
 import { Env } from '../../env';
-import { getXudtTypeScript, isScriptEqual, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
+import { buildPreLockArgs, getXudtTypeScript, isScriptEqual, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
+import { groupBy } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
 
@@ -131,7 +132,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     {
       schema: {
         description: 'Get RGB++ balance by btc address, support xUDT only for now',
-        tags: ['RGB++'],
+        tags: ['RGB++@Beta'],
         params: z.object({
           btc_address: z.string(),
         }),
@@ -190,11 +191,21 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       });
 
       const pendingUtxos = utxos.filter((utxo) => !utxo.status.confirmed);
-      const pendingTxids = Array.from(new Set(pendingUtxos.map((utxo) => utxo.txid)));
-      let pendingOutputCells = await fastify.transactionProcessor.getPendingOuputCellsByTxids(pendingTxids);
-      pendingOutputCells = typeScript
-        ? await filterCellsByTypeScript(pendingOutputCells, typeScript)
-        : pendingOutputCells;
+      const pendingUtxosGroup = groupBy(pendingUtxos, (utxo) => utxo.txid);
+      const pendingTxids = Object.keys(pendingUtxosGroup);
+
+      const pendingOutputCellsGroup = await Promise.all(
+        pendingTxids.map(async (txid) => {
+          const cells = await fastify.transactionProcessor.getPendingOuputCellsByTxid(txid);
+          const lockArgsSet = new Set(pendingUtxosGroup[txid].map((utxo) => buildPreLockArgs(utxo.vout)));
+          return cells.filter((cell) => lockArgsSet.has(cell.cellOutput.lock.args));
+        }),
+      );
+      let pendingOutputCells = pendingOutputCellsGroup.flat();
+      if (typeScript) {
+        pendingOutputCells = await filterCellsByTypeScript(pendingOutputCells, typeScript);
+      }
+
       const pendingXudtBalances = await fastify.rgbppCollector.getRgbppBalanceByCells(pendingOutputCells);
       Object.values(pendingXudtBalances).forEach(({ amount, typeHash, ...xudtInfo }) => {
         if (!xudtBalances[typeHash]) {

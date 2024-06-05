@@ -91,15 +91,15 @@ describe('/rgbpp/v1/address', () => {
       mockRgbppUtxoPairs as RgbppUtxoCellsPair[],
     );
     const transactionProcessor = fastify.container.resolve('transactionProcessor');
-    const getPendingOuputCellsByTxidsSpy = vi
-      .spyOn(transactionProcessor, 'getPendingOuputCellsByTxids')
+    const getPendingOuputCellsByTxidSpy = vi
+      .spyOn(transactionProcessor, 'getPendingOuputCellsByTxid')
       .mockResolvedValueOnce([
         {
           cellOutput: {
             capacity: '0x5e9f52687',
             lock: {
               codeHash: '0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248',
-              args: '0x01000000bae5d17d4bc31c3f6556104423ba407a10a67ef546d4edb6cb179e17034e9f98',
+              args: '0x010000000000000000000000000000000000000000000000000000000000000000000000',
               hashType: 'type',
             },
             type: {
@@ -109,19 +109,13 @@ describe('/rgbpp/v1/address', () => {
             },
           },
           data: '0x00e1f505000000000000000000000000',
-          outPoint: {
-            txHash: '0x5e0e3bc6429fe8ec6da213f4de31bb40581b36be221458ab1766bf86bcb49e42',
-            index: '0x0',
-          },
-          blockNumber: '0xc8ebc1',
-          txIndex: '0x3',
         },
         {
           cellOutput: {
             capacity: '0x5e9f52687',
             lock: {
               codeHash: '0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248',
-              args: '0x01000000bae5d17d4bc31c3f6556104423ba407a10a67ef546d4edb6cb179e17034e9f98',
+              args: '0x010000000000000000000000000000000000000000000000000000000000000000000000',
               hashType: 'type',
             },
             type: {
@@ -131,12 +125,22 @@ describe('/rgbpp/v1/address', () => {
             },
           },
           data: '0x00e1f505000000000000000000000000',
-          outPoint: {
-            txHash: '0x5e0e3bc6429fe8ec6da213f4de31bb40581b36be221458ab1766bf86bcb49e42',
-            index: '0x0',
+        },
+        {
+          cellOutput: {
+            capacity: '0x5e9f52687',
+            lock: {
+              codeHash: '0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248',
+              args: '0x010000000000000000000000000000000000000000000000000000000000000001234567',
+              hashType: 'type',
+            },
+            type: {
+              codeHash: '0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb',
+              args: '0x8c556e92974a8dd8237719020a259d606359ac2cc958cb8bda77a1c3bb3cd93b',
+              hashType: 'type',
+            },
           },
-          blockNumber: '0xc8ebc1',
-          txIndex: '0x3',
+          data: '0x00e1f505000000000000000000000000',
         },
       ]);
 
@@ -150,10 +154,13 @@ describe('/rgbpp/v1/address', () => {
     });
     const data = response.json();
 
-    expect(getPendingOuputCellsByTxidsSpy).toHaveBeenCalledWith([
-      '989f4e03179e17cbb6edd446f57ea6107a40ba23441056653f1cc34b7dd1e5ba',
+    expect(getPendingOuputCellsByTxidSpy).toBeCalledTimes(2);
+    expect(getPendingOuputCellsByTxidSpy).toHaveBeenCalledWith(
       'aab2d8fc3f064087450057ccb6012893cf219043d8c915fe64c5322c0eeb6fd2',
-    ]);
+    );
+    expect(getPendingOuputCellsByTxidSpy).toHaveBeenCalledWith(
+      '989f4e03179e17cbb6edd446f57ea6107a40ba23441056653f1cc34b7dd1e5ba',
+    );
     expect(response.statusCode).toBe(200);
     expect(data).toMatchSnapshot();
 
