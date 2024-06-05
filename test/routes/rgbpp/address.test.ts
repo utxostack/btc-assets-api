@@ -91,8 +91,8 @@ describe('/rgbpp/v1/address', () => {
       mockRgbppUtxoPairs as RgbppUtxoCellsPair[],
     );
     const transactionProcessor = fastify.container.resolve('transactionProcessor');
-    const getPendingOuputCellsByTxidsSpy = vi
-      .spyOn(transactionProcessor, 'getPendingOuputCellsByTxids')
+    const getPendingOuputCellsByTxidSpy = vi
+      .spyOn(transactionProcessor, 'getPendingOuputCellsByTxid')
       .mockResolvedValueOnce([
         {
           cellOutput: {
@@ -150,10 +150,13 @@ describe('/rgbpp/v1/address', () => {
     });
     const data = response.json();
 
-    expect(getPendingOuputCellsByTxidsSpy).toHaveBeenCalledWith([
-      '989f4e03179e17cbb6edd446f57ea6107a40ba23441056653f1cc34b7dd1e5ba',
+    expect(getPendingOuputCellsByTxidSpy).toBeCalledTimes(2);
+    expect(getPendingOuputCellsByTxidSpy).toHaveBeenCalledWith(
       'aab2d8fc3f064087450057ccb6012893cf219043d8c915fe64c5322c0eeb6fd2',
-    ]);
+    );
+    expect(getPendingOuputCellsByTxidSpy).toHaveBeenCalledWith(
+      '989f4e03179e17cbb6edd446f57ea6107a40ba23441056653f1cc34b7dd1e5ba',
+    );
     expect(response.statusCode).toBe(200);
     expect(data).toMatchSnapshot();
 
