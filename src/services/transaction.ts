@@ -600,10 +600,6 @@ export default class TransactionProcessor
     const outputs = ckbVirtualResult.ckbRawTx.outputs;
     return outputs.map((output, index) => {
       const cell: Cell = {
-        outPoint: {
-          txHash: txid,
-          index: BI.from(index).toHexString(),
-        },
         cellOutput: output,
         data: ckbVirtualResult.ckbRawTx.outputsData[index],
       };
