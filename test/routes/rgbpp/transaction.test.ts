@@ -85,7 +85,29 @@ describe('/rgbpp/v1/transaction', () => {
     sumInputsCapacity: '0x5e9f52f1f',
   };
 
-  test('Post transaction with ckb_virtual_result JSON stringify', async () => {
+  test('Post transaction', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/rgbpp/v1/transaction/ckb-tx',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
+      },
+      body: {
+        btc_txid: '0662cbe5a6666f36d3c6c431e22ef5073acf059d4ea1c7cd8d158b4107ab0d68',
+        ckb_virtual_result: mockCkbVirtualResult,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+
+    await fastify.close();
+  });
+
+  test('Post transaction with ckb_virtual_result JSON string', async () => {
     const fastify = buildFastify();
     await fastify.ready();
 
@@ -103,6 +125,35 @@ describe('/rgbpp/v1/transaction', () => {
     });
 
     expect(response.statusCode).toBe(200);
+
+    await fastify.close();
+  });
+
+  test('Post transaction with Invalid ckb_virtual_result JSON string', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { commitment, ...incorrectCkbVirtualResult } = mockCkbVirtualResult;
+
+    const response = await fastify.inject({
+      method: 'POST',
+      url: '/rgbpp/v1/transaction/ckb-tx',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
+      },
+      body: {
+        btc_txid: '0662cbe5a6666f36d3c6c431e22ef5073acf059d4ea1c7cd8d158b4107ab0d69',
+        ckb_virtual_result: JSON.stringify(incorrectCkbVirtualResult),
+      },
+    });
+    const data = response.json();
+
+    expect(response.statusCode).toBe(400);
+    expect(data).toEqual({
+      message: 'Invalid CKB virtual result',
+    });
 
     await fastify.close();
   });
