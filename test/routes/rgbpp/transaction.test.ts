@@ -85,6 +85,28 @@ describe('/rgbpp/v1/transaction', () => {
     sumInputsCapacity: '0x5e9f52f1f',
   };
 
+  test('Post transaction with ckb_virtual_result JSON stringify', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/rgbpp/v1/transaction/ckb-tx',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
+      },
+      body: {
+        btc_txid: '0662cbe5a6666f36d3c6c431e22ef5073acf059d4ea1c7cd8d158b4107ab0d68',
+        ckb_virtual_result: JSON.stringify(mockCkbVirtualResult),
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+
+    await fastify.close();
+  });
+
   test('Get transaction job info with completed state', async () => {
     const fastify = buildFastify();
     await fastify.ready();
