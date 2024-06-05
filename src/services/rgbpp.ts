@@ -2,21 +2,23 @@ import { UTXO } from './bitcoin/schema';
 import pLimit from 'p-limit';
 import asyncRetry from 'async-retry';
 import { Cradle } from '../container';
-import { IndexerCell, buildRgbppLockArgs, genRgbppLockScript } from '@rgbpp-sdk/ckb';
+import { IndexerCell, buildRgbppLockArgs, genRgbppLockScript, leToU128 } from '@rgbpp-sdk/ckb';
 import * as Sentry from '@sentry/node';
-import { RPC, Script } from '@ckb-lumos/lumos';
+import { BI, RPC, Script } from '@ckb-lumos/lumos';
 import { Job } from 'bullmq';
 import { z } from 'zod';
-import { Cell } from '../routes/rgbpp/types';
+import { Cell, XUDTBalance } from '../routes/rgbpp/types';
 import BaseQueueWorker from './base/queue-worker';
 import DataCache from './base/data-cache';
 import { groupBy } from 'lodash';
+import { computeScriptHash } from '@ckb-lumos/lumos/utils';
+import { remove0x } from '@rgbpp-sdk/btc';
 
 type GetCellsParams = Parameters<RPC['getCells']>;
 type SearchKey = GetCellsParams[0];
 type CKBBatchRequest = { exec: () => Promise<{ objects: IndexerCell[] }[]> };
 
-type RgbppUtxoCellsPair = {
+export type RgbppUtxoCellsPair = {
   utxo: UTXO;
   cells: Cell[];
 };
@@ -90,13 +92,60 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
   }
 
   /**
+   * Save the rgbpp utxo cells pairs to the cache
+   * @param btcAddress - the btc address
+   * @param pairs - the rgbpp utxo cells pairs
+   */
+  private async saveRgbppUtxoCellsPairsToCache(btcAddress: string, pairs: RgbppUtxoCellsPair[]) {
+    const data = pairs.reduce((acc, { utxo, cells }) => {
+      const key = `${utxo.txid}:${utxo.vout}`;
+      acc[key] = cells;
+      return acc;
+    }, {} as IRgbppCollectJobReturn);
+    this.dataCache.set(btcAddress, data);
+    return data;
+  }
+
+  /**
+   * Get the rgbpp balance by cells
+   * @param cells - the cells to calculate the balance
+   */
+  public async getRgbppBalanceByCells(cells: Cell[]) {
+    const xudtBalances: Record<
+      string,
+      Omit<XUDTBalance, 'total_amount' | 'available_amount' | 'pending_amount'> & {
+        amount: string;
+      }
+    > = {};
+    for (const cell of cells) {
+      const type = cell.cellOutput.type!;
+      const typeHash = computeScriptHash(type);
+      const infoCellData = await this.cradle.ckb.getInfoCellData(type);
+      // https://blog.cryptape.com/enhance-sudts-programmability-with-xudt#heading-xudt-data-structures
+      const amount = BI.from(leToU128(remove0x(cell.data).slice(0, 32))).toHexString();
+      if (infoCellData) {
+        if (!xudtBalances[typeHash]) {
+          xudtBalances[typeHash] = {
+            ...infoCellData,
+            type_hash: typeHash,
+            amount: amount,
+          };
+        } else {
+          xudtBalances[typeHash].amount = BI.from(xudtBalances[typeHash].amount).add(BI.from(amount)).toHexString();
+        }
+      }
+    }
+    return xudtBalances;
+  }
+
+  /**
    * Get the rgbpp cells batch request for the utxos
    * @param utxos - the utxos to collect
    * @param typeScript - the type script to filter the cells
    */
   public async getRgbppCellsByBatchRequest(utxos: UTXO[], typeScript?: Script) {
     const batchRequest: CKBBatchRequest = this.cradle.ckb.rpc.createBatchRequest(
-      utxos.map((utxo) => {
+      utxos.map((utxo: UTXO) => {
         const { txid, vout } = utxo;
         const args = buildRgbppLockArgs(vout, txid);
         const searchKey: SearchKey = {
@@ -131,15 +180,24 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
   }
 
   /**
-   * Get the rgbpp cells from cache
-   * @param btcAddress - the btc address
+   * Get the rgbpp utxo cells pairs
    */
-  public async getRgbppCellsFromCache(btcAddress: string) {
-    const data = await this.dataCache.get(btcAddress);
-    if (!data) {
-      return null;
+  public async getRgbppUtxoCellsPairs(btcAddress: string, utxos: UTXO[], noCache?: boolean) {
+    if (this.cradle.env.RGBPP_COLLECT_DATA_CACHE_ENABLE && !noCache) {
+      const cached = await this.dataCache.get(btcAddress);
+      if (cached) {
+        const pairs = utxos
+          .map((utxo) => {
+            const key = `${utxo.txid}:${utxo.vout}`;
+            return { utxo, cells: cached[key] || [] };
+          })
+          .filter(({ cells }) => cells.length > 0);
+        return pairs;
+      }
     }
-    return Object.values(data).flat();
+    const pairs = await this.collectRgbppUtxoCellsPairs(utxos);
+    await this.saveRgbppUtxoCellsPairsToCache(btcAddress, pairs);
+    return pairs;
   }
 
   /**
@@ -157,7 +215,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
           asyncRetry(
             async () => {
               const batchCells = await this.getRgbppCellsByBatchRequest(group, typeScript);
-              return batchCells.map((cells, index: number) => {
+              return batchCells.map((cells: Cell[], index: number) => {
                 const utxo = group[index];
                 return { utxo, cells };
               });
@@ -169,7 +227,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         );
       }),
     );
-    const pairs = data.flat().filter(({ cells }) => cells.length > 0);
+    const pairs = data.flat().filter(({ cells }: RgbppUtxoCellsPair) => cells.length > 0);
     return pairs;
   }
 
@@ -200,12 +258,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     try {
       const { btcAddress, utxos } = job.data;
       const pairs = await this.collectRgbppUtxoCellsPairs(utxos);
-      const data = pairs.reduce((acc, { utxo, cells }) => {
-        const key = `${utxo.txid}:${utxo.vout}`;
-        acc[key] = cells;
-        return acc;
-      }, {} as IRgbppCollectJobReturn);
-      this.dataCache.set(btcAddress, data);
+      const data = await this.saveRgbppUtxoCellsPairsToCache(btcAddress, pairs);
       return data;
     } catch (e) {
       const { message, stack } = e as Error;

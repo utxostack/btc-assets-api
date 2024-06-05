@@ -20,6 +20,9 @@ dependencies:
   '@ckb-lumos/lumos':
     specifier: 0.22.2
     version: 0.22.2
+  '@ckb-lumos/rpc':
+    specifier: ^0.22.2
+    version: 0.22.2
   '@fastify/compress':
     specifier: ^7.0.0
     version: 7.0.0

@@ -1,8 +1,28 @@
-import { Collector, sendCkbTx } from '@rgbpp-sdk/ckb';
+import {
+  Collector,
+  getSporeTypeScript,
+  getUniqueTypeScript,
+  getXudtTypeScript,
+  isScriptEqual,
+  sendCkbTx,
+} from '@rgbpp-sdk/ckb';
 import { Cradle } from '../container';
-import { Indexer, RPC } from '@ckb-lumos/lumos';
+import { Indexer, RPC, Script } from '@ckb-lumos/lumos';
+import { CKBRPC } from '@ckb-lumos/rpc';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
+import {
+  decodeInfoCellData,
+  decodeUDTHashFromInscriptionData,
+  getInscriptionInfoTypeScript,
+  isInscriptionInfoTypeScript,
+  isUniqueCellTypeScript,
+} from '../utils/xudt';
+import { computeScriptHash } from '@ckb-lumos/lumos/utils';
+import DataCache from './base/data-cache';
+import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils';
+
+export type TransactionWithStatus = Awaited<ReturnType<CKBRPC['getTransaction']>>;
 
 // https://github.com/nervosnetwork/ckb/blob/develop/rpc/src/error.rs#L33
 export enum CKBRPCErrorCodes {
@@ -126,10 +146,162 @@ export class CKBRpcError extends Error {
 export default class CKBClient {
   public rpc: RPC;
   public indexer: Indexer;
+  private dataCache: DataCache<unknown>;
 
   constructor(private cradle: Cradle) {
     this.rpc = new RPC(cradle.env.CKB_RPC_URL);
     this.indexer = new Indexer(cradle.env.CKB_RPC_URL);
+    this.dataCache = new DataCache(cradle.redis, {
+      prefix: 'ckb-info-cell-txs',
+      expire: 60 * 1000,
+    });
+  }
+
+  /**
+   * Get the ckb script configs
+   */
+  public getScripts() {
+    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
+    const xudtTypeScript = getXudtTypeScript(isMainnet);
+    const sporeTypeScript = getSporeTypeScript(isMainnet);
+    const uniqueCellTypeScript = getUniqueTypeScript(isMainnet);
+    const inscriptionTypeScript = getInscriptionInfoTypeScript(isMainnet);
+    return {
+      XUDT: xudtTypeScript,
+      SPORE: sporeTypeScript,
+      UNIQUE: uniqueCellTypeScript,
+      INSCRIPTION: inscriptionTypeScript,
+    };
+  }
+
+  /**
+   * Get the unique cell data of the given xudt type script from the transaction
+   * @param tx - the ckb transaction that contains the unique cell
+   * @param index - the index of the unique cell in the transaction
+   * @param xudtTypeScript - the xudt type script
+   * reference:
+   * - https://github.com/ckb-cell/unique-cell
+   */
+  public getUniqueCellData(tx: TransactionWithStatus, index: number, xudtTypeScript: Script) {
+    // find the xudt cell index in the transaction
+    // generally, the xudt cell and unique cell are in the same transaction
+    const xudtCellIndex = tx.transaction.outputs.findIndex((cell) => {
+      return cell.type && isScriptEqual(cell.type, xudtTypeScript);
+    });
+    if (xudtCellIndex === -1) {
+      return null;
+    }
+
+    const encodeData = tx.transaction.outputsData[index];
+    if (!encodeData) {
+      return null;
+    }
+    const data = decodeInfoCellData(encodeData);
+    return data;
+  }
+
+  /**
+   * Get the inscription cell data of the given xudt type script from the transaction
+   * @param tx - the ckb transaction that contains the inscription cell
+   * @param index - the index of the inscription cell in the transaction
+   * @param xudtTypeScript - the xudt type script
+   * reference:
+   * - https://omiga-core.notion.site/Omiga-Inscritption-885f9073c1a6499db08f5815b7de20d7
+   * - https://github.com/duanyytop/ckb-omiga/blob/master/src/inscription/helper.ts#L96-L109
+   */
+  public getInscriptionInfoCellData(tx: TransactionWithStatus, index: number, xudtTypeScript: Script) {
+    const encodeData = tx.transaction.outputsData[index];
+    if (!encodeData) {
+      return null;
+    }
+    const xudtTypeHash = scriptToHash(xudtTypeScript);
+    if (decodeUDTHashFromInscriptionData(encodeData) !== xudtTypeHash) {
+      return null;
+    }
+    const data = decodeInfoCellData(encodeData);
+    return data;
+  }
+
+  /**
+   * Get all transactions that have the xudt type cell and info cell
+   */
+  public async getAllInfoCellTxs() {
+    const cachedTxs = await this.dataCache.get('all');
+    if (cachedTxs) {
+      return cachedTxs as TransactionWithStatus[];
+    }
+
+    const scripts = this.getScripts();
+    let batchRequest = this.rpc.createBatchRequest();
+
+    // info cell script could be unique cell or inscription cell
+    [scripts.UNIQUE, scripts.INSCRIPTION].forEach((script) => {
+      const searchScript = { ...script, args: '0x' };
+      batchRequest.add(
+        'getTransactions',
+        {
+          script: searchScript,
+          scriptType: 'type',
+        },
+        'asc',
+        '0xffff', // 0xffff basically means no limit
+      );
+    });
+    type getTransactionsResult = ReturnType<typeof this.rpc.getTransactions<false>>;
+    const infoCellTxs: Awaited<getTransactionsResult>[] = await batchRequest.exec();
+
+    // get all transactions that have the xudt type cell and info cell
+    batchRequest = this.rpc.createBatchRequest();
+    infoCellTxs.forEach((txs) => {
+      txs.objects
+        .filter(({ ioType }) => ioType === 'output')
+        .forEach((tx) => {
+          batchRequest.add('getTransaction', tx.txHash);
+        });
+    });
+    const txs: TransactionWithStatus[] = await batchRequest.exec();
+    await this.dataCache.set('all', txs);
+    return txs;
+  }
+
+  /**
+   * Get the unique cell of the given xudt type
+   * @param script - the xudt type script
+   */
+  public async getInfoCellData(script: Script) {
+    const typeHash = computeScriptHash(script);
+    const cachedData = await this.dataCache.get(`type:${typeHash}`);
+    if (cachedData) {
+      return cachedData as ReturnType<typeof decodeInfoCellData>;
+    }
+
+    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
+    const txs = await this.getAllInfoCellTxs();
+    for (const tx of txs) {
+      // check if the unique cell is the info cell of the xudt type
+      const uniqueCellIndex = tx.transaction.outputs.findIndex((cell) => {
+        return cell.type && isUniqueCellTypeScript(cell.type, isMainnet);
+      });
+      if (uniqueCellIndex !== -1) {
+        const infoCellData = this.getUniqueCellData(tx, uniqueCellIndex, script);
+        if (infoCellData) {
+          await this.dataCache.set(`type:${typeHash}`, infoCellData);
+          return infoCellData;
+        }
+      }
+      // check if the inscription cell is the info cell of the xudt type
+      const inscriptionCellIndex = tx.transaction.outputs.findIndex((cell) => {
+        return cell.type && isInscriptionInfoTypeScript(cell.type, isMainnet);
+      });
+      if (inscriptionCellIndex !== -1) {
+        const infoCellData = this.getInscriptionInfoCellData(tx, inscriptionCellIndex, script);
+        if (infoCellData) {
+          await this.dataCache.set(`type:${typeHash}`, infoCellData);
+          return infoCellData;
+        }
+      }
+    }
+    return null;
   }
 
   /**

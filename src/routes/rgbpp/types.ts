@@ -19,10 +19,12 @@ export const CellDep = z.object({
 export type CellDep = z.infer<typeof CellDep>;
 
 export const InputCell = z.object({
-  previousOutput: z.object({
-    txHash: z.string(),
-    index: z.string(),
-  }).or(z.null()),
+  previousOutput: z
+    .object({
+      txHash: z.string(),
+      index: z.string(),
+    })
+    .or(z.null()),
   since: z.string(),
 });
 export type InputCell = z.infer<typeof InputCell>;
@@ -80,3 +82,14 @@ export const CKBVirtualResult = z.object({
   sumInputsCapacity: z.string(),
 });
 export type CKBVirtualResult = z.infer<typeof CKBVirtualResult>;
+
+export const XUDTBalance = z.object({
+  name: z.string(),
+  decimal: z.number(),
+  symbol: z.string(),
+  total_amount: z.string(),
+  available_amount: z.string(),
+  pending_amount: z.string(),
+  type_hash: z.string(),
+});
+export type XUDTBalance = z.infer<typeof XUDTBalance>;

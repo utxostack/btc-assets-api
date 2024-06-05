@@ -3,8 +3,8 @@ import { z } from 'zod';
 
 interface IDataCacheOptions<T> {
   prefix: string;
-  schema: z.ZodType<T>;
   expire: number;
+  schema?: z.ZodType<T>;
 }
 
 class DataCacheError extends Error {
@@ -23,22 +23,22 @@ export default class DataCache<T> {
   constructor(redis: Redis, options: IDataCacheOptions<T>) {
     this.redis = redis;
     this.prefix = options.prefix;
-    this.schema = options.schema;
+    this.schema = options.schema ?? z.any();
     this.expire = options.expire;
   }
 
-  public async set(btcAddress: string, data: unknown) {
+  public async set(id: string, data: unknown) {
     const parsed = this.schema.safeParse(data);
     if (!parsed.success) {
       throw new DataCacheError(parsed.error.message);
     }
-    const key = `data-cache:${this.prefix}:${btcAddress}`;
+    const key = `data-cache:${this.prefix}:${id}`;
     await this.redis.set(key, JSON.stringify(parsed.data), 'PX', this.expire);
     return parsed.data;
   }
 
-  public async get(btcAddress: string): Promise<T | null> {
-    const key = `data-cache:${this.prefix}:${btcAddress}`;
+  public async get(id: string): Promise<T | null> {
+    const key = `data-cache:${this.prefix}:${id}`;
     const data = await this.redis.get(key);
     if (data) {
       const parsed = this.schema.safeParse(JSON.parse(data));

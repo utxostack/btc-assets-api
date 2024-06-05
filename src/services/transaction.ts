@@ -25,7 +25,7 @@ import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
 import { DelayedError, Job } from 'bullmq';
 import { Cradle } from '../container';
 import { Transaction } from '../routes/bitcoin/types';
-import { CKBRawTransaction, CKBVirtualResult } from '../routes/rgbpp/types';
+import { CKBRawTransaction, CKBVirtualResult, Cell } from '../routes/rgbpp/types';
 import { BitcoinSPVError } from './spv';
 import { BloomFilter } from 'bloom-filters';
 import { BI } from '@ckb-lumos/lumos';
@@ -292,6 +292,7 @@ export default class TransactionProcessor
     const { ckbVirtualResult, txid, context } = job.data;
     Sentry.withScope((scope) => {
       if (context?.jwt) {
+        scope.setTag('token.id', context?.jwt.jti);
         scope.setTag('token.app', context?.jwt.sub);
         scope.setTag('token.domain', context?.jwt.aud);
       }
@@ -577,6 +578,33 @@ export default class TransactionProcessor
   public async getTransactionRequest(txid: string): Promise<Job<ITransactionRequest> | undefined> {
     const job = await this.queue.getJob(txid);
     return job;
+  }
+
+  /**
+   * get pending output cells by txid, get ckb output cells from the uncompleted job
+   * @param txid - the transaction id
+   */
+  public async getPendingOuputCellsByTxid(txid: string) {
+    const job = await this.getTransactionRequest(txid);
+    if (!job) {
+      return [];
+    }
+
+    // get ckb output cells from the uncompleted job only
+    const state = await job.getState();
+    if (state === 'completed' || state === 'failed') {
+      return [];
+    }
+
+    const { ckbVirtualResult } = job.data;
+    const outputs = ckbVirtualResult.ckbRawTx.outputs;
+    return outputs.map((output, index) => {
+      const cell: Cell = {
+        cellOutput: output,
+        data: ckbVirtualResult.ckbRawTx.outputsData[index],
+      };
+      return cell;
+    });
   }
 
   /**
