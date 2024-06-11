@@ -167,7 +167,7 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
     return this.enqueueSyncJobThrottle(btcAddress);
   }
 
-  public async process(job: Job<IUTXOSyncRequest>): Promise<IUTXOSyncJobReturn> {
+  public async process(job: Job<IUTXOSyncRequest>) {
     try {
       const { btcAddress } = job.data;
       if (!validateBitcoinAddress(btcAddress)) {
@@ -189,7 +189,7 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
 
       const utxos = await this.cradle.bitcoin.getAddressTxsUtxo({ address: btcAddress });
       const data = { btcAddress, utxos, txsHash };
-      return this.dataCache.set(btcAddress, data);
+      await this.dataCache.set(btcAddress, data);
     } catch (e) {
       const { message, stack } = e as Error;
       const error = new UTXOSyncerError(message);
