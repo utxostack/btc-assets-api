@@ -142,7 +142,7 @@ export default class BitcoinClient implements IBitcoinClient {
         }
         break;
       case NetworkType.signet:
-        // Bitcoin testnet genesis block hash
+        // Bitcoin signet genesis block hash
         if (hash !== '00000008819873e925422c1ff0f99f7cc9bbb232af63a077a480a3633bee1ef6') {
           throw new Error('Bitcoin client is not running on signet');
         }
