@@ -238,7 +238,14 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
       // used for the case that the utxos are updated
       jobId = `${btcAddress}:${Date.now()}`;
     }
-    return this.addJob(jobId, { btcAddress });
+    return this.addJob(
+      jobId,
+      { btcAddress },
+      {
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    );
   }
 
   /**

@@ -90,7 +90,7 @@ export default fp(async (fastify) => {
           onCompleted: async (job) => {
             fastify.log.info(`[UTXOSyncer] job completed: ${job.id}`);
             if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
-              const { btcAddress } = job.returnvalue;
+              const { btcAddress } = job.data;
               const rgbppCollector: RgbppCollector = fastify.container.resolve('rgbppCollector');
               await rgbppCollector.enqueueCollectJob(btcAddress, true);
             }
