@@ -41,7 +41,7 @@ export default abstract class BaseQueueWorker<T, R> {
     );
   }
 
-  abstract process(job: Job<T>): Promise<R>;
+  abstract process(job: Job<T>): Promise<R | void>;
 
   /**
    * Add a job to the queue

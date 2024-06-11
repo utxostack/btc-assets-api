@@ -31,3 +31,4 @@ data
 redis-data
 dump.rdb
 .envrc
+.env.signet

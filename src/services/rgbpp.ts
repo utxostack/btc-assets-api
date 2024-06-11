@@ -25,7 +25,6 @@ export type RgbppUtxoCellsPair = {
 
 interface IRgbppCollectRequest {
   btcAddress: string;
-  utxos: UTXO[];
 }
 
 interface IRgbppCollectJobReturn {
@@ -80,12 +79,9 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    * @param err - the error
    */
   private captureJobExceptionToSentryScope(job: Job<IRgbppCollectRequest>, err: Error) {
-    const { btcAddress, utxos } = job.data;
+    const { btcAddress } = job.data;
     Sentry.withScope((scope) => {
       scope.setTag('btcAddress', btcAddress);
-      scope.setContext('utxos', {
-        utxos: JSON.stringify(utxos),
-      });
       this.cradle.logger.error(err);
       scope.captureException(err);
     });
@@ -235,18 +231,21 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    * Enqueue a collect job to the queue
    * @param utxos - the utxos to collect
    */
-  public async enqueueCollectJob(
-    btcAddress: string,
-    utxos: UTXO[],
-    allowDuplicate?: boolean,
-  ): Promise<Job<IRgbppCollectRequest>> {
+  public async enqueueCollectJob(btcAddress: string, allowDuplicate?: boolean): Promise<Job<IRgbppCollectRequest>> {
     let jobId = btcAddress;
     if (allowDuplicate) {
       // add a timestamp to the job id to allow duplicate jobs
       // used for the case that the utxos are updated
       jobId = `${btcAddress}:${Date.now()}`;
     }
-    return this.addJob(jobId, { btcAddress, utxos });
+    return this.addJob(
+      jobId,
+      { btcAddress },
+      {
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    );
   }
 
   /**
@@ -256,10 +255,10 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    */
   public async process(job: Job<IRgbppCollectRequest>) {
     try {
-      const { btcAddress, utxos } = job.data;
+      const { btcAddress } = job.data;
+      const utxos = await this.cradle.utxoSyncer.getUtxosByAddress(btcAddress);
       const pairs = await this.collectRgbppUtxoCellsPairs(utxos);
-      const data = await this.saveRgbppUtxoCellsPairsToCache(btcAddress, pairs);
-      return data;
+      await this.saveRgbppUtxoCellsPairsToCache(btcAddress, pairs);
     } catch (e) {
       const { message, stack } = e as Error;
       const error = new RgbppCollectorError(message);
