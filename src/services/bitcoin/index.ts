@@ -171,7 +171,15 @@ export default class BitcoinClient implements IBitcoinClient {
 
   public async postTx({ txhex }: { txhex: string }) {
     const txid = await this.call('postTx', [{ txhex }]);
-    Promise.all(this.backupers.map((backuper) => backuper.postTx({ txhex })));
+    Promise.all(
+      this.backupers.map(async (backuper) => {
+        try {
+          await backuper.postTx({ txhex });
+        } catch (err) {
+          Sentry.captureException(err);
+        }
+      }),
+    );
     return txid;
   }
 
