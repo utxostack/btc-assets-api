@@ -53,7 +53,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         no_cache === 'true',
       );
       if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
-        await fastify.rgbppCollector.enqueueCollectJob(address, utxos);
+        await fastify.rgbppCollector.enqueueCollectJob(address);
       }
 
       const rgbppUtxoMap = rgbppUtxoCellsPairs.reduce((map, { utxo }) => {
@@ -140,7 +140,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           ? await fastify.rgbppCollector.getRgbppUtxoCellsPairs(address, utxos, no_cache === 'true')
           : [];
       if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
-        await fastify.rgbppCollector.enqueueCollectJob(address, utxos);
+        await fastify.rgbppCollector.enqueueCollectJob(address);
       }
       const rgbppUtxoSet = new Set(rgbppUtxoCellsPairs.map((pair) => pair.utxo.txid + ':' + pair.utxo.vout));
 

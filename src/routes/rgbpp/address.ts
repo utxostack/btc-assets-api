@@ -63,7 +63,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       no_cache === 'true',
     );
     if (env.RGBPP_COLLECT_DATA_CACHE_ENABLE) {
-      await fastify.rgbppCollector.enqueueCollectJob(btc_address, utxos);
+      await fastify.rgbppCollector.enqueueCollectJob(btc_address);
     }
     const cells = rgbppUtxoCellsPairs.map((pair) => pair.cells).flat();
     return cells;
