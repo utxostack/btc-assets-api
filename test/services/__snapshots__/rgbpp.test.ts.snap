@@ -339,30 +339,7 @@ exports[`RgbppCollector > getRgbppCellsByBatchRequest: should return the batch r
       "txIndex": "0x8",
     },
   ],
-  [
-    {
-      "blockNumber": "0xcc3d9d",
-      "cellOutput": {
-        "capacity": "0x5e9f53e00",
-        "lock": {
-          "args": "0x01000000a7fd61a66986273e1e8500e276e5ade9e1d66658e73cc1a4123a440ef6f78d36",
-          "codeHash": "0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248",
-          "hashType": "type",
-        },
-        "type": {
-          "args": "0x30d3fbec9ceba691770d57c6d06bdb98cf0f82bef0ca6e87687a118d6ce1e7b7",
-          "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
-          "hashType": "type",
-        },
-      },
-      "data": "0x00e1f505000000000000000000000000",
-      "outPoint": {
-        "index": "0x1",
-        "txHash": "0xefcada73aa020bfc4c4dc7192f9a6a6e6152af77d1bb2c2380314b4130751bc4",
-      },
-      "txIndex": "0x6",
-    },
-  ],
+  [],
   [
     {
       "blockNumber": "0xcb42df",
@@ -734,43 +711,6 @@ exports[`RgbppCollector > getRgbppCellsByBatchRequest: should return the utxo an
       "txid": "a46315f568b38160b2c9e0c68f678b5fe787e6eb0b5c70b55a64e9255e946e97",
       "value": 546,
       "vout": 2,
-    },
-  },
-  {
-    "cells": [
-      {
-        "blockNumber": "0xcc3d9d",
-        "cellOutput": {
-          "capacity": "0x5e9f53e00",
-          "lock": {
-            "args": "0x01000000a7fd61a66986273e1e8500e276e5ade9e1d66658e73cc1a4123a440ef6f78d36",
-            "codeHash": "0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248",
-            "hashType": "type",
-          },
-          "type": {
-            "args": "0x30d3fbec9ceba691770d57c6d06bdb98cf0f82bef0ca6e87687a118d6ce1e7b7",
-            "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
-            "hashType": "type",
-          },
-        },
-        "data": "0x00e1f505000000000000000000000000",
-        "outPoint": {
-          "index": "0x1",
-          "txHash": "0xefcada73aa020bfc4c4dc7192f9a6a6e6152af77d1bb2c2380314b4130751bc4",
-        },
-        "txIndex": "0x6",
-      },
-    ],
-    "utxo": {
-      "status": {
-        "block_hash": "000000000000000136b682e35e2ccce1a8b2d408f81607237ddf27f3acdb92ba",
-        "block_height": 2818010,
-        "block_time": 1716787908,
-        "confirmed": true,
-      },
-      "txid": "368df7f60e443a12a4c13ce75866d6e1e9ade576e200851e3e278669a661fda7",
-      "value": 546,
-      "vout": 1,
     },
   },
   {
