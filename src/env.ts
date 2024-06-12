@@ -8,7 +8,7 @@ const envSchema = z
     NODE_ENV: z.string().default('development'),
     PORT: z.string().optional(),
     ADDRESS: z.string().optional(),
-    NETWORK: z.enum(['mainnet', 'testnet']).default('testnet'),
+    NETWORK: z.enum(['mainnet', 'testnet', 'signet']).default('testnet'),
     LOGGER_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
     /**

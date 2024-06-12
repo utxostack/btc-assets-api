@@ -3,6 +3,7 @@ import { isAdminMode } from './env';
 export enum NetworkType {
   mainnet = 'prod',
   testnet = 'testnet',
+  signet = 'signet',
 }
 
 export const CUSTOM_HEADERS = {
