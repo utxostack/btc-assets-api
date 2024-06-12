@@ -11,11 +11,11 @@ on:
       - completed
 
 jobs:
-  deploy:
+  deploy-testnet:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy
+      - name: Deploy Testnet
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -25,4 +25,19 @@ jobs:
           script: |
             cd ${{ secrets.SSH_WORK_DIR }}
             echo ${{ secrets.PACKAGE_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            bash ./update.sh
+  deploy-signet:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy Signet
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST_SIGNET }}
+          username: ${{ secrets.SSH_USERNAME_SIGNET }}
+          password: ${{ secrets.PASSWORD }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.SSH_WORK_DIR_SIGNET }}
+            echo ${{ secrets.PACKAGE_TOKEN }} | sudo docker login ghcr.io -u ${{ github.actor }} --password-stdin
             bash ./update.sh
