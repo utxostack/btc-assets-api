@@ -55,10 +55,10 @@ jobs:
           BITCOIN_MEMPOOL_SPACE_API_URL: ${{ secrets.BITCOIN_MEMPOOL_SPACE_API_URL }}
           BITCOIN_ELECTRS_API_URL: ${{ secrets.BITCOIN_ELECTRS_API_URL }}
           BITCOIN_SPV_SERVICE_URL: ${{ secrets.BITCOIN_SPV_SERVICE_URL }}
+          PAYMASTER_PRIVATE_KEY: ${{ secrets.PAYMASTER_PRIVATE_KEY }}
           PAYMASTER_RECEIVE_BTC_ADDRESS: ${{ secrets.PAYMASTER_RECEIVE_BTC_ADDRESS }}
           CKB_RPC_URL: ${{ secrets.CKB_RPC_URL }}
           CKB_INDEXER_URL: ${{ secrets.CKB_INDEXER_URL }}
-          PAYMASTER_PRIVATE_KEY: ${{ secrets.PAYMASTER_PRIVATE_KEY }}
           REDIS_URL: redis://localhost:6379
           CI_REDIS_URL: redis://localhost:6379
         run: pnpm test
