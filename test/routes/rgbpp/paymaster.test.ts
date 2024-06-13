@@ -42,6 +42,7 @@ describe('/bitcoin/v1/paymaster', () => {
 
     expect(response.statusCode).toBe(200);
     expect(data.btc_address).toEqual(env.PAYMASTER_RECEIVE_BTC_ADDRESS);
+    expect(data.ckb_address).not.toBeUndefined();
     expect(data.fee).toEqual(env.PAYMASTER_BTC_CONTAINER_FEE_SATS);
 
     await fastify.close();
