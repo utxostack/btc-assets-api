@@ -37,6 +37,7 @@ import { BitcoinClientAPIError } from './bitcoin';
 import { HttpStatusCode } from 'axios';
 import BaseQueueWorker from './base/queue-worker';
 import { Env } from '../env';
+import { TestnetTypeMap } from '../constants';
 
 export interface ITransactionRequest {
   txid: string;
@@ -132,12 +133,16 @@ export default class TransactionProcessor
     return this.cradle.env.NETWORK === 'mainnet';
   }
 
+  private get testnetType() {
+    return TestnetTypeMap[this.cradle.env.NETWORK];
+  }
+
   private get rgbppLockScript() {
-    return getRgbppLockScript(this.isMainnet);
+    return getRgbppLockScript(this.isMainnet, this.testnetType);
   }
 
   private get btcTimeLockScript() {
-    return getBtcTimeLockScript(this.isMainnet);
+    return getBtcTimeLockScript(this.isMainnet, this.testnetType);
   }
 
   private isRgbppLock(lock: CKBComponents.Script) {

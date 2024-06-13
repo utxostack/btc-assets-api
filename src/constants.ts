@@ -1,10 +1,17 @@
 import { isAdminMode } from './env';
+import { BTCTestnetType } from '@rgbpp-sdk/ckb';
 
 export enum NetworkType {
-  mainnet = 'prod',
+  mainnet = 'mainnet',
   testnet = 'testnet',
   signet = 'signet',
 }
+
+export const TestnetTypeMap: Record<NetworkType, BTCTestnetType | undefined> = {
+  [NetworkType.mainnet]: undefined,
+  [NetworkType.testnet]: 'Testnet3',
+  [NetworkType.signet]: 'Signet',
+};
 
 export const CUSTOM_HEADERS = {
   ApiCache: 'x-api-cache',

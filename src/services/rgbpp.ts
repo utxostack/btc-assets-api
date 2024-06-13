@@ -13,6 +13,7 @@ import DataCache from './base/data-cache';
 import { groupBy } from 'lodash';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { remove0x } from '@rgbpp-sdk/btc';
+import { TestnetTypeMap } from '../constants';
 
 type GetCellsParams = Parameters<RPC['getCells']>;
 type SearchKey = GetCellsParams[0];
@@ -140,12 +141,13 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    * @param typeScript - the type script to filter the cells
    */
   public async getRgbppCellsByBatchRequest(utxos: UTXO[], typeScript?: Script) {
+    const network = this.cradle.env.NETWORK;
     const batchRequest: CKBBatchRequest = this.cradle.ckb.rpc.createBatchRequest(
       utxos.map((utxo: UTXO) => {
         const { txid, vout } = utxo;
         const args = buildRgbppLockArgs(vout, txid);
         const searchKey: SearchKey = {
-          script: genRgbppLockScript(args, process.env.NETWORK === 'mainnet'),
+          script: genRgbppLockScript(args, network === 'mainnet', TestnetTypeMap[network]),
           scriptType: 'lock',
         };
         if (typeScript) {
