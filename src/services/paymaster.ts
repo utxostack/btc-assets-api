@@ -55,6 +55,7 @@ export default class Paymaster implements IPaymaster {
     this.cellCapacity = this.cradle.env.PAYMASTER_CELL_CAPACITY;
     this.presetCount = this.cradle.env.PAYMASTER_CELL_PRESET_COUNT;
     this.refillThreshold = this.cradle.env.PAYMASTER_CELL_REFILL_THRESHOLD;
+    this.refillCellQueue();
   }
 
   private get lockScript() {
