@@ -17,6 +17,7 @@ import {
 import { btcTxIdFromBtcTimeLockArgs } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import { BtcAssetsApi } from '@rgbpp-sdk/service';
 import { Cradle } from '../container';
+import { TestnetTypeMap } from '../constants';
 
 interface IUnlocker {
   getNextBatchLockCell(): Promise<IndexerCell[]>;
@@ -45,8 +46,12 @@ export default class Unlocker implements IUnlocker {
     return this.cradle.env.NETWORK === 'mainnet';
   }
 
+  private get testnetType() {
+    return TestnetTypeMap[this.cradle.env.NETWORK];
+  }
+
   private get lockScript() {
-    return getBtcTimeLockScript(this.isMainnet);
+    return getBtcTimeLockScript(this.isMainnet, this.testnetType);
   }
 
   /**
@@ -116,6 +121,7 @@ export default class Unlocker implements IUnlocker {
         btcTimeCells: udtTypeCells,
         btcAssetsApi,
         isMainnet: this.isMainnet,
+        btcTestnetType: this.testnetType,
       });
       ckbRawTxs.push(ckbRawTx);
     }
@@ -127,6 +133,7 @@ export default class Unlocker implements IUnlocker {
         btcTimeCells: sporeTypeCells,
         btcAssetsApi,
         isMainnet: this.isMainnet,
+        btcTestnetType: this.testnetType,
       });
       ckbRawTxs.push(ckbRawTx);
     }
