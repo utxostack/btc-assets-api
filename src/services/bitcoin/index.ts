@@ -101,19 +101,21 @@ export default class BitcoinClient implements IBitcoinClient {
     try {
       this.cradle.logger.debug(`Calling ${method} with args: ${JSON.stringify(args)}`);
       // @ts-expect-error args: A spread argument must either have a tuple type or be passed to a rest parameter
-      const result = await this.source[method].call(this.source, ...args).catch((err) => {
-        this.cradle.logger.error(err);
-        Sentry.captureException(err);
-        if (this.fallback) {
-          this.cradle.logger.warn(`Fallback to ${this.fallback.constructor.name} due to error: ${err.message}`);
-          // @ts-expect-error same as above
-          return this.fallback[method].call(this.fallback, ...args);
-        }
-        throw err;
-      });
+      const result = await this.source[method].call(this.source, ...args);
       // @ts-expect-error return type is correct
       return result;
     } catch (err) {
+      this.cradle.logger.error(err);
+      Sentry.captureException(err);
+      if (this.fallback) {
+        this.cradle.logger.warn(
+          `Fallback to ${this.fallback.constructor.name} due to error: ${(err as Error).message}`,
+        );
+        // @ts-expect-error same as above
+        const result = await this.fallback[method].call(this.fallback, ...args);
+        // @ts-expect-error return type is correct
+        return result;
+      }
       this.cradle.logger.error(err);
       if (isAxiosError(err)) {
         const error = new BitcoinClientAPIError(err.response?.data ?? err.message);
