@@ -108,7 +108,7 @@ export default class UTXOSyncer extends BaseQueueWorker<IUTXOSyncRequest, IUTXOS
     const { btcAddress } = job.data;
     Sentry.withScope((scope) => {
       // Ignore the error for the specified addresses to avoid too many errors
-      if (this.cradle.env.SAENTRY_IGNORE_UTXO_SYNC_ERROR_ADDRESSES.includes(btcAddress)) {
+      if (this.cradle.env.SENTRY_IGNORE_UTXO_SYNC_ERROR_ADDRESSES.includes(btcAddress)) {
         return;
       }
       scope.setTag('btcAddress', btcAddress);

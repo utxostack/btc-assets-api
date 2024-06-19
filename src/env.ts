@@ -38,7 +38,7 @@ const envSchema = z
     SENTRY_DSN_URL: z.string().optional(),
     SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().default(0.5),
     SENTRY_PROFILES_SAMPLE_RATE: z.coerce.number().default(0.5),
-    SAENTRY_IGNORE_UTXO_SYNC_ERROR_ADDRESSES: z
+    SENTRY_IGNORE_UTXO_SYNC_ERROR_ADDRESSES: z
       .string()
       .default('')
       .transform((value) => {
