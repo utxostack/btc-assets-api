@@ -5,10 +5,14 @@ import { Block, RecommendedFees, Transaction, UTXO } from './schema';
 export class ElectrsClient implements IBitcoinDataProvider {
   private request: AxiosInstance;
 
-  constructor(baseURL: string) {
+  constructor(private baseURL: string) {
     this.request = axios.create({
       baseURL,
     });
+  }
+
+  public async getBaseURL(): Promise<string> {
+    return this.baseURL;
   }
 
   public async getFeesRecommended(): Promise<RecommendedFees> {

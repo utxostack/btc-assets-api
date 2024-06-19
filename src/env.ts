@@ -38,6 +38,13 @@ const envSchema = z
     SENTRY_DSN_URL: z.string().optional(),
     SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().default(0.5),
     SENTRY_PROFILES_SAMPLE_RATE: z.coerce.number().default(0.5),
+    SENTRY_IGNORE_UTXO_SYNC_ERROR_ADDRESSES: z
+      .string()
+      .default('')
+      .transform((value) => {
+        const addresses = value.split(',');
+        return addresses.map((address) => address.trim());
+      }),
 
     /**
      * The rate limit per minute for each IP address.

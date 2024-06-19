@@ -9,12 +9,19 @@ export class MempoolClient implements IBitcoinDataProvider {
   private mempool: ReturnType<typeof mempoolJS>;
   private defaultFee = 1;
 
-  constructor(baseURL: string, cradle: Cradle) {
+  constructor(
+    private baseURL: string,
+    cradle: Cradle,
+  ) {
     const url = new URL(baseURL);
     this.mempool = mempoolJS({
       hostname: url.hostname,
       network: cradle.env.NETWORK,
     });
+  }
+
+  public async getBaseURL(): Promise<string> {
+    return this.baseURL;
   }
 
   // https://github.com/mempool/mempool/blob/dbd4d152ce831859375753fb4ca32ac0e5b1aff8/backend/src/api/fee-api.ts#L77
