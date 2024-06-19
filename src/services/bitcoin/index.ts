@@ -128,6 +128,10 @@ export default class BitcoinClient implements IBitcoinClient {
     }
   }
 
+  public async getBaseURL(): Promise<string> {
+    return this.source.getBaseURL();
+  }
+
   public async checkNetwork(network: NetworkType) {
     const hash = await this.getBlockHeight({ height: 0 });
     switch (network) {
@@ -175,10 +179,14 @@ export default class BitcoinClient implements IBitcoinClient {
     const txid = await this.call('postTx', [{ txhex }]);
     Promise.all(
       this.backupers.map(async (backuper) => {
+        const baseURL = await backuper.getBaseURL();
         try {
           await backuper.postTx({ txhex });
         } catch (err) {
-          Sentry.captureException(err);
+          Sentry.withScope((scope) => {
+            scope.setTag('bitcoin.baseURL', baseURL);
+            scope.captureException(err);
+          });
         }
       }),
     );
