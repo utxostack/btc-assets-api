@@ -190,7 +190,12 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         };
       });
 
-      const pendingUtxos = utxos.filter((utxo) => !utxo.status.confirmed);
+      const pendingUtxos = utxos.filter(
+        (utxo) =>
+          !utxo.status.confirmed ||
+          // include utxo that confirmed in 20 minutes to avoid missing pending xudt
+          (utxo.status.block_time && Date.now() / 1000 - utxo.status.block_time < 20 * 60),
+      );
       const pendingUtxosGroup = groupBy(pendingUtxos, (utxo) => utxo.txid);
       const pendingTxids = Object.keys(pendingUtxosGroup);
 
