@@ -2,7 +2,7 @@ import { FastifyPluginCallback, FastifyRequest } from 'fastify';
 import { Server } from 'http';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { Cell, Script, XUDTBalance } from './types';
+import { CKBRawTransactionWithInputCell, CKBTransaction, Cell, Script, XUDTBalance } from './types';
 import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
 import { Env } from '../../env';
@@ -10,6 +10,7 @@ import { buildPreLockArgs, getXudtTypeScript, isScriptEqual, isTypeAssetSupporte
 import { groupBy } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
+import { Transaction as BTCTransaction } from '../bitcoin/types';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   const env: Env = fastify.container.resolve('env');
@@ -132,7 +133,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     {
       schema: {
         description: 'Get RGB++ balance by btc address, support xUDT only for now',
-        tags: ['RGB++@Beta'],
+        tags: ['RGB++'],
         params: z.object({
           btc_address: z.string(),
         }),
@@ -236,6 +237,53 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         xudt: Object.values(xudtBalances),
       };
     },
+  );
+
+  fastify.get(
+    '/:btc_address/activity',
+    {
+      schema: {
+        description: 'Get RGB++ activity by btc address',
+        tags: ['RGB++'],
+        params: z.object({
+          btc_address: z.string(),
+        }),
+        querystring: z.object({
+          type_script: Script.or(z.string())
+            .describe(
+              `
+              type script to filter cells
+
+              two ways to provide:
+              - as a object: 'encodeURIComponent(JSON.stringify({"codeHash":"0x...", "args":"0x...", "hashType":"type"}))'
+              - as a hex string: '0x...' (You can pack by @ckb-lumos/codec blockchain.Script.pack({ "codeHash": "0x...", ... }))
+            `,
+            )
+            .default(getXudtTypeScript(env.NETWORK === 'mainnet')),
+          include_plain_btc_tx: z.boolean().default(true).describe('Whether to include plain BTC tx'),
+          after_btc_txid: z.string().optional().describe('Get activity after this btc txid'),
+        }),
+        response: {
+          200: z.object({
+            address: z.string(),
+            txs: z.object({
+              btcTx: BTCTransaction,
+              isRgbpp: z.boolean(),
+              isomorphicTx: z
+                .object({
+                  ckbRawTx: CKBRawTransactionWithInputCell.optional(),
+                  ckbTx: CKBTransaction.optional(),
+                  status: z.object({
+                    confirmed: z.boolean(),
+                  }),
+                })
+                .optional(),
+            }),
+          }),
+        },
+      },
+    },
+    async () => {},
   );
 
   done();

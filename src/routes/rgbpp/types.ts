@@ -93,3 +93,10 @@ export const XUDTBalance = z.object({
   type_hash: z.string(),
 });
 export type XUDTBalance = z.infer<typeof XUDTBalance>;
+
+export const CKBRawTransactionWithInputCell = CKBRawTransaction.merge(
+  z.object({
+    inputs: z.array(InputCell.merge(OutputCell)),
+  }),
+);
+export type CKBRawTransactionWithInputCell = z.infer<typeof CKBRawTransactionWithInputCell>;
