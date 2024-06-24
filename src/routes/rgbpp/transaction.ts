@@ -4,15 +4,7 @@ import { Server } from 'http';
 import z from 'zod';
 import { CKBVirtualResult } from './types';
 import { Job } from 'bullmq';
-import {
-  btcTxIdFromBtcTimeLockArgs,
-  buildRgbppLockArgs,
-  genRgbppLockScript,
-  getBtcTimeLockScript,
-} from '@rgbpp-sdk/ckb';
-import { remove0x } from '@rgbpp-sdk/btc';
 import { CUSTOM_HEADERS } from '../../constants';
-import { env } from '../../env';
 import { JwtPayload } from '../../plugins/jwt';
 
 const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
@@ -73,62 +65,21 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
     },
     async (request, reply) => {
       const { btc_txid } = request.params;
-      const isMainnet = env.NETWORK === 'mainnet';
-
       // get the transaction hash from the job if it exists
       const job = await fastify.transactionProcessor.getTransactionRequest(btc_txid);
       if (job?.returnvalue) {
         return { txhash: job.returnvalue };
       }
 
-      const transaction = await fastify.bitcoin.getTx({ txid: btc_txid });
-
-      // query CKB transaction hash by RGBPP_LOCK cells
-      for (let index = 0; index < transaction.vout.length; index++) {
-        const args = buildRgbppLockArgs(index, btc_txid);
-        const lock = genRgbppLockScript(args, isMainnet);
-
-        const txs = await fastify.ckb.indexer.getTransactions({
-          script: lock,
-          scriptType: 'lock',
-        });
-
-        if (txs.objects.length > 0) {
-          const [tx] = txs.objects;
-          reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
-          return { txhash: tx.txHash };
-        }
+      const rgbppLockTxHash = await fastify.rgbppCollector.queryRgbppLockTxHashByBtcTxId(btc_txid);
+      if (rgbppLockTxHash) {
+        reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
+        return { txhash: rgbppLockTxHash };
       }
-
-      // XXX: unstable, need to be improved: https://github.com/ckb-cell/btc-assets-api/issues/45
-      // query CKB transaction hash by BTC_TIME_LOCK cells
-      const btcTimeLockScript = getBtcTimeLockScript(isMainnet);
-      const txs = await fastify.ckb.indexer.getTransactions({
-        script: {
-          ...btcTimeLockScript,
-          args: '0x',
-        },
-        scriptType: 'lock',
-      });
-
-      if (txs.objects.length > 0) {
-        for (const { txHash } of txs.objects) {
-          const tx = await fastify.ckb.rpc.getTransaction(txHash);
-          const isBtcTimeLockTx = tx.transaction.outputs.some((output) => {
-            if (
-              output.lock.codeHash !== btcTimeLockScript.codeHash ||
-              output.lock.hashType !== btcTimeLockScript.hashType
-            ) {
-              return false;
-            }
-            const btcTxid = btcTxIdFromBtcTimeLockArgs(output.lock.args);
-            return remove0x(btcTxid) === btc_txid;
-          });
-          if (isBtcTimeLockTx) {
-            reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
-            return { txhash: txHash };
-          }
-        }
+      const btcTimeLockTxHash = await fastify.rgbppCollector.queryBtcTimeLockTxHashByBtcTxId(btc_txid);
+      if (btcTimeLockTxHash) {
+        reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
+        return { txhash: btcTimeLockTxHash };
       }
 
       reply.status(404);
