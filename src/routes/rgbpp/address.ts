@@ -2,7 +2,7 @@ import { FastifyPluginCallback, FastifyRequest } from 'fastify';
 import { Server } from 'http';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { CKBRawTransactionWithInputCell, CKBTransaction, Cell, Script, XUDTBalance } from './types';
+import { CKBRawTransaction, CKBTransaction, Cell, Script, XUDTBalance } from './types';
 import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
 import { Env } from '../../env';
@@ -11,6 +11,8 @@ import { groupBy } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
 import { Transaction as BTCTransaction } from '../bitcoin/types';
+import { tryGetCommitmentFromBtcTx } from '../../utils/commitment';
+import { TransactionWithStatus } from '../../services/ckb';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   const env: Env = fastify.container.resolve('env');
@@ -260,30 +262,119 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             `,
             )
             .default(getXudtTypeScript(env.NETWORK === 'mainnet')),
-          include_plain_btc_tx: z.boolean().default(true).describe('Whether to include plain BTC tx'),
+          rgbpp_only: z
+            .enum(['true', 'false'])
+            .default('false')
+            .describe('Whether to get RGB++ only activity, default is false'),
           after_btc_txid: z.string().optional().describe('Get activity after this btc txid'),
         }),
         response: {
           200: z.object({
             address: z.string(),
-            txs: z.object({
-              btcTx: BTCTransaction,
-              isRgbpp: z.boolean(),
-              isomorphicTx: z
-                .object({
-                  ckbRawTx: CKBRawTransactionWithInputCell.optional(),
-                  ckbTx: CKBTransaction.optional(),
-                  status: z.object({
-                    confirmed: z.boolean(),
-                  }),
-                })
-                .optional(),
-            }),
+            txs: z.array(
+              z.object({
+                btcTx: BTCTransaction,
+                isRgbpp: z.boolean(),
+                isomorphicTx: z
+                  .object({
+                    ckbRawTx: CKBRawTransaction.optional(),
+                    ckbTx: CKBTransaction.optional(),
+                    inputs: z.array(Cell).optional(),
+                    outputs: z.array(Cell).optional(),
+                    status: z.object({
+                      confirmed: z.boolean(),
+                    }),
+                  })
+                  .optional(),
+              }),
+            ),
           }),
         },
       },
     },
-    async () => {},
+    async (request) => {
+      const { btc_address } = request.params;
+      const { after_btc_txid } = request.query;
+
+      const btcTxs = await fastify.bitcoin.getAddressTxs({
+        address: btc_address,
+        after_txid: after_btc_txid,
+      });
+      const btcTxMap = new Map(btcTxs.map((tx) => [tx.txid, tx]));
+
+      console.log(btcTxs);
+
+      const withCommitmentTxs = btcTxs.filter((btcTx) => tryGetCommitmentFromBtcTx(btcTx));
+      const maybeRgbppBtcTxids = new Set(withCommitmentTxs.map((btcTx) => btcTx.txid));
+
+      const ckbRawTxMap = new Map<string, CKBRawTransaction>();
+      const ckbTxMap = new Map<string, TransactionWithStatus>();
+
+      await Promise.all(
+        Array.from(maybeRgbppBtcTxids).map(async (btcTxid) => {
+          const job = await fastify.transactionProcessor.getTransactionRequest(btcTxid);
+          if (!job) {
+            return undefined;
+          }
+          maybeRgbppBtcTxids.delete(btcTxid);
+          const { ckbRawTx } = job.data.ckbVirtualResult;
+          ckbRawTxMap.set(btcTxid, ckbRawTx);
+
+          const state = await job.getState();
+          if (state === 'completed') {
+            const ckbTx = await fastify.ckb.rpc.getTransaction(job.returnvalue);
+            ckbTxMap.set(btcTxid, ckbTx);
+          }
+        }),
+      );
+
+      await Promise.all(
+        Array.from(maybeRgbppBtcTxids).map(async (btcTxid) => {
+          const rgbppLockTx = await fastify.rgbppCollector.queryRgbppLockTxByBtcTx(btcTxMap.get(btcTxid)!);
+          if (rgbppLockTx) {
+            const ckbTx = await fastify.ckb.rpc.getTransaction(rgbppLockTx.txHash);
+            ckbTxMap.set(btcTxid, ckbTx);
+            return;
+          }
+          const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTxId(btcTxid);
+          if (btcTimeLockTx) {
+            ckbTxMap.set(btcTxid, btcTimeLockTx as TransactionWithStatus);
+            return;
+          }
+        }),
+      );
+
+      const txs = btcTxs.map((tx) => {
+        const isRgbpp = ckbRawTxMap.has(tx.txid) || ckbTxMap.has(tx.txid);
+        const btcTx = BTCTransaction.parse(tx);
+
+        if (!isRgbpp) {
+          return {
+            btcTx,
+            isRgbpp: false,
+          };
+        }
+
+        const ckbRawTx = ckbRawTxMap.get(tx.txid);
+        const ckbTx = ckbTxMap.get(tx.txid);
+        const status = ckbTx ? { confirmed: ckbTx.txStatus.status === 'committed' } : { confirmed: false };
+
+        return {
+          btcTx,
+          isRgbpp: true,
+          isomorphicTx: {
+            ckbRawTx: ckbRawTx ? CKBRawTransaction.parse(ckbRawTx) : undefined,
+            ckbTx: ckbTx ? CKBTransaction.parse(ckbTx.transaction) : undefined,
+            status,
+          },
+        };
+      });
+
+      return {
+        address: btc_address,
+        txs,
+      };
+    },
   );
 
   done();

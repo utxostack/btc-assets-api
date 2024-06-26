@@ -1,5 +1,5 @@
 import { bytes } from '@ckb-lumos/codec';
-import { opReturnScriptPubKeyToData, remove0x, transactionToHex } from '@rgbpp-sdk/btc';
+import { remove0x, transactionToHex } from '@rgbpp-sdk/btc';
 import {
   RGBPPLock,
   RGBPP_TX_ID_PLACEHOLDER,
@@ -38,6 +38,7 @@ import { HttpStatusCode } from 'axios';
 import BaseQueueWorker from './base/queue-worker';
 import { Env } from '../env';
 import { TestnetTypeMap } from '../constants';
+import { getCommitmentFromBtcTx } from '../utils/commitment';
 
 export interface ITransactionRequest {
   txid: string;
@@ -77,13 +78,6 @@ class InvalidTransactionError extends Error {
 class TransactionNotConfirmedError extends Error {
   constructor(txid: string) {
     super(`Transaction not confirmed: ${txid}`);
-    this.name = this.constructor.name;
-  }
-}
-
-class OpReturnNotFoundError extends Error {
-  constructor(txid: string) {
-    super(`OP_RETURN output not found: ${txid}`);
     this.name = this.constructor.name;
   }
 }
@@ -154,20 +148,6 @@ export default class TransactionProcessor
   }
 
   /**
-   * Get commitment from Bitcoin transactions
-   * depended on @rgbpp-sdk/btc opReturnScriptPubKeyToData method
-   * @param tx - Bitcoin transaction
-   */
-  private async getCommitmentFromBtcTx(tx: Transaction): Promise<Buffer> {
-    const opReturn = tx.vout.find((vout) => vout.scriptpubkey_type === 'op_return');
-    if (!opReturn) {
-      throw new OpReturnNotFoundError(tx.txid);
-    }
-    const buffer = Buffer.from(opReturn.scriptpubkey, 'hex');
-    return opReturnScriptPubKeyToData(buffer);
-  }
-
-  /**
    * Clear the btcTxId in the RGBPP_LOCK/BTC_TIME_LOCK script to avoid the mismatch between the CKB and BTC transactions
    * @param ckbRawTx - CKB Raw Transaction
    * @param txid - Bitcoin transaction id
@@ -219,7 +199,7 @@ export default class TransactionProcessor
     const { commitment, ckbRawTx } = ckbVirtualResult;
 
     // make sure the commitment matches the Bitcoin transaction
-    const btcTxCommitment = await this.getCommitmentFromBtcTx(btcTx);
+    const btcTxCommitment = await getCommitmentFromBtcTx(btcTx);
     if (commitment !== btcTxCommitment.toString('hex')) {
       this.cradle.logger.info(`[TransactionProcessor] Bitcoin Transaction Commitment Mismatch: ${txid}`);
       return false;
