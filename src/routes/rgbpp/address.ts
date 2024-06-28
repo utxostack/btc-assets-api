@@ -2,7 +2,7 @@ import { FastifyPluginCallback, FastifyRequest } from 'fastify';
 import { Server } from 'http';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { CKBRawTransaction, CKBTransaction, Cell, Script, XUDTBalance } from './types';
+import { CKBTransaction, Cell, IsomorphicTransaction, Script, XUDTBalance } from './types';
 import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
 import { Env } from '../../env';
@@ -241,6 +241,45 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     },
   );
 
+  async function getIsomorphicTx(btcTx: BTCTransaction) {
+    const isomorphicTx: IsomorphicTransaction = {
+      ckbRawTx: undefined,
+      ckbTx: undefined,
+      status: { confirmed: false },
+    };
+    const setCkbTxAndStatus = (tx: TransactionWithStatus) => {
+      isomorphicTx.ckbTx = CKBTransaction.parse(tx.transaction);
+      isomorphicTx.status.confirmed = tx.txStatus.status === 'committed';
+    };
+
+    const job = await fastify.transactionProcessor.getTransactionRequest(btcTx.txid);
+    if (job) {
+      const { ckbRawTx } = job.data.ckbVirtualResult;
+      isomorphicTx.ckbRawTx = ckbRawTx;
+      // if the job is completed, get the ckb tx hash and fetch the ckb tx
+      const state = await job.getState();
+      if (state === 'completed') {
+        const ckbTx = await fastify.ckb.rpc.getTransaction(job.returnvalue);
+        // remove ckbRawTx to reduce response size
+        isomorphicTx.ckbRawTx = undefined;
+        setCkbTxAndStatus(ckbTx);
+      }
+      return isomorphicTx;
+    }
+    const rgbppLockTx = await fastify.rgbppCollector.queryRgbppLockTxByBtcTx(btcTx);
+    if (rgbppLockTx) {
+      const ckbTx = await fastify.ckb.rpc.getTransaction(rgbppLockTx.txHash);
+      setCkbTxAndStatus(ckbTx);
+    } else {
+      // XXX: this is a performance bottleneck, need to optimize
+      const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTxId(btcTx.txid);
+      if (btcTimeLockTx) {
+        setCkbTxAndStatus(btcTimeLockTx as TransactionWithStatus);
+      }
+    }
+    return isomorphicTx;
+  }
+
   fastify.get(
     '/:btc_address/activity',
     {
@@ -275,17 +314,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
               z.object({
                 btcTx: BTCTransaction,
                 isRgbpp: z.boolean(),
-                isomorphicTx: z
-                  .object({
-                    ckbRawTx: CKBRawTransaction.optional(),
-                    ckbTx: CKBTransaction.optional(),
-                    inputs: z.array(Cell).optional(),
-                    outputs: z.array(Cell).optional(),
-                    status: z.object({
-                      confirmed: z.boolean(),
-                    }),
-                  })
-                  .optional(),
+                isomorphicTx: IsomorphicTransaction.optional(),
               }),
             ),
           }),
@@ -294,76 +323,46 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     },
     async (request) => {
       const { btc_address } = request.params;
-      const { after_btc_txid } = request.query;
+      const { rgbpp_only, after_btc_txid } = request.query;
 
       const btcTxs = await fastify.bitcoin.getAddressTxs({
         address: btc_address,
         after_txid: after_btc_txid,
       });
-      const btcTxMap = new Map(btcTxs.map((tx) => [tx.txid, tx]));
       const withCommitmentTxs = btcTxs.filter((btcTx) => tryGetCommitmentFromBtcTx(btcTx));
 
-      const ckbRawTxMap = new Map<string, CKBRawTransaction>();
-      const ckbTxMap = new Map<string, TransactionWithStatus>();
-      await Promise.all(
-        withCommitmentTxs
-          .map((btcTx) => btcTx.txid)
-          .map(async (btcTxid) => {
-            const job = await fastify.transactionProcessor.getTransactionRequest(btcTxid);
-            if (job) {
-              const { ckbRawTx } = job.data.ckbVirtualResult;
-              ckbRawTxMap.set(btcTxid, ckbRawTx);
+      let txs = await Promise.all(
+        withCommitmentTxs.map(async (btcTx) => {
+          const isomorphicTx = await getIsomorphicTx(btcTx);
+          const isRgbpp = isomorphicTx.ckbRawTx || isomorphicTx.ckbTx;
+          if (!isRgbpp) {
+            return {
+              btcTx,
+              isRgbpp: false,
+            };
+          }
 
-              // if the job is completed, get the ckb tx hash and fetch the ckb tx
-              const state = await job.getState();
-              if (state === 'completed') {
-                const ckbTx = await fastify.ckb.rpc.getTransaction(job.returnvalue);
-                ckbTxMap.set(btcTxid, ckbTx);
-              }
-              return;
-            }
+          const inputOutpoints = isomorphicTx.ckbRawTx?.inputs || isomorphicTx.ckbTx?.inputs || [];
+          const inputs = await fastify.ckb.getInputCellsByOutPoint(
+            inputOutpoints.map((input) => input.previousOutput) as CKBComponents.OutPoint[],
+          );
+          const outputs = isomorphicTx.ckbRawTx?.outputs || isomorphicTx.ckbTx?.outputs || [];
 
-            const rgbppLockTx = await fastify.rgbppCollector.queryRgbppLockTxByBtcTx(btcTxMap.get(btcTxid)!);
-            if (rgbppLockTx) {
-              const ckbTx = await fastify.ckb.rpc.getTransaction(rgbppLockTx.txHash);
-              ckbTxMap.set(btcTxid, ckbTx);
-              return;
-            }
-            // XXX: this is a performance bottleneck, need to optimize
-            // 3.4s of 4s is spent on this
-            const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTxId(btcTxid);
-            if (btcTimeLockTx) {
-              ckbTxMap.set(btcTxid, btcTimeLockTx as TransactionWithStatus);
-              return;
-            }
-          }),
-      );
-
-      const txs = btcTxs.map((tx) => {
-        const isRgbpp = ckbRawTxMap.has(tx.txid) || ckbTxMap.has(tx.txid);
-        const btcTx = BTCTransaction.parse(tx);
-
-        if (!isRgbpp) {
           return {
             btcTx,
-            isRgbpp: false,
+            isRgbpp: true,
+            isomorphicTx: {
+              ...isomorphicTx,
+              inputs,
+              outputs,
+            },
           };
-        }
+        }),
+      );
 
-        const ckbRawTx = ckbRawTxMap.get(tx.txid);
-        const ckbTx = ckbTxMap.get(tx.txid);
-        const status = ckbTx ? { confirmed: ckbTx.txStatus.status === 'committed' } : { confirmed: false };
-
-        return {
-          btcTx,
-          isRgbpp: true,
-          isomorphicTx: {
-            ckbRawTx: ckbRawTx ? CKBRawTransaction.parse(ckbRawTx) : undefined,
-            ckbTx: ckbTx ? CKBTransaction.parse(ckbTx.transaction) : undefined,
-            status,
-          },
-        };
-      });
+      if (rgbpp_only === 'true') {
+        txs = txs.filter((tx) => tx.isRgbpp);
+      }
 
       return {
         address: btc_address,
