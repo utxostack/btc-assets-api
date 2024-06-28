@@ -3,6 +3,7 @@
 exports[`/:btc_address/activity 1`] = `
 {
   "address": "tb1q7yuyvms6z49qd65vwmtlpa4rp2rdt3nmjmpnpl",
+  "cursor": "024af1f0ace74f327a68ae2447c1d401f7b093704825c1ee3215859c937e7d2d",
   "txs": [
     {
       "btcTx": {

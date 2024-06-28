@@ -325,6 +325,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
                   ]),
                 ),
             ),
+            cursor: z.string().optional(),
           }),
         },
       },
@@ -391,9 +392,11 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         });
       }
 
+      const cursor = btcTxs.length > 0 ? btcTxs[btcTxs.length - 1].txid : undefined;
       return {
         address: btc_address,
         txs,
+        cursor,
       };
     },
   );
