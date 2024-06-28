@@ -187,6 +187,15 @@ export default class TransactionProcessor
   }
 
   /**
+   * Get commitment from Bitcoin transactions
+   * depended on @rgbpp-sdk/btc opReturnScriptPubKeyToData method
+   * @param tx - Bitcoin transaction
+   */
+  private getCommitmentFromBtcTx(tx: Transaction): Buffer {
+    return getCommitmentFromBtcTx(tx);
+  }
+
+  /**
    * Verify transaction request
    * - check if the commitment matches the Bitcoin transaction
    * - check if the CKB Virtual Transaction is valid
@@ -199,7 +208,7 @@ export default class TransactionProcessor
     const { commitment, ckbRawTx } = ckbVirtualResult;
 
     // make sure the commitment matches the Bitcoin transaction
-    const btcTxCommitment = await getCommitmentFromBtcTx(btcTx);
+    const btcTxCommitment = this.getCommitmentFromBtcTx(btcTx);
     if (commitment !== btcTxCommitment.toString('hex')) {
       this.cradle.logger.info(`[TransactionProcessor] Bitcoin Transaction Commitment Mismatch: ${txid}`);
       return false;
