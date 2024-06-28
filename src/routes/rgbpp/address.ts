@@ -75,7 +75,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
   /**
    * Filter cells by type script
    */
-  async function filterCellsByTypeScript(cells: Cell[], typeScript: Script) {
+  function filterCellsByTypeScript(cells: Cell[], typeScript: Script) {
     return cells.filter((cell) => {
       if (!cell.cellOutput.type) {
         return false;
@@ -311,11 +311,19 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           200: z.object({
             address: z.string(),
             txs: z.array(
-              z.object({
-                btcTx: BTCTransaction,
-                isRgbpp: z.boolean(),
-                isomorphicTx: IsomorphicTransaction.optional(),
-              }),
+              z
+                .object({
+                  btcTx: BTCTransaction,
+                })
+                .and(
+                  z.union([
+                    z.object({
+                      isRgbpp: z.literal(true),
+                      isomorphicTx: IsomorphicTransaction,
+                    }),
+                    z.object({ isRgbpp: z.literal(false) }),
+                  ]),
+                ),
             ),
           }),
         },
@@ -324,6 +332,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async (request) => {
       const { btc_address } = request.params;
       const { rgbpp_only, after_btc_txid } = request.query;
+      const typeScript = getTypeScript(request);
 
       const btcTxs = await fastify.bitcoin.getAddressTxs({
         address: btc_address,
@@ -339,7 +348,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             return {
               btcTx,
               isRgbpp: false,
-            };
+            } as const;
           }
 
           const inputOutpoints = isomorphicTx.ckbRawTx?.inputs || isomorphicTx.ckbTx?.inputs || [];
@@ -356,12 +365,30 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
               inputs,
               outputs,
             },
-          };
+          } as const;
         }),
       );
 
       if (rgbpp_only === 'true') {
         txs = txs.filter((tx) => tx.isRgbpp);
+      }
+
+      if (typeScript) {
+        txs = txs.filter((tx) => {
+          if (!tx.isRgbpp) {
+            return false;
+          }
+          const cells = [...tx.isomorphicTx.inputs, ...tx.isomorphicTx.outputs];
+          const filteredCells = cells.filter((cell) => {
+            if (!cell.type) return false;
+            if (!typeScript.args) {
+              const script = { ...cell.type, args: '' };
+              return isScriptEqual(script, typeScript);
+            }
+            return isScriptEqual(cell.type, typeScript);
+          });
+          return filteredCells.length > 0;
+        });
       }
 
       return {
