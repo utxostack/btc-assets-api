@@ -83,16 +83,22 @@ export const CKBVirtualResult = z.object({
 });
 export type CKBVirtualResult = z.infer<typeof CKBVirtualResult>;
 
-export const XUDTBalance = z.object({
+export const XUDTTypeInfo = z.object({
+  symbol: z.string(),
   name: z.string(),
   decimal: z.number(),
-  symbol: z.string(),
-  total_amount: z.string(),
-  available_amount: z.string(),
-  pending_amount: z.string(),
   type_hash: z.string(),
   type_script: Script,
 });
+export type XUDTTypeInfo = z.infer<typeof XUDTTypeInfo>;
+
+export const XUDTBalance = XUDTTypeInfo.merge(
+  z.object({
+    total_amount: z.string(),
+    available_amount: z.string(),
+    pending_amount: z.string(),
+  }),
+);
 export type XUDTBalance = z.infer<typeof XUDTBalance>;
 
 export const IsomorphicTransaction = z.object({

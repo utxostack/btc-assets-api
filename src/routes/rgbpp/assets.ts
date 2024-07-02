@@ -2,11 +2,16 @@ import { FastifyPluginCallback } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Server } from 'http';
 import z from 'zod';
-import { Cell } from './types';
+import { Cell, XUDTTypeInfo } from './types';
 import { UTXO } from '../../services/bitcoin/schema';
+import { getTypeScript } from '../../utils/typescript';
+import { Env } from '../../env';
+import { isUDTTypeSupported } from '@rgbpp-sdk/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 
 const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
+  const env: Env = fastify.container.resolve('env');
+
   fastify.get(
     '/:btc_txid',
     {
@@ -94,6 +99,48 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
           typeHash,
         };
       });
+    },
+  );
+
+  fastify.get(
+    '/type',
+    {
+      schema: {
+        description: 'Get RGB++ assets type info by typescript',
+        tags: ['RGB++'],
+        querystring: z.object({
+          type_script: z.string().optional(),
+        }),
+        response: {
+          200: z
+            .object({
+              type: z.literal('xudt'),
+            })
+            .merge(XUDTTypeInfo)
+            .nullable(),
+        },
+      },
+    },
+    async (request) => {
+      const isMainnet = env.NETWORK === 'mainnet';
+      const typeScript = getTypeScript(request.query.type_script);
+      if (!typeScript) {
+        return null;
+      }
+      if (isUDTTypeSupported(typeScript, isMainnet)) {
+        const infoCell = await fastify.ckb.getInfoCellData(typeScript);
+        const typeHash = computeScriptHash(typeScript);
+        if (!infoCell) {
+          return null;
+        }
+        return {
+          type: 'xudt' as const,
+          type_hash: typeHash,
+          type_script: typeScript,
+          ...infoCell,
+        };
+      }
+      return null;
     },
   );
 
