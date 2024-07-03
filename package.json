@@ -47,6 +47,7 @@
     "@rgbpp-sdk/service": "^0.4.0",
     "@sentry/node": "^7.102.1",
     "@sentry/profiling-node": "^7.102.1",
+    "@spore-sdk/core": "^0.2.0-beta.9",
     "async-retry": "^1.3.3",
     "awilix": "^10.0.1",
     "axios": "^1.6.7",

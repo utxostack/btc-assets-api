@@ -25,8 +25,8 @@ import { TestnetTypeMap } from '../constants';
 import { TransactionWithStatus } from '@ckb-lumos/base';
 
 type GetCellsParams = Parameters<RPC['getCells']>;
-type SearchKey = GetCellsParams[0];
-type CKBBatchRequest = { exec: () => Promise<{ objects: IndexerCell[] }[]> };
+export type SearchKey = GetCellsParams[0];
+export type CKBBatchRequest = { exec: () => Promise<{ objects: IndexerCell[] }[]> };
 
 export type RgbppUtxoCellsPair = {
   utxo: UTXO;

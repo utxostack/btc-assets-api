@@ -92,6 +92,18 @@ export const XUDTTypeInfo = z.object({
 });
 export type XUDTTypeInfo = z.infer<typeof XUDTTypeInfo>;
 
+export const SporeTypeInfo = z.object({
+  contentType: z.string(),
+  cluster: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      description: z.string(),
+    })
+    .optional(),
+});
+export type SporeTypeInfo = z.infer<typeof SporeTypeInfo>;
+
 export const XUDTBalance = XUDTTypeInfo.merge(
   z.object({
     total_amount: z.string(),
