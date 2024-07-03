@@ -4,6 +4,7 @@ import { Server } from 'http';
 import z from 'zod';
 import { Cell } from './types';
 import { UTXO } from '../../services/bitcoin/schema';
+import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 
 const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   fastify.get(
@@ -16,7 +17,13 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
           btc_txid: z.string(),
         }),
         response: {
-          200: z.array(Cell),
+          200: z.array(
+            Cell.merge(
+              z.object({
+                type_hash: z.string().optional(),
+              }),
+            ),
+          ),
         },
       },
     },
@@ -36,7 +43,13 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
       });
 
       const batchCells = await fastify.rgbppCollector.getRgbppCellsByBatchRequest(utxos);
-      return batchCells.flat();
+      return batchCells.flat().map((cell) => {
+        const typeHash = cell.cellOutput.type ? computeScriptHash(cell.cellOutput.type) : undefined;
+        return {
+          ...cell,
+          type_hash: typeHash,
+        };
+      });
     },
   );
 
@@ -51,7 +64,13 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
           vout: z.coerce.number(),
         }),
         response: {
-          200: z.array(Cell),
+          200: z.array(
+            Cell.merge(
+              z.object({
+                type_hash: z.string().optional(),
+              }),
+            ),
+          ),
         },
       },
     },
@@ -68,7 +87,13 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
       };
 
       const batchCells = await fastify.rgbppCollector.getRgbppCellsByBatchRequest([utxo]);
-      return batchCells.flat();
+      return batchCells.flat().map((cell) => {
+        const typeHash = cell.cellOutput.type ? computeScriptHash(cell.cellOutput.type) : undefined;
+        return {
+          ...cell,
+          type_hash: typeHash,
+        };
+      });
     },
   );
 
