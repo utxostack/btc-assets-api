@@ -23,7 +23,7 @@ exports[`Get RGB++ assets by BTC txid 1`] = `
       "txHash": "0xb799ae6896875f2a1a1e765d614cf864c444242babc4bfd7808b37fdea66c4cc",
     },
     "txIndex": "0x2",
-    "type_hash": "0x27b36bd74aec3ffccb1c1351c3e3db64cba33ee1b5651059fe468fbcbb8c81bd",
+    "typeHash": "0x27b36bd74aec3ffccb1c1351c3e3db64cba33ee1b5651059fe468fbcbb8c81bd",
   },
 ]
 `;
@@ -51,7 +51,7 @@ exports[`Get RGB++ assets by BTC txid and vout 1`] = `
       "txHash": "0xb799ae6896875f2a1a1e765d614cf864c444242babc4bfd7808b37fdea66c4cc",
     },
     "txIndex": "0x2",
-    "type_hash": "0x27b36bd74aec3ffccb1c1351c3e3db64cba33ee1b5651059fe468fbcbb8c81bd",
+    "typeHash": "0x27b36bd74aec3ffccb1c1351c3e3db64cba33ee1b5651059fe468fbcbb8c81bd",
   },
 ]
 `;

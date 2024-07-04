@@ -20,7 +20,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
           200: z.array(
             Cell.merge(
               z.object({
-                type_hash: z.string().optional(),
+                typeHash: z.string().optional(),
               }),
             ),
           ),
@@ -47,7 +47,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
         const typeHash = cell.cellOutput.type ? computeScriptHash(cell.cellOutput.type) : undefined;
         return {
           ...cell,
-          type_hash: typeHash,
+          typeHash,
         };
       });
     },
@@ -67,7 +67,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
           200: z.array(
             Cell.merge(
               z.object({
-                type_hash: z.string().optional(),
+                typeHash: z.string().optional(),
               }),
             ),
           ),
@@ -91,7 +91,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
         const typeHash = cell.cellOutput.type ? computeScriptHash(cell.cellOutput.type) : undefined;
         return {
           ...cell,
-          type_hash: typeHash,
+          typeHash,
         };
       });
     },
