@@ -23,6 +23,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x4f8f6042b3646e677c871be1629150407b520e48174612d428506995f6055558",
     },
     "txIndex": "0x8",
+    "typeHash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
   },
   {
     "blockNumber": "0xc87015",
@@ -45,6 +46,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xe098e5919e496fc6efb601307578cc436df7d554b9a3994f03b85d0ad2e8e7a6",
     },
     "txIndex": "0x1",
+    "typeHash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
   },
   {
     "blockNumber": "0xcc3842",
@@ -67,6 +69,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xdd0226408c4c31b2466f7c3d661d4e3e3c8b429631212a525f6668765baadc80",
     },
     "txIndex": "0x1",
+    "typeHash": "0x4e3ae370563059382617a4cb4a28f12811bf16ec0e7d4bf38c7974ba99d52024",
   },
   {
     "blockNumber": "0xcb4375",
@@ -89,6 +92,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x3aeb2a7f8e00ca32fae9b658da88274f2dcfeff41108ea28b567dc9b79c7dd3c",
     },
     "txIndex": "0x3",
+    "typeHash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
   },
   {
     "blockNumber": "0xc35ba6",
@@ -111,6 +115,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x71b4f66ac7f657e3b96b5b0694de5fadb61740d2644eabb91090dd9bce93316a",
     },
     "txIndex": "0x4",
+    "typeHash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
   },
   {
     "blockNumber": "0xcb4378",
@@ -133,6 +138,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xb5ab02c1583387fa7bc3cb7e61daccead6d4d6b9a1294555328d4bc209ed5f8f",
     },
     "txIndex": "0x1",
+    "typeHash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
   },
   {
     "blockNumber": "0xcc383d",
@@ -155,6 +161,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x3b1a2d2d00a5ef95b45d93cc1d9394a411319f956121d95104b784e8b469f538",
     },
     "txIndex": "0x3",
+    "typeHash": "0xc1b4ba4b70e7d819df97052db2c8f397818fff778fe558f6f4cbdd1a7188a90c",
   },
   {
     "blockNumber": "0xc35ba6",
@@ -177,6 +184,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x274865dc9e754ab8fc96cbc7be20093feca0073b91d3157aed2639f6e89ada90",
     },
     "txIndex": "0x8",
+    "typeHash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
   },
   {
     "blockNumber": "0xcc3d9d",
@@ -199,6 +207,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xefcada73aa020bfc4c4dc7192f9a6a6e6152af77d1bb2c2380314b4130751bc4",
     },
     "txIndex": "0x6",
+    "typeHash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
   },
   {
     "blockNumber": "0xcb42df",
@@ -221,6 +230,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xeec5c357338f622f9bf586532be687f8fc1918566f27b4abb7fa5f9c1891af6b",
     },
     "txIndex": "0x2",
+    "typeHash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
   },
   {
     "blockNumber": "0xcb669c",
@@ -243,6 +253,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x2f6b86c4311dc854e779c0bbce110f397a0acc03dfe435aedf832b4f3de1a485",
     },
     "txIndex": "0x1",
+    "typeHash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
   },
   {
     "blockNumber": "0xcb7072",
@@ -265,6 +276,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xbd1886d03da82d0a012af423044d8f192598d3a7be454397497fd22aba2a784e",
     },
     "txIndex": "0x1",
+    "typeHash": "0xf0d58aed78476f0aa4fab18f45de1fdcf4f42426fb03570de236dfd36638f3ed",
   },
 ]
 `;
