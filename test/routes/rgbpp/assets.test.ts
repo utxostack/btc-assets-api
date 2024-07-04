@@ -1,11 +1,10 @@
 import { beforeEach, expect, test } from 'vitest';
 import { buildFastify } from '../../../src/app';
 import { describe } from 'node:test';
-import { Env } from '../../../src/env';
 
 let token: string;
 
-describe('/rgbpp/v1/paymaster', () => {
+describe('/rgbpp/v1/assets', () => {
   beforeEach(async () => {
     const fastify = buildFastify();
     await fastify.ready();
@@ -24,15 +23,13 @@ describe('/rgbpp/v1/paymaster', () => {
     await fastify.close();
   });
 
-  test('Get paymaster btc address', async () => {
+  test('Get RGB++ assets by BTC txid', async () => {
     const fastify = buildFastify();
     await fastify.ready();
 
-    const env: Env = fastify.container.resolve('env');
-
     const response = await fastify.inject({
       method: 'GET',
-      url: '/rgbpp/v1/paymaster/info',
+      url: '/rgbpp/v1/assets/ca159e04767c25cb012f0d1c0731c767e2b58468d4cd7b505de0b184dcf97017',
       headers: {
         Authorization: `Bearer ${token}`,
         Origin: 'https://test.com',
@@ -41,9 +38,27 @@ describe('/rgbpp/v1/paymaster', () => {
     const data = response.json();
 
     expect(response.statusCode).toBe(200);
-    expect(data.btc_address).toEqual(env.PAYMASTER_RECEIVE_BTC_ADDRESS);
-    expect(data.ckb_address).not.toBeUndefined();
-    expect(data.fee).toEqual(env.PAYMASTER_BTC_CONTAINER_FEE_SATS);
+    expect(data).toMatchSnapshot();
+
+    await fastify.close();
+  });
+
+  test('Get RGB++ assets by BTC txid and vout', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/rgbpp/v1/assets/ca159e04767c25cb012f0d1c0731c767e2b58468d4cd7b505de0b184dcf97017/1',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
+      },
+    });
+    const data = response.json();
+
+    expect(response.statusCode).toBe(200);
+    expect(data).toMatchSnapshot();
 
     await fastify.close();
   });

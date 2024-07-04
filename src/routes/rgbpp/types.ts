@@ -91,5 +91,6 @@ export const XUDTBalance = z.object({
   available_amount: z.string(),
   pending_amount: z.string(),
   type_hash: z.string(),
+  type_script: Script,
 });
 export type XUDTBalance = z.infer<typeof XUDTBalance>;

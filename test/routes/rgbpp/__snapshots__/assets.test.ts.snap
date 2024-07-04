@@ -1,0 +1,57 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Get RGB++ assets by BTC txid 1`] = `
+[
+  {
+    "blockNumber": "0xc6067f",
+    "cellOutput": {
+      "capacity": "0x5e9f52520",
+      "lock": {
+        "args": "0x010000001770f9dc84b1e05d507bcdd46884b5e267c731071c0d2f01cb257c76049e15ca",
+        "codeHash": "0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248",
+        "hashType": "type",
+      },
+      "type": {
+        "args": "0x7e96affc517fe2b286e309e88d6b331911fc319baa3f8a830dcf59a9756f2c25",
+        "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+        "hashType": "type",
+      },
+    },
+    "data": "0x0040075af07507000000000000000000",
+    "outPoint": {
+      "index": "0x0",
+      "txHash": "0xb799ae6896875f2a1a1e765d614cf864c444242babc4bfd7808b37fdea66c4cc",
+    },
+    "txIndex": "0x2",
+    "typeHash": "0x27b36bd74aec3ffccb1c1351c3e3db64cba33ee1b5651059fe468fbcbb8c81bd",
+  },
+]
+`;
+
+exports[`Get RGB++ assets by BTC txid and vout 1`] = `
+[
+  {
+    "blockNumber": "0xc6067f",
+    "cellOutput": {
+      "capacity": "0x5e9f52520",
+      "lock": {
+        "args": "0x010000001770f9dc84b1e05d507bcdd46884b5e267c731071c0d2f01cb257c76049e15ca",
+        "codeHash": "0x61ca7a4796a4eb19ca4f0d065cb9b10ddcf002f10f7cbb810c706cb6bb5c3248",
+        "hashType": "type",
+      },
+      "type": {
+        "args": "0x7e96affc517fe2b286e309e88d6b331911fc319baa3f8a830dcf59a9756f2c25",
+        "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+        "hashType": "type",
+      },
+    },
+    "data": "0x0040075af07507000000000000000000",
+    "outPoint": {
+      "index": "0x0",
+      "txHash": "0xb799ae6896875f2a1a1e765d614cf864c444242babc4bfd7808b37fdea66c4cc",
+    },
+    "txIndex": "0x2",
+    "typeHash": "0x27b36bd74aec3ffccb1c1351c3e3db64cba33ee1b5651059fe468fbcbb8c81bd",
+  },
+]
+`;

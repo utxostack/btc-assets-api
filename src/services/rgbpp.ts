@@ -124,8 +124,9 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         if (!xudtBalances[typeHash]) {
           xudtBalances[typeHash] = {
             ...infoCellData,
-            type_hash: typeHash,
             amount: amount,
+            type_hash: typeHash,
+            type_script: type,
           };
         } else {
           xudtBalances[typeHash].amount = BI.from(xudtBalances[typeHash].amount).add(BI.from(amount)).toHexString();
