@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/ban-types */
 import { HttpStatusCode, isAxiosError } from 'axios';
 import * as Sentry from '@sentry/node';
 import { Cradle } from '../../container';
@@ -50,6 +52,9 @@ interface IBitcoinClient extends IBitcoinDataProvider {
   getBlockchainInfo(): Promise<ChainInfo>;
 }
 
+type MethodParameters<T, K extends keyof T> = T[K] extends (...args: infer P) => any ? P : never;
+type MethodReturnType<T, K extends keyof T> = T[K] extends (...args: any[]) => infer R ? R : never;
+
 export default class BitcoinClient implements IBitcoinClient {
   private cradle: Cradle;
   private source: IBitcoinDataProvider;
@@ -93,34 +98,35 @@ export default class BitcoinClient implements IBitcoinClient {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async call<K extends keyof IBitcoinDataProvider>(
     method: K,
-    args: Parameters<IBitcoinDataProvider[K]>,
-  ): Promise<ReturnType<IBitcoinDataProvider[K]>> {
+    ...args: MethodParameters<IBitcoinDataProvider, K>
+  ): Promise<MethodReturnType<IBitcoinDataProvider, K>> {
     try {
       this.cradle.logger.debug(`Calling ${method} with args: ${JSON.stringify(args)}`);
-      // @ts-expect-error args: A spread argument must either have a tuple type or be passed to a rest parameter
-      const result = await this.source[method].call(this.source, ...args);
-      // @ts-expect-error return type is correct
-      return result;
+      const result = await (this.source[method] as Function).apply(this.source, args);
+      return result as MethodReturnType<IBitcoinDataProvider, K>;
     } catch (err) {
+      let calledError = err;
       this.cradle.logger.error(err);
       Sentry.captureException(err);
       if (this.fallback) {
         this.cradle.logger.warn(
           `Fallback to ${this.fallback.constructor.name} due to error: ${(err as Error).message}`,
         );
-        // @ts-expect-error same as above
-        const result = await this.fallback[method].call(this.fallback, ...args);
-        // @ts-expect-error return type is correct
-        return result;
+        try {
+          const result = await (this.fallback[method] as Function).apply(this.fallback, args);
+          return result as MethodReturnType<IBitcoinDataProvider, K>;
+        } catch (fallbackError) {
+          this.cradle.logger.error(fallbackError);
+          Sentry.captureException(fallbackError);
+          calledError = fallbackError;
+        }
       }
-      this.cradle.logger.error(err);
-      if (isAxiosError(err)) {
-        const error = new BitcoinClientAPIError(err.response?.data ?? err.message);
-        if (err.response?.status) {
-          error.statusCode = err.response.status;
+      if (isAxiosError(calledError)) {
+        const error = new BitcoinClientAPIError(calledError.response?.data ?? calledError.message);
+        if (calledError.response?.status) {
+          error.statusCode = calledError.response.status;
         }
         throw error;
       }
@@ -172,11 +178,11 @@ export default class BitcoinClient implements IBitcoinClient {
   }
 
   public async getFeesRecommended() {
-    return this.call('getFeesRecommended', []);
+    return this.call('getFeesRecommended');
   }
 
   public async postTx({ txhex }: { txhex: string }) {
-    const txid = await this.call('postTx', [{ txhex }]);
+    const txid = await this.call('postTx', { txhex });
     Promise.all(
       this.backupers.map(async (backuper) => {
         const baseURL = await backuper.getBaseURL();
@@ -194,38 +200,38 @@ export default class BitcoinClient implements IBitcoinClient {
   }
 
   public async getAddressTxsUtxo({ address }: { address: string }) {
-    return this.call('getAddressTxsUtxo', [{ address }]);
+    return this.call('getAddressTxsUtxo', { address });
   }
 
   public async getAddressTxs({ address, after_txid }: { address: string; after_txid?: string }) {
-    return this.call('getAddressTxs', [{ address, after_txid }]);
+    return this.call('getAddressTxs', { address, after_txid });
   }
 
   public async getTx({ txid }: { txid: string }) {
-    return this.call('getTx', [{ txid }]);
+    return this.call('getTx', { txid });
   }
 
   public async getTxHex({ txid }: { txid: string }) {
-    return this.call('getTxHex', [{ txid }]);
+    return this.call('getTxHex', { txid });
   }
 
   public async getBlock({ hash }: { hash: string }) {
-    return this.call('getBlock', [{ hash }]);
+    return this.call('getBlock', { hash });
   }
 
   public async getBlockHeight({ height }: { height: number }) {
-    return this.call('getBlockHeight', [{ height }]);
+    return this.call('getBlockHeight', { height });
   }
 
   public async getBlockHeader({ hash }: { hash: string }) {
-    return this.call('getBlockHeader', [{ hash }]);
+    return this.call('getBlockHeader', { hash });
   }
 
   public async getBlockTxids({ hash }: { hash: string }) {
-    return this.call('getBlockTxids', [{ hash }]);
+    return this.call('getBlockTxids', { hash });
   }
 
   public async getBlocksTipHash() {
-    return this.call('getBlocksTipHash', []);
+    return this.call('getBlocksTipHash');
   }
 }
