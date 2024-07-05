@@ -1,3 +1,0 @@
-// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
-
-exports[`BitcoinSPV > getTxProof: throw BitcoinSPVError 1`] = `[BitcoinSPVError: target transaction is in header#2583777 and it requires 5 confirmations, but the tip header in local storage is header#2583781]`;
