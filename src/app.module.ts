@@ -6,6 +6,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { envSchema } from './env';
 import { SentryModule } from '@ntegral/nestjs-sentry';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import { CacheModule } from '@nestjs/cache-manager';
+import type { RedisClientOptions } from 'redis';
+import * as redisStore from 'cache-manager-redis-store';
+import { StoreConfig } from 'cache-manager';
 
 @Module({
   imports: [
@@ -13,8 +17,20 @@ import { nodeProfilingIntegration } from '@sentry/profiling-node';
       isGlobal: true,
       validate: envSchema.parse,
     }),
+    CacheModule.registerAsync<RedisClientOptions>({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) =>
+        ({
+          store: redisStore,
+          url: configService.get('REDIS_URL'),
+          ttl: 10,
+        }) as StoreConfig,
+    }),
     SentryModule.forRootAsync({
       imports: [ConfigModule],
+      inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         dsn: configService.get('SENTRY_DSN'),
         environment: configService.get('NODE_ENV'),
@@ -32,7 +48,6 @@ import { nodeProfilingIntegration } from '@sentry/profiling-node';
           return null;
         },
       }),
-      inject: [ConfigService],
     }),
     TokenModule,
     BitcoinModule,

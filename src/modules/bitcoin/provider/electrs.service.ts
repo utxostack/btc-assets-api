@@ -1,5 +1,4 @@
 import axios, { AxiosInstance } from 'axios';
-import { IBitcoinDataProvider } from './interface';
 import {
   Block,
   BlockDto,
@@ -8,8 +7,9 @@ import {
   TransactionDto,
   UTXODto,
 } from '../bitcoin.schema';
+import { IBitcoinDataProvider } from '../interface/bitcoin-data-provider.interface';
 
-export class ElectrsClient implements IBitcoinDataProvider {
+export class ElectrsService implements IBitcoinDataProvider {
   private request: AxiosInstance;
 
   constructor(private baseURL: string) {

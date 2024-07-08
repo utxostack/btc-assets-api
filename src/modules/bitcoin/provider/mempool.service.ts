@@ -1,10 +1,10 @@
 import mempoolJS from '@cell-studio/mempool.js';
 import * as Sentry from '@sentry/node';
 import { FeesMempoolBlocks } from '@cell-studio/mempool.js/lib/interfaces/bitcoin/fees';
-import { IBitcoinDataProvider } from './interface';
 import { Block, RecommendedFees, RecommendedFeesDto, Transaction, UTXO } from '../bitcoin.schema';
+import { IBitcoinDataProvider } from '../interface/bitcoin-data-provider.interface';
 
-export class MempoolClient implements IBitcoinDataProvider {
+export class MempoolService implements IBitcoinDataProvider {
   private mempool: ReturnType<typeof mempoolJS>;
   private defaultFee = 1;
 

@@ -1,12 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IBitcoinBroadcastBackuper, IBitcoinDataProvider } from './clients/interface';
 import { ConfigService } from '@nestjs/config';
-import { MempoolClient } from './clients/mempool.client';
-import { ElectrsClient } from './clients/electrs.client';
 import { HttpStatusCode, isAxiosError } from 'axios';
 import { NetworkType } from 'src/constants';
 import { InjectSentry, SentryService } from '@ntegral/nestjs-sentry';
 import { BlockchainInfoDto } from './bitcoin.schema';
+import { IBitcoinDataProvider } from './interface/bitcoin-data-provider.interface';
+import { IBitcoinBroadcastBackuper } from './interface/bitcoin-broadcast-backuper.interface';
+import { MempoolService } from './provider/mempool.service';
+import { ElectrsService } from './provider/electrs.service';
 
 type MethodParameters<T, K extends keyof T> = T[K] extends (...args: infer P) => any ? P : never;
 type MethodReturnType<T, K extends keyof T> = T[K] extends (...args: any[]) => infer R ? R : never;
@@ -68,18 +69,18 @@ export class BitcoinService {
     switch (BITCOIN_DATA_PROVIDER) {
       case 'mempool':
         this.logger.log('Using Mempool.space API as the bitcoin data provider');
-        this.source = new MempoolClient(BITCOIN_MEMPOOL_SPACE_API_URL, network);
+        this.source = new MempoolService(BITCOIN_MEMPOOL_SPACE_API_URL, network);
         if (BITCOIN_ELECTRS_API_URL) {
           this.logger.log('Using Electrs API as the fallback bitcoin data provider');
-          this.fallback = new ElectrsClient(BITCOIN_ELECTRS_API_URL);
+          this.fallback = new ElectrsService(BITCOIN_ELECTRS_API_URL);
         }
         break;
       case 'electrs':
         this.logger.log('Using Electrs API as the bitcoin data provider');
-        this.source = new ElectrsClient(BITCOIN_ELECTRS_API_URL);
+        this.source = new ElectrsService(BITCOIN_ELECTRS_API_URL);
         if (BITCOIN_MEMPOOL_SPACE_API_URL) {
           this.logger.log('Using Mempool.space API as the fallback bitcoin data provider');
-          this.fallback = new MempoolClient(BITCOIN_MEMPOOL_SPACE_API_URL, network);
+          this.fallback = new MempoolService(BITCOIN_MEMPOOL_SPACE_API_URL, network);
         }
         break;
       default:
@@ -97,7 +98,7 @@ export class BitcoinService {
       Array.isArray(additionalElectrsUrlList) &&
       additionalElectrsUrlList.length > 0
     ) {
-      const additionalElectrs = additionalElectrsUrlList.map((url) => new ElectrsClient(url));
+      const additionalElectrs = additionalElectrsUrlList.map((url) => new ElectrsService(url));
       this.backupers.push(...additionalElectrs);
     }
   }

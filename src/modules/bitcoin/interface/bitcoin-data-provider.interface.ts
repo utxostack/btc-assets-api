@@ -20,5 +20,3 @@ export interface IBitcoinDataProvider {
   getBlockTxids({ hash }: { hash: string }): Promise<string[]>;
   getBlocksTipHash(): Promise<string>;
 }
-
-export type IBitcoinBroadcastBackuper = Pick<IBitcoinDataProvider, 'getBaseURL' | 'postTx'>;
