@@ -8,6 +8,38 @@ A service for Retrieving BTC/RGB++ information/assets and processing transaction
 - Transaction Handling by posting transactions to the /bitcoin/v1/transaction or /rgbpp/v1/transaction/ckb-tx endpoint
 - RGB++ CKB transaction Queue simplifies the RGB++ assets workflows by some cron jobs
 
+## Get started
+
+We provide APIs for testnet and signet for use.
+
+- Testnet: [https://api.testnet.rgbpp.io](https://api.testnet.rgbpp.io/docs)
+- Signet: [https://api.signet.rgbpp.io](https://api.signet.rgbpp.io/docs)
+
+For mainnet, API is currently limited to verified apps only.
+You can also check the [Deployment](#Deployment) section to deploy your own.
+
+### Get an access token
+
+#### Testnet
+
+You can get a testnet access token through the [/token/generate](https://api.testnet.rgbpp.io/docs/static/index.html#/Token/post_token_generate) API directly.
+
+### Signet
+
+And you can get an access token of BTC Signet network through the [/token/generate](https://api.signet.rgbpp.io/docs/static/index.html#/Token/post_token_generate) API directly.
+
+#### Mainnet
+
+The mainnet is currently limited to verified apps only.
+
+When your app development is ready on testnet, and requires a mainnet access token,
+please email us at f@cell.studio to request a mainnet JWT token.
+
+In the email, please provide the following information about your app:
+
+- `name`: Your app name, e.g. "rgbpp-app"
+- `domain`: Your app domain, e.g. "rgbpp.app" (without protocol prefix and port suffix)
+
 ### Deployment
 
 #### Requirements
@@ -111,4 +143,4 @@ Use the provided `docker-compose.yml` file to run the service:
 docker-compose up
 ```
 
-after the service is running, you can access the API documentation at `http://localhost:3000/docs`
+After the service is running, you can access the API documentation at `http://localhost:3000/docs`
