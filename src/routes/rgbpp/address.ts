@@ -81,7 +81,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         return false;
       }
       // if typeScript.args is empty, only compare codeHash and hashType
-      if (!typeScript.args) {
+      if (!typeScript.args || typeScript.args === '0x') {
         const script = { ...cell.cellOutput.type, args: '' };
         return isScriptEqual(script, typeScript);
       }
