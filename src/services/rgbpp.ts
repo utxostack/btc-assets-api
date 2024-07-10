@@ -1,8 +1,15 @@
-import { UTXO } from './bitcoin/schema';
+import { Transaction, UTXO } from './bitcoin/schema';
 import pLimit from 'p-limit';
 import asyncRetry from 'async-retry';
 import { Cradle } from '../container';
-import { IndexerCell, buildRgbppLockArgs, genRgbppLockScript, leToU128 } from '@rgbpp-sdk/ckb';
+import {
+  IndexerCell,
+  buildRgbppLockArgs,
+  genRgbppLockScript,
+  getBtcTimeLockScript,
+  isScriptEqual,
+  leToU128,
+} from '@rgbpp-sdk/ckb';
 import * as Sentry from '@sentry/node';
 import { BI, RPC, Script } from '@ckb-lumos/lumos';
 import { Job } from 'bullmq';
@@ -14,6 +21,7 @@ import { groupBy } from 'lodash';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { remove0x } from '@rgbpp-sdk/btc';
 import { TestnetTypeMap } from '../constants';
+import { TransactionWithStatus } from '@ckb-lumos/base';
 
 type GetCellsParams = Parameters<RPC['getCells']>;
 type SearchKey = GetCellsParams[0];
@@ -228,6 +236,65 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     );
     const pairs = data.flat().filter(({ cells }: RgbppUtxoCellsPair) => cells.length > 0);
     return pairs;
+  }
+
+  public async queryRgbppLockTxByBtcTx(btcTx: Transaction) {
+    const network = this.cradle.env.NETWORK;
+    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
+
+    const batchRequest = this.cradle.ckb.rpc.createBatchRequest(
+      btcTx.vout.map((_, index) => {
+        const args = buildRgbppLockArgs(index, btcTx.txid);
+        const lock = genRgbppLockScript(args, isMainnet, TestnetTypeMap[network]);
+        const searchKey: SearchKey = {
+          script: lock,
+          scriptType: 'lock',
+        };
+        return ['getTransactions', searchKey, 'desc', '0x1'];
+      }),
+    );
+    type getTransactionsResult = ReturnType<typeof this.cradle.ckb.rpc.getTransactions<false>>;
+    const transactions: Awaited<getTransactionsResult>[] = await batchRequest.exec();
+    for (const { objects } of transactions) {
+      if (objects.length > 0) {
+        const [tx] = objects;
+        return tx;
+      }
+    }
+    return null;
+  }
+
+  public async queryBtcTimeLockTxByBtcTxId(btcTxId: string) {
+    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
+    // XXX: unstable, need to be improved: https://github.com/ckb-cell/btc-assets-api/issues/45
+    const btcTimeLockScript = getBtcTimeLockScript(isMainnet);
+    const btcTimeLockTxs = await this.cradle.ckb.indexer.getTransactions({
+      script: {
+        ...btcTimeLockScript,
+        args: '0x',
+      },
+      scriptType: 'lock',
+    });
+
+    const batchRequest = this.cradle.ckb.rpc.createBatchRequest(
+      btcTimeLockTxs.objects.map(({ txHash }) => ['getTransaction', txHash]),
+    );
+    const transactions: TransactionWithStatus[] = await batchRequest.exec();
+    if (transactions.length > 0) {
+      for (const tx of transactions) {
+        const isBtcTimeLockTx = tx.transaction.outputs.some((output) => {
+          if (!isScriptEqual(output.lock, btcTimeLockScript)) {
+            return false;
+          }
+          const btcTxid = remove0x(btcTxId);
+          return remove0x(btcTxid) === btcTxId;
+        });
+        if (isBtcTimeLockTx) {
+          return tx;
+        }
+      }
+    }
+    return null;
   }
 
   /**

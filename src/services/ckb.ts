@@ -7,7 +7,7 @@ import {
   sendCkbTx,
 } from '@rgbpp-sdk/ckb';
 import { Cradle } from '../container';
-import { Indexer, RPC, Script } from '@ckb-lumos/lumos';
+import { BI, Indexer, RPC, Script } from '@ckb-lumos/lumos';
 import { CKBRPC } from '@ckb-lumos/rpc';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
@@ -21,6 +21,7 @@ import {
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import DataCache from './base/data-cache';
 import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils';
+import { OutputCell } from '../routes/rgbpp/types';
 
 export type TransactionWithStatus = Awaited<ReturnType<CKBRPC['getTransaction']>>;
 
@@ -302,6 +303,16 @@ export default class CKBClient {
       }
     }
     return null;
+  }
+
+  public async getInputCellsByOutPoint(outPoints: CKBComponents.OutPoint[]): Promise<OutputCell[]> {
+    const batchRequest = this.rpc.createBatchRequest(outPoints.map((outPoint) => ['getTransaction', outPoint.txHash]));
+    const txs = await batchRequest.exec();
+    const inputs = txs.map((tx: TransactionWithStatus, index: number) => {
+      const outPoint = outPoints[index];
+      return tx.transaction.outputs[BI.from(outPoint.index).toNumber()];
+    });
+    return inputs;
   }
 
   /**

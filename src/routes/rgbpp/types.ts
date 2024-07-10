@@ -94,3 +94,14 @@ export const XUDTBalance = z.object({
   type_script: Script,
 });
 export type XUDTBalance = z.infer<typeof XUDTBalance>;
+
+export const IsomorphicTransaction = z.object({
+  ckbRawTx: CKBRawTransaction.optional(),
+  ckbTx: CKBTransaction.optional(),
+  inputs: z.array(OutputCell).optional(),
+  outputs: z.array(OutputCell).optional(),
+  status: z.object({
+    confirmed: z.boolean(),
+  }),
+});
+export type IsomorphicTransaction = z.infer<typeof IsomorphicTransaction>;

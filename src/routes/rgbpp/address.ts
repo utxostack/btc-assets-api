@@ -2,7 +2,7 @@ import { FastifyPluginCallback, FastifyRequest } from 'fastify';
 import { Server } from 'http';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { Cell, Script, XUDTBalance } from './types';
+import { CKBTransaction, Cell, IsomorphicTransaction, Script, XUDTBalance } from './types';
 import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
 import { Env } from '../../env';
@@ -10,6 +10,9 @@ import { buildPreLockArgs, getXudtTypeScript, isScriptEqual, isTypeAssetSupporte
 import { groupBy } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
+import { Transaction as BTCTransaction } from '../bitcoin/types';
+import { tryGetCommitmentFromBtcTx } from '../../utils/commitment';
+import { TransactionWithStatus } from '../../services/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
@@ -73,13 +76,13 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
   /**
    * Filter cells by type script
    */
-  async function filterCellsByTypeScript(cells: Cell[], typeScript: Script) {
+  function filterCellsByTypeScript(cells: Cell[], typeScript: Script) {
     return cells.filter((cell) => {
       if (!cell.cellOutput.type) {
         return false;
       }
       // if typeScript.args is empty, only compare codeHash and hashType
-      if (!typeScript.args) {
+      if (!typeScript.args || typeScript.args === '0x') {
         const script = { ...cell.cellOutput.type, args: '' };
         return isScriptEqual(script, typeScript);
       }
@@ -140,7 +143,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     {
       schema: {
         description: 'Get RGB++ balance by btc address, support xUDT only for now',
-        tags: ['RGB++@Beta'],
+        tags: ['RGB++'],
         params: z.object({
           btc_address: z.string(),
         }),
@@ -242,6 +245,166 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       return {
         address: btc_address,
         xudt: Object.values(xudtBalances),
+      };
+    },
+  );
+
+  async function getIsomorphicTx(btcTx: BTCTransaction) {
+    const isomorphicTx: IsomorphicTransaction = {
+      ckbRawTx: undefined,
+      ckbTx: undefined,
+      status: { confirmed: false },
+    };
+    const setCkbTxAndStatus = (tx: TransactionWithStatus) => {
+      isomorphicTx.ckbTx = CKBTransaction.parse(tx.transaction);
+      isomorphicTx.status.confirmed = tx.txStatus.status === 'committed';
+    };
+
+    const job = await fastify.transactionProcessor.getTransactionRequest(btcTx.txid);
+    if (job) {
+      const { ckbRawTx } = job.data.ckbVirtualResult;
+      isomorphicTx.ckbRawTx = ckbRawTx;
+      // if the job is completed, get the ckb tx hash and fetch the ckb tx
+      const state = await job.getState();
+      if (state === 'completed') {
+        const ckbTx = await fastify.ckb.rpc.getTransaction(job.returnvalue);
+        // remove ckbRawTx to reduce response size
+        isomorphicTx.ckbRawTx = undefined;
+        setCkbTxAndStatus(ckbTx);
+      }
+      return isomorphicTx;
+    }
+    const rgbppLockTx = await fastify.rgbppCollector.queryRgbppLockTxByBtcTx(btcTx);
+    if (rgbppLockTx) {
+      const ckbTx = await fastify.ckb.rpc.getTransaction(rgbppLockTx.txHash);
+      setCkbTxAndStatus(ckbTx);
+    } else {
+      // XXX: this is a performance bottleneck, need to optimize
+      const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTxId(btcTx.txid);
+      if (btcTimeLockTx) {
+        setCkbTxAndStatus(btcTimeLockTx as TransactionWithStatus);
+      }
+    }
+    return isomorphicTx;
+  }
+
+  fastify.get(
+    '/:btc_address/activity',
+    {
+      schema: {
+        description: 'Get RGB++ activity by btc address',
+        tags: ['RGB++'],
+        params: z.object({
+          btc_address: z.string(),
+        }),
+        querystring: z.object({
+          type_script: Script.or(z.string())
+            .describe(
+              `
+              type script to filter cells
+
+              two ways to provide:
+              - as a object: 'encodeURIComponent(JSON.stringify({"codeHash":"0x...", "args":"0x...", "hashType":"type"}))'
+              - as a hex string: '0x...' (You can pack by @ckb-lumos/codec blockchain.Script.pack({ "codeHash": "0x...", ... }))
+            `,
+            )
+            .default(getXudtTypeScript(env.NETWORK === 'mainnet')),
+          rgbpp_only: z
+            .enum(['true', 'false'])
+            .default('false')
+            .describe('Whether to get RGB++ only activity, default is false'),
+          after_btc_txid: z.string().optional().describe('Get activity after this btc txid'),
+        }),
+        response: {
+          200: z.object({
+            address: z.string(),
+            txs: z.array(
+              z
+                .object({
+                  btcTx: BTCTransaction,
+                })
+                .and(
+                  z.union([
+                    z.object({
+                      isRgbpp: z.literal(true),
+                      isomorphicTx: IsomorphicTransaction,
+                    }),
+                    z.object({ isRgbpp: z.literal(false) }),
+                  ]),
+                ),
+            ),
+            cursor: z.string().optional(),
+          }),
+        },
+      },
+    },
+    async (request) => {
+      const { btc_address } = request.params;
+      const { rgbpp_only, after_btc_txid } = request.query;
+      const typeScript = getTypeScript(request);
+
+      const btcTxs = await fastify.bitcoin.getAddressTxs({
+        address: btc_address,
+        after_txid: after_btc_txid,
+      });
+      const withCommitmentTxs = btcTxs.filter((btcTx) => tryGetCommitmentFromBtcTx(btcTx));
+
+      let txs = await Promise.all(
+        withCommitmentTxs.map(async (btcTx) => {
+          const isomorphicTx = await getIsomorphicTx(btcTx);
+          const isRgbpp = isomorphicTx.ckbRawTx || isomorphicTx.ckbTx;
+          if (!isRgbpp) {
+            return {
+              btcTx,
+              isRgbpp: false,
+            } as const;
+          }
+
+          const inputOutpoints = isomorphicTx.ckbRawTx?.inputs || isomorphicTx.ckbTx?.inputs || [];
+          const inputs = await fastify.ckb.getInputCellsByOutPoint(
+            inputOutpoints.map((input) => input.previousOutput) as CKBComponents.OutPoint[],
+          );
+          const outputs = isomorphicTx.ckbRawTx?.outputs || isomorphicTx.ckbTx?.outputs || [];
+
+          return {
+            btcTx,
+            isRgbpp: true,
+            isomorphicTx: {
+              ...isomorphicTx,
+              inputs,
+              outputs,
+            },
+          } as const;
+        }),
+      );
+
+      if (rgbpp_only === 'true') {
+        txs = txs.filter((tx) => tx.isRgbpp);
+      }
+
+      if (typeScript) {
+        txs = txs.filter((tx) => {
+          if (!tx.isRgbpp) {
+            return false;
+          }
+          const cells = [...tx.isomorphicTx.inputs, ...tx.isomorphicTx.outputs];
+          const filteredCells = cells.filter((cell) => {
+            if (!cell.type) return false;
+            if (!typeScript.args) {
+              const script = { ...cell.type, args: '' };
+              return isScriptEqual(script, typeScript);
+            }
+            return isScriptEqual(cell.type, typeScript);
+          });
+          return filteredCells.length > 0;
+        });
+      }
+
+      const cursor = btcTxs.length > 0 ? btcTxs[btcTxs.length - 1].txid : undefined;
+      return {
+        address: btc_address,
+        txs,
+        cursor,
       };
     },
   );
