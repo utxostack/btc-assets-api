@@ -131,9 +131,11 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
                   type: z.literal('xudt'),
                 })
                 .merge(XUDTTypeInfo),
-              z.object({
-                type: z.literal('spore'),
-              }),
+              z
+                .object({
+                  type: z.literal('spore'),
+                })
+                .merge(SporeTypeInfo),
             ])
             .nullable(),
         },
@@ -195,6 +197,8 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
             description: clusterData.description,
           };
         }
+
+        console.log(sporeInfo);
 
         return {
           type: 'spore' as const,
