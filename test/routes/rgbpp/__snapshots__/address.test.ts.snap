@@ -2674,6 +2674,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x4f8f6042b3646e677c871be1629150407b520e48174612d428506995f6055558",
     },
     "txIndex": "0x8",
+    "typeHash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
   },
   {
     "blockNumber": "0xc87015",
@@ -2696,6 +2697,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xe098e5919e496fc6efb601307578cc436df7d554b9a3994f03b85d0ad2e8e7a6",
     },
     "txIndex": "0x1",
+    "typeHash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
   },
   {
     "blockNumber": "0xcc3842",
@@ -2718,6 +2720,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xdd0226408c4c31b2466f7c3d661d4e3e3c8b429631212a525f6668765baadc80",
     },
     "txIndex": "0x1",
+    "typeHash": "0x4e3ae370563059382617a4cb4a28f12811bf16ec0e7d4bf38c7974ba99d52024",
   },
   {
     "blockNumber": "0xcb4375",
@@ -2740,6 +2743,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x3aeb2a7f8e00ca32fae9b658da88274f2dcfeff41108ea28b567dc9b79c7dd3c",
     },
     "txIndex": "0x3",
+    "typeHash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
   },
   {
     "blockNumber": "0xc35ba6",
@@ -2762,6 +2766,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x71b4f66ac7f657e3b96b5b0694de5fadb61740d2644eabb91090dd9bce93316a",
     },
     "txIndex": "0x4",
+    "typeHash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
   },
   {
     "blockNumber": "0xcb4378",
@@ -2784,6 +2789,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xb5ab02c1583387fa7bc3cb7e61daccead6d4d6b9a1294555328d4bc209ed5f8f",
     },
     "txIndex": "0x1",
+    "typeHash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
   },
   {
     "blockNumber": "0xcc383d",
@@ -2806,6 +2812,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x3b1a2d2d00a5ef95b45d93cc1d9394a411319f956121d95104b784e8b469f538",
     },
     "txIndex": "0x3",
+    "typeHash": "0xc1b4ba4b70e7d819df97052db2c8f397818fff778fe558f6f4cbdd1a7188a90c",
   },
   {
     "blockNumber": "0xc35ba6",
@@ -2828,6 +2835,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x274865dc9e754ab8fc96cbc7be20093feca0073b91d3157aed2639f6e89ada90",
     },
     "txIndex": "0x8",
+    "typeHash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
   },
   {
     "blockNumber": "0xcc3d9d",
@@ -2850,6 +2858,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xefcada73aa020bfc4c4dc7192f9a6a6e6152af77d1bb2c2380314b4130751bc4",
     },
     "txIndex": "0x6",
+    "typeHash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
   },
   {
     "blockNumber": "0xcb42df",
@@ -2872,6 +2881,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xeec5c357338f622f9bf586532be687f8fc1918566f27b4abb7fa5f9c1891af6b",
     },
     "txIndex": "0x2",
+    "typeHash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
   },
   {
     "blockNumber": "0xcb669c",
@@ -2894,6 +2904,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0x2f6b86c4311dc854e779c0bbce110f397a0acc03dfe435aedf832b4f3de1a485",
     },
     "txIndex": "0x1",
+    "typeHash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
   },
   {
     "blockNumber": "0xcb7072",
@@ -2916,6 +2927,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xbd1886d03da82d0a012af423044d8f192598d3a7be454397497fd22aba2a784e",
     },
     "txIndex": "0x1",
+    "typeHash": "0xf0d58aed78476f0aa4fab18f45de1fdcf4f42426fb03570de236dfd36638f3ed",
   },
 ]
 `;
@@ -2932,6 +2944,11 @@ exports[`/:btc_address/balance - with pending_amount 1`] = `
       "symbol": "LP-UTXOSwap V1",
       "total_amount": "0x624eee61",
       "type_hash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
+      "type_script": {
+        "args": "0x1ba116c119d1cfd98a53e9d1a615cf2af2bb87d95515c9d217d367054cfc696b",
+        "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+        "hashType": "type",
+      },
     },
     {
       "available_amount": "0x98aeea0",
@@ -2941,6 +2958,11 @@ exports[`/:btc_address/balance - with pending_amount 1`] = `
       "symbol": "JDI",
       "total_amount": "0x98aeea0",
       "type_hash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
+      "type_script": {
+        "args": "0xc625c4ac0ba3ece5886d04958c3fc2d5558a21841c03577fad2d7c46e5b2b2b9",
+        "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+        "hashType": "type",
+      },
     },
     {
       "available_amount": "0x5f5e100",
@@ -2950,6 +2972,11 @@ exports[`/:btc_address/balance - with pending_amount 1`] = `
       "symbol": "UBBQ",
       "total_amount": "0xbebc200",
       "type_hash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
+      "type_script": {
+        "args": "0x30d3fbec9ceba691770d57c6d06bdb98cf0f82bef0ca6e87687a118d6ce1e7b7",
+        "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+        "hashType": "type",
+      },
     },
     {
       "available_amount": "0x0",
@@ -2959,6 +2986,11 @@ exports[`/:btc_address/balance - with pending_amount 1`] = `
       "symbol": "PDD",
       "total_amount": "0x5f5e100",
       "type_hash": "0x10f511f2efb0027191b97ac5b4bd77374ffdac7399e8527d76f5f9bd32e7d35b",
+      "type_script": {
+        "args": "0x8c556e92974a8dd8237719020a259d606359ac2cc958cb8bda77a1c3bb3cd93b",
+        "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+        "hashType": "type",
+      },
     },
   ],
 }
@@ -2976,6 +3008,11 @@ exports[`/:btc_address/balance - without pending_amount 1`] = `
       "symbol": "LP-UTXOSwap V1",
       "total_amount": "0x624eee61",
       "type_hash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
+      "type_script": {
+        "args": "0x1ba116c119d1cfd98a53e9d1a615cf2af2bb87d95515c9d217d367054cfc696b",
+        "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+        "hashType": "type",
+      },
     },
     {
       "available_amount": "0x98aeea0",
@@ -2985,6 +3022,11 @@ exports[`/:btc_address/balance - without pending_amount 1`] = `
       "symbol": "JDI",
       "total_amount": "0x98aeea0",
       "type_hash": "0x6d7dd4497d1ef095644e422d30b2456cfe32c6469346c77752a4d6b56f432a73",
+      "type_script": {
+        "args": "0xc625c4ac0ba3ece5886d04958c3fc2d5558a21841c03577fad2d7c46e5b2b2b9",
+        "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+        "hashType": "type",
+      },
     },
     {
       "available_amount": "0x5f5e100",
@@ -2994,6 +3036,11 @@ exports[`/:btc_address/balance - without pending_amount 1`] = `
       "symbol": "UBBQ",
       "total_amount": "0x5f5e100",
       "type_hash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
+      "type_script": {
+        "args": "0x30d3fbec9ceba691770d57c6d06bdb98cf0f82bef0ca6e87687a118d6ce1e7b7",
+        "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+        "hashType": "type",
+      },
     },
   ],
 }

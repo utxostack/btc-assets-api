@@ -13,6 +13,7 @@ import { UTXO } from '../../services/bitcoin/schema';
 import { Transaction as BTCTransaction } from '../bitcoin/types';
 import { tryGetCommitmentFromBtcTx } from '../../utils/commitment';
 import { TransactionWithStatus } from '../../services/ckb';
+import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   const env: Env = fastify.container.resolve('env');
@@ -116,7 +117,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             .describe('Whether to disable cache to get RGB++ assets, default is false'),
         }),
         response: {
-          200: z.array(Cell),
+          200: z.array(Cell.merge(z.object({ typeHash: z.string().optional() }))),
         },
       },
     },
@@ -126,7 +127,14 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const utxos = await getUxtos(btc_address, no_cache);
       const cells = await getRgbppAssetsCells(btc_address, utxos, no_cache);
       const typeScript = getTypeScript(request);
-      return typeScript ? filterCellsByTypeScript(cells, typeScript) : cells;
+      const assetCells = typeScript ? await filterCellsByTypeScript(cells, typeScript) : cells;
+      return assetCells.map((cell) => {
+        const typeHash = cell.cellOutput.type ? computeScriptHash(cell.cellOutput.type) : undefined;
+        return {
+          ...cell,
+          typeHash,
+        };
+      });
     },
   );
 
