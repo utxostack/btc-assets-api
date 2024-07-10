@@ -197,9 +197,6 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
             description: clusterData.description,
           };
         }
-
-        console.log(sporeInfo);
-
         return {
           type: 'spore' as const,
           ...sporeInfo,
