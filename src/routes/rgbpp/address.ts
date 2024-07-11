@@ -11,7 +11,6 @@ import { groupBy } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
 import { Transaction as BTCTransaction } from '../bitcoin/types';
-import { tryGetCommitmentFromBtcTx } from '../../utils/commitment';
 import { TransactionWithStatus } from '../../services/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 
@@ -127,7 +126,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const utxos = await getUxtos(btc_address, no_cache);
       const cells = await getRgbppAssetsCells(btc_address, utxos, no_cache);
       const typeScript = getTypeScript(request);
-      const assetCells = typeScript ? await filterCellsByTypeScript(cells, typeScript) : cells;
+      const assetCells = typeScript ? filterCellsByTypeScript(cells, typeScript) : cells;
       return assetCells.map((cell) => {
         const typeHash = cell.cellOutput.type ? computeScriptHash(cell.cellOutput.type) : undefined;
         return {
@@ -189,7 +188,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const xudtBalances: Record<string, XUDTBalance> = {};
 
       let cells = await getRgbppAssetsCells(btc_address, utxos, no_cache);
-      cells = typeScript ? await filterCellsByTypeScript(cells, typeScript) : cells;
+      cells = typeScript ? filterCellsByTypeScript(cells, typeScript) : cells;
       const availableXudtBalances = await fastify.rgbppCollector.getRgbppBalanceByCells(cells);
       Object.keys(availableXudtBalances).forEach((key) => {
         const { amount, ...xudtInfo } = availableXudtBalances[key];
@@ -219,7 +218,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       );
       let pendingOutputCells = pendingOutputCellsGroup.flat();
       if (typeScript) {
-        pendingOutputCells = await filterCellsByTypeScript(pendingOutputCells, typeScript);
+        pendingOutputCells = filterCellsByTypeScript(pendingOutputCells, typeScript);
       }
 
       const pendingXudtBalances = await fastify.rgbppCollector.getRgbppBalanceByCells(pendingOutputCells);
@@ -308,7 +307,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
               - as a hex string: '0x...' (You can pack by @ckb-lumos/codec blockchain.Script.pack({ "codeHash": "0x...", ... }))
             `,
             )
-            .default(getXudtTypeScript(env.NETWORK === 'mainnet')),
+            .optional(),
           rgbpp_only: z
             .enum(['true', 'false'])
             .default('false')
@@ -347,10 +346,9 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         address: btc_address,
         after_txid: after_btc_txid,
       });
-      const withCommitmentTxs = btcTxs.filter((btcTx) => tryGetCommitmentFromBtcTx(btcTx));
 
       let txs = await Promise.all(
-        withCommitmentTxs.map(async (btcTx) => {
+        btcTxs.map(async (btcTx) => {
           const isomorphicTx = await getIsomorphicTx(btcTx);
           const isRgbpp = isomorphicTx.ckbRawTx || isomorphicTx.ckbTx;
           if (!isRgbpp) {
