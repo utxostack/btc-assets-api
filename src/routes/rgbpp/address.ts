@@ -318,19 +318,11 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           200: z.object({
             address: z.string(),
             txs: z.array(
-              z
-                .object({
-                  btcTx: BTCTransaction,
-                })
-                .and(
-                  z.union([
-                    z.object({
-                      isRgbpp: z.literal(true),
-                      isomorphicTx: IsomorphicTransaction,
-                    }),
-                    z.object({ isRgbpp: z.literal(false) }),
-                  ]),
-                ),
+              z.object({
+                btcTx: BTCTransaction,
+                isRgbpp: z.boolean(),
+                isomorphicTx: IsomorphicTransaction.optional(),
+              }),
             ),
             cursor: z.string().optional(),
           }),
