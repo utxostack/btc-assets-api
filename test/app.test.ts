@@ -12,7 +12,7 @@ test('`/docs/json` - 200', async () => {
   const data = response.json();
 
   expect(response.statusCode).toBe(200);
-  expect(data.swagger).toBe('2.0');
+  expect(data.openapi).toBe('3.1.0');
   expect(Object.keys(data.paths)).toStrictEqual([
     '/token/generate',
     '/bitcoin/v1/info',
