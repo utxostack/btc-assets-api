@@ -4,6 +4,8 @@ import asyncRetry from 'async-retry';
 import { Cradle } from '../container';
 import {
   IndexerCell,
+  RGBPP_TX_INPUTS_MAX_LENGTH,
+  btcTxIdFromBtcTimeLockArgs,
   buildRgbppLockArgs,
   genRgbppLockScript,
   getBtcTimeLockScript,
@@ -250,7 +252,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
           script: lock,
           scriptType: 'lock',
         };
-        return ['getTransactions', searchKey, 'desc', '0x1'];
+        return ['getTransactions', searchKey, 'desc', BI.from(RGBPP_TX_INPUTS_MAX_LENGTH).toHexString()];
       }),
     );
     type getTransactionsResult = ReturnType<typeof this.cradle.ckb.rpc.getTransactions<false>>;
@@ -286,7 +288,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
           if (!isScriptEqual(output.lock, btcTimeLockScript)) {
             return false;
           }
-          const btcTxid = remove0x(btcTxId);
+          const btcTxid = btcTxIdFromBtcTimeLockArgs(output.lock.args);
           return remove0x(btcTxid) === btcTxId;
         });
         if (isBtcTimeLockTx) {
