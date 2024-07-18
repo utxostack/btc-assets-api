@@ -281,7 +281,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
 
   async function getIsomorphicTx(btcTx: BTCTransaction) {
     const isomorphicTx: IsomorphicTransaction = {
-      ckbRawTx: undefined,
+      ckbVirtualTx: undefined,
       ckbTx: undefined,
       status: { confirmed: false },
     };
@@ -293,13 +293,13 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     const job = await fastify.transactionProcessor.getTransactionRequest(btcTx.txid);
     if (job) {
       const { ckbRawTx } = job.data.ckbVirtualResult;
-      isomorphicTx.ckbRawTx = ckbRawTx;
+      isomorphicTx.ckbVirtualTx = ckbRawTx;
       // if the job is completed, get the ckb tx hash and fetch the ckb tx
       const state = await job.getState();
       if (state === 'completed') {
         const ckbTx = await fastify.ckb.rpc.getTransaction(job.returnvalue);
         // remove ckbRawTx to reduce response size
-        isomorphicTx.ckbRawTx = undefined;
+        isomorphicTx.ckbVirtualTx = undefined;
         setCkbTxAndStatus(ckbTx);
       }
       return isomorphicTx;
@@ -381,7 +381,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       let txs = await Promise.all(
         btcTxs.map(async (btcTx) => {
           const isomorphicTx = await getIsomorphicTx(btcTx);
-          const isRgbpp = isomorphicTx.ckbRawTx || isomorphicTx.ckbTx;
+          const isRgbpp = isomorphicTx.ckbVirtualTx || isomorphicTx.ckbTx;
           if (!isRgbpp) {
             return {
               btcTx,
@@ -389,11 +389,11 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             } as const;
           }
 
-          const inputs = isomorphicTx.ckbRawTx?.inputs || isomorphicTx.ckbTx?.inputs || [];
+          const inputs = isomorphicTx.ckbVirtualTx?.inputs || isomorphicTx.ckbTx?.inputs || [];
           const inputCells = await fastify.ckb.getInputCellsByOutPoint(inputs.map((input) => input.previousOutput!));
           const inputCellOutputs = inputCells.map((cell) => cell.cellOutput);
 
-          const outputs = isomorphicTx.ckbRawTx?.outputs || isomorphicTx.ckbTx?.outputs || [];
+          const outputs = isomorphicTx.ckbVirtualTx?.outputs || isomorphicTx.ckbTx?.outputs || [];
 
           return {
             btcTx,

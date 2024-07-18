@@ -114,7 +114,7 @@ export const XUDTBalance = XUDTTypeInfo.merge(
 export type XUDTBalance = z.infer<typeof XUDTBalance>;
 
 export const IsomorphicTransaction = z.object({
-  ckbRawTx: CKBRawTransaction.optional(),
+  ckbVirtualTx: CKBRawTransaction.optional(),
   ckbTx: CKBTransaction.optional(),
   inputs: z.array(OutputCell).optional(),
   outputs: z.array(OutputCell).optional(),
