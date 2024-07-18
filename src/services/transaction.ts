@@ -317,21 +317,39 @@ export default class TransactionProcessor
     ]);
     // using for spv proof, we need to remove the witness data from the transaction
     const hexWithoutWitness = transactionToHex(BitcoinTransaction.fromHex(hex), false);
-    let signedTx = await appendCkbTxWitnesses({
+    const signedTx = await appendCkbTxWitnesses({
       ckbRawTx,
       btcTxBytes: hexWithoutWitness,
       rgbppApiSpvProof,
     })!;
 
-    // append the spore cobuild witness to the transaction if needed
+    return signedTx;
+  }
+
+  /**
+   * Append the spore cobuild witness to the transaction if needed
+   * @param signedTx - the signed CKB transaction
+   */
+  private async appendSporeCobuildWitnessIfNeed(signedTx: CKBRawTransaction, needPaymasterCell: boolean) {
     const sporeTypeDep = getSporeTypeDep(this.isMainnet);
     const hasSporeTypeDep = signedTx.cellDeps.some((cellDep) => {
       return serializeCellDep(cellDep) === serializeCellDep(sporeTypeDep);
     });
     if (hasSporeTypeDep) {
-      signedTx = await this.appendSporeCobuildWitness(signedTx);
-    }
+      // if paymaster cell is needed, we need to exchange the last two witnesses
+      // make sure the spore cobuild witness is the last witness
+      if (needPaymasterCell) {
+        const witnesses = signedTx.witnesses;
+        signedTx.witnesses = [
+          ...witnesses.slice(0, witnesses.length - 2),
+          witnesses[witnesses.length - 1],
+          witnesses[witnesses.length - 2],
+        ];
+      }
 
+      const tx = await this.appendSporeCobuildWitness(signedTx);
+      return tx;
+    }
     return signedTx;
   }
 
@@ -354,7 +372,7 @@ export default class TransactionProcessor
     if (sporeLiveCells.length > 0) {
       signedTx.witnesses[signedTx.witnesses.length - 1] = generateSporeTransferCoBuild(
         sporeLiveCells,
-        signedTx.outputs,
+        signedTx.outputs.slice(0, 1),
       );
     }
     return signedTx;
@@ -445,6 +463,9 @@ export default class TransactionProcessor
           signedTx = await this.appendPaymasterCellAndSignTx(btcTx, ckbVirtualResult, signedTx);
         }
         this.cradle.logger.debug(`[TransactionProcessor] Transaction signed: ${JSON.stringify(signedTx)}`);
+
+        // append the spore cobuild witness to the transaction if needed
+        signedTx = await this.appendSporeCobuildWitnessIfNeed(signedTx, ckbVirtualResult.needPaymasterCell);
 
         const txHash = await this.cradle.ckb.sendTransaction(signedTx);
         job.returnvalue = txHash;
