@@ -66,9 +66,9 @@ interface ITransactionProcessor {
 export const TRANSACTION_QUEUE_NAME = 'rgbpp-ckb-transaction-queue';
 
 class InvalidTransactionError extends Error {
-  public data: ITransactionRequest;
+  public data?: ITransactionRequest;
 
-  constructor(message: string, data: ITransactionRequest) {
+  constructor(message: string, data?: ITransactionRequest) {
     super(message);
     this.name = this.constructor.name;
     this.data = data;
@@ -340,11 +340,11 @@ export default class TransactionProcessor
       // make sure the spore cobuild witness is the last witness
       if (needPaymasterCell) {
         const witnesses = signedTx.witnesses;
-        signedTx.witnesses = [
-          ...witnesses.slice(0, witnesses.length - 2),
-          witnesses[witnesses.length - 1],
-          witnesses[witnesses.length - 2],
-        ];
+        const len = witnesses.length;
+        if (len < 2) {
+          throw new InvalidTransactionError('Not enough spore transaction witnesses');
+        }
+        signedTx.witnesses = [...witnesses.slice(0, len - 2), witnesses[len - 1], witnesses[len - 2]];
       }
 
       const tx = await this.appendSporeCobuildWitness(signedTx);
