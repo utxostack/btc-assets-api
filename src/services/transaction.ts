@@ -327,30 +327,15 @@ export default class TransactionProcessor
   }
 
   /**
-   * Append the spore cobuild witness to the transaction if needed
-   * @param signedTx - the signed CKB transaction
+   * check if the transaction has spore type dep
+   * if the transaction has spore type dep, we need to append the spore cobuild witness to the transaction
    */
-  private async appendSporeCobuildWitnessIfNeed(signedTx: CKBRawTransaction, needPaymasterCell: boolean) {
+  private hasSporeTypeDep(tx: CKBRawTransaction) {
     const sporeTypeDep = getSporeTypeDep(this.isMainnet);
-    const hasSporeTypeDep = signedTx.cellDeps.some((cellDep) => {
+    const hasSporeTypeDep = tx.cellDeps.some((cellDep) => {
       return serializeCellDep(cellDep) === serializeCellDep(sporeTypeDep);
     });
-    if (hasSporeTypeDep) {
-      // if paymaster cell is needed, we need to exchange the last two witnesses
-      // make sure the spore cobuild witness is the last witness
-      if (needPaymasterCell) {
-        const witnesses = signedTx.witnesses;
-        const len = witnesses.length;
-        if (len < 2) {
-          throw new InvalidTransactionError('Not enough spore transaction witnesses');
-        }
-        signedTx.witnesses = [...witnesses.slice(0, len - 2), witnesses[len - 1], witnesses[len - 2]];
-      }
-
-      const tx = await this.appendSporeCobuildWitness(signedTx);
-      return tx;
-    }
-    return signedTx;
+    return hasSporeTypeDep;
   }
 
   /**
@@ -387,7 +372,7 @@ export default class TransactionProcessor
   private async appendPaymasterCellAndSignTx(
     btcTx: Transaction,
     ckbVirtualResult: CKBVirtualResult,
-    signedTx: CKBRawTransaction | undefined,
+    signedTx: CKBRawTransaction,
   ) {
     if (this.cradle.paymaster.enablePaymasterReceivesUTXOCheck) {
       // make sure the paymaster received a UTXO as container fee
@@ -403,10 +388,17 @@ export default class TransactionProcessor
       this.cradle.logger.warn(`[TransactionProcessor] Paymaster receives UTXO check disabled`);
     }
 
+    const isSporeTransfer = this.hasSporeTypeDep(signedTx);
+    if (isSporeTransfer) {
+      signedTx.witnesses = signedTx.witnesses.slice(0, -1);
+    }
     const tx = await this.cradle.paymaster.appendCellAndSignTx(btcTx.txid, {
       ...ckbVirtualResult,
       ckbRawTx: signedTx!,
     });
+    if (isSporeTransfer) {
+      tx.witnesses.push('0x');
+    }
     return tx;
   }
 
@@ -464,8 +456,10 @@ export default class TransactionProcessor
         }
         this.cradle.logger.debug(`[TransactionProcessor] Transaction signed: ${JSON.stringify(signedTx)}`);
 
-        // append the spore cobuild witness to the transaction if needed
-        signedTx = await this.appendSporeCobuildWitnessIfNeed(signedTx, ckbVirtualResult.needPaymasterCell);
+        // append the spore cobuild witness to the transaction
+        if (this.hasSporeTypeDep(signedTx)) {
+          signedTx = await this.appendSporeCobuildWitness(signedTx);
+        }
 
         const txHash = await this.cradle.ckb.sendTransaction(signedTx);
         job.returnvalue = txHash;
