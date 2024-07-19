@@ -292,7 +292,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     {
       schema: {
         description: 'Get RGB++ activity by btc address',
-        tags: ['RGB++'],
+        tags: ['RGB++@Unstable'],
         params: z.object({
           btc_address: z.string(),
         }),

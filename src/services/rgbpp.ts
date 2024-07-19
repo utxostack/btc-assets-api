@@ -4,6 +4,7 @@ import asyncRetry from 'async-retry';
 import { Cradle } from '../container';
 import {
   IndexerCell,
+  btcTxIdFromBtcTimeLockArgs,
   buildRgbppLockArgs,
   genRgbppLockScript,
   getBtcTimeLockScript,
@@ -286,7 +287,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
           if (!isScriptEqual(output.lock, btcTimeLockScript)) {
             return false;
           }
-          const btcTxid = remove0x(btcTxId);
+          const btcTxid = btcTxIdFromBtcTimeLockArgs(output.lock.args);
           return remove0x(btcTxid) === btcTxId;
         });
         if (isBtcTimeLockTx) {
