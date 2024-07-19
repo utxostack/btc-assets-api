@@ -22,10 +22,10 @@ describe('transactionProcessor', () => {
   test('verifyTransaction: should return true for valid transaction', async () => {
     vi.spyOn(
       transactionProcessor as unknown as {
-        getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;
+        getCommitmentFromBtcTx: (txid: string) => Buffer;
       },
       'getCommitmentFromBtcTx',
-    ).mockResolvedValueOnce(Buffer.from(commitment, 'hex'));
+    ).mockReturnValueOnce(Buffer.from(commitment, 'hex'));
 
     const transactionRequest: ITransactionRequest = {
       txid: 'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
@@ -44,10 +44,10 @@ describe('transactionProcessor', () => {
   test('verifyTransaction: should return false for mismatch commitment', async () => {
     vi.spyOn(
       transactionProcessor as unknown as {
-        getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;
+        getCommitmentFromBtcTx: (txid: string) => Buffer;
       },
       'getCommitmentFromBtcTx',
-    ).mockResolvedValueOnce(Buffer.from('mismatchcommitment', 'hex'));
+    ).mockReturnValueOnce(Buffer.from('mismatchcommitment', 'hex'));
 
     const transactionRequest: ITransactionRequest = {
       txid: 'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
@@ -67,10 +67,10 @@ describe('transactionProcessor', () => {
     const commitment = 'mismatchcommitment';
     vi.spyOn(
       transactionProcessor as unknown as {
-        getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;
+        getCommitmentFromBtcTx: (txid: string) => Buffer;
       },
       'getCommitmentFromBtcTx',
-    ).mockResolvedValueOnce(Buffer.from(commitment, 'hex'));
+    ).mockReturnValueOnce(Buffer.from(commitment, 'hex'));
 
     const transactionRequest: ITransactionRequest = {
       txid: 'bb8c92f11920824db22b379c0ef491dea2d819e721d5df296bebc67a0568ea0f',
@@ -89,10 +89,10 @@ describe('transactionProcessor', () => {
   test('verifyTransaction: should throw TransactionNotConfirmedError for unconfirmed transaction', async () => {
     vi.spyOn(
       transactionProcessor as unknown as {
-        getCommitmentFromBtcTx: (txid: string) => Promise<Buffer>;
+        getCommitmentFromBtcTx: (txid: string) => Buffer;
       },
       'getCommitmentFromBtcTx',
-    ).mockResolvedValueOnce(Buffer.from(commitment, 'hex'));
+    ).mockReturnValueOnce(Buffer.from(commitment, 'hex'));
     vi.spyOn(transactionProcessor['cradle']['bitcoin'], 'getTx').mockResolvedValueOnce({
       status: { confirmed: false, block_height: 0 },
     } as unknown as Transaction);

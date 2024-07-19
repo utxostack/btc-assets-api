@@ -12,7 +12,7 @@ test('`/docs/json` - 200', async () => {
   const data = response.json();
 
   expect(response.statusCode).toBe(200);
-  expect(data.swagger).toBe('2.0');
+  expect(data.openapi).toBe('3.1.0');
   expect(Object.keys(data.paths)).toStrictEqual([
     '/token/generate',
     '/bitcoin/v1/info',
@@ -35,6 +35,7 @@ test('`/docs/json` - 200', async () => {
     '/rgbpp/v1/assets/{btc_txid}/{vout}',
     '/rgbpp/v1/address/{btc_address}/assets',
     '/rgbpp/v1/address/{btc_address}/balance',
+    '/rgbpp/v1/address/{btc_address}/activity',
     '/rgbpp/v1/btc-spv/proof',
     '/rgbpp/v1/paymaster/info',
     '/cron/process-transactions',

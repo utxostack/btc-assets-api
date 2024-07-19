@@ -14,6 +14,7 @@ const paymasterRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTy
         response: {
           200: z.object({
             btc_address: z.string().describe('Bitcoin address to send funds to'),
+            ckb_address: z.string().describe('CKB address to pay cell capacity to'),
             fee: z.coerce.number().describe('Container fee in satoshis'),
           }),
         },
@@ -26,8 +27,9 @@ const paymasterRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTy
         return;
       }
 
+      const ckb_address = fastify.paymaster.ckbAddress;
       const fee = fastify.paymaster.containerFee;
-      return { btc_address, fee };
+      return { btc_address, ckb_address, fee };
     },
   );
   done();

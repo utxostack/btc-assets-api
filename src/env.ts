@@ -8,7 +8,7 @@ const envSchema = z
     NODE_ENV: z.string().default('development'),
     PORT: z.string().optional(),
     ADDRESS: z.string().optional(),
-    NETWORK: z.enum(['mainnet', 'testnet']).default('testnet'),
+    NETWORK: z.enum(['mainnet', 'testnet', 'signet']).default('testnet'),
     LOGGER_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 
     /**
@@ -38,6 +38,13 @@ const envSchema = z
     SENTRY_DSN_URL: z.string().optional(),
     SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().default(0.5),
     SENTRY_PROFILES_SAMPLE_RATE: z.coerce.number().default(0.5),
+    SENTRY_IGNORE_UTXO_SYNC_ERROR_ADDRESSES: z
+      .string()
+      .default('')
+      .transform((value) => {
+        const addresses = value.split(',');
+        return addresses.map((address) => address.trim());
+      }),
 
     /**
      * The rate limit per minute for each IP address.

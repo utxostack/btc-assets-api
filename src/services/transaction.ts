@@ -1,5 +1,5 @@
 import { bytes } from '@ckb-lumos/codec';
-import { opReturnScriptPubKeyToData, remove0x, transactionToHex } from '@rgbpp-sdk/btc';
+import { remove0x, transactionToHex } from '@rgbpp-sdk/btc';
 import {
   RGBPPLock,
   RGBPP_TX_ID_PLACEHOLDER,
@@ -37,6 +37,8 @@ import { BitcoinClientAPIError } from './bitcoin';
 import { HttpStatusCode } from 'axios';
 import BaseQueueWorker from './base/queue-worker';
 import { Env } from '../env';
+import { TestnetTypeMap } from '../constants';
+import { getCommitmentFromBtcTx } from '../utils/commitment';
 
 export interface ITransactionRequest {
   txid: string;
@@ -64,9 +66,9 @@ interface ITransactionProcessor {
 export const TRANSACTION_QUEUE_NAME = 'rgbpp-ckb-transaction-queue';
 
 class InvalidTransactionError extends Error {
-  public data: ITransactionRequest;
+  public data?: ITransactionRequest;
 
-  constructor(message: string, data: ITransactionRequest) {
+  constructor(message: string, data?: ITransactionRequest) {
     super(message);
     this.name = this.constructor.name;
     this.data = data;
@@ -76,13 +78,6 @@ class InvalidTransactionError extends Error {
 class TransactionNotConfirmedError extends Error {
   constructor(txid: string) {
     super(`Transaction not confirmed: ${txid}`);
-    this.name = this.constructor.name;
-  }
-}
-
-class OpReturnNotFoundError extends Error {
-  constructor(txid: string) {
-    super(`OP_RETURN output not found: ${txid}`);
     this.name = this.constructor.name;
   }
 }
@@ -132,12 +127,16 @@ export default class TransactionProcessor
     return this.cradle.env.NETWORK === 'mainnet';
   }
 
+  private get testnetType() {
+    return TestnetTypeMap[this.cradle.env.NETWORK];
+  }
+
   private get rgbppLockScript() {
-    return getRgbppLockScript(this.isMainnet);
+    return getRgbppLockScript(this.isMainnet, this.testnetType);
   }
 
   private get btcTimeLockScript() {
-    return getBtcTimeLockScript(this.isMainnet);
+    return getBtcTimeLockScript(this.isMainnet, this.testnetType);
   }
 
   private isRgbppLock(lock: CKBComponents.Script) {
@@ -146,20 +145,6 @@ export default class TransactionProcessor
 
   private isBtcTimeLock(lock: CKBComponents.Script) {
     return lock.codeHash === this.btcTimeLockScript.codeHash && lock.hashType === this.btcTimeLockScript.hashType;
-  }
-
-  /**
-   * Get commitment from Bitcoin transactions
-   * depended on @rgbpp-sdk/btc opReturnScriptPubKeyToData method
-   * @param tx - Bitcoin transaction
-   */
-  private async getCommitmentFromBtcTx(tx: Transaction): Promise<Buffer> {
-    const opReturn = tx.vout.find((vout) => vout.scriptpubkey_type === 'op_return');
-    if (!opReturn) {
-      throw new OpReturnNotFoundError(tx.txid);
-    }
-    const buffer = Buffer.from(opReturn.scriptpubkey, 'hex');
-    return opReturnScriptPubKeyToData(buffer);
   }
 
   /**
@@ -202,6 +187,15 @@ export default class TransactionProcessor
   }
 
   /**
+   * Get commitment from Bitcoin transactions
+   * depended on @rgbpp-sdk/btc opReturnScriptPubKeyToData method
+   * @param tx - Bitcoin transaction
+   */
+  private getCommitmentFromBtcTx(tx: Transaction): Buffer {
+    return getCommitmentFromBtcTx(tx);
+  }
+
+  /**
    * Verify transaction request
    * - check if the commitment matches the Bitcoin transaction
    * - check if the CKB Virtual Transaction is valid
@@ -214,7 +208,7 @@ export default class TransactionProcessor
     const { commitment, ckbRawTx } = ckbVirtualResult;
 
     // make sure the commitment matches the Bitcoin transaction
-    const btcTxCommitment = await this.getCommitmentFromBtcTx(btcTx);
+    const btcTxCommitment = this.getCommitmentFromBtcTx(btcTx);
     if (commitment !== btcTxCommitment.toString('hex')) {
       this.cradle.logger.info(`[TransactionProcessor] Bitcoin Transaction Commitment Mismatch: ${txid}`);
       return false;
@@ -323,22 +317,25 @@ export default class TransactionProcessor
     ]);
     // using for spv proof, we need to remove the witness data from the transaction
     const hexWithoutWitness = transactionToHex(BitcoinTransaction.fromHex(hex), false);
-    let signedTx = await appendCkbTxWitnesses({
+    const signedTx = await appendCkbTxWitnesses({
       ckbRawTx,
       btcTxBytes: hexWithoutWitness,
       rgbppApiSpvProof,
     })!;
 
-    // append the spore cobuild witness to the transaction if needed
+    return signedTx;
+  }
+
+  /**
+   * check if the transaction has spore type dep
+   * if the transaction has spore type dep, we need to append the spore cobuild witness to the transaction
+   */
+  private hasSporeTypeDep(tx: CKBRawTransaction) {
     const sporeTypeDep = getSporeTypeDep(this.isMainnet);
-    const hasSporeTypeDep = signedTx.cellDeps.some((cellDep) => {
+    const hasSporeTypeDep = tx.cellDeps.some((cellDep) => {
       return serializeCellDep(cellDep) === serializeCellDep(sporeTypeDep);
     });
-    if (hasSporeTypeDep) {
-      signedTx = await this.appendSporeCobuildWitness(signedTx);
-    }
-
-    return signedTx;
+    return hasSporeTypeDep;
   }
 
   /**
@@ -360,7 +357,7 @@ export default class TransactionProcessor
     if (sporeLiveCells.length > 0) {
       signedTx.witnesses[signedTx.witnesses.length - 1] = generateSporeTransferCoBuild(
         sporeLiveCells,
-        signedTx.outputs,
+        signedTx.outputs.slice(0, 1),
       );
     }
     return signedTx;
@@ -375,7 +372,7 @@ export default class TransactionProcessor
   private async appendPaymasterCellAndSignTx(
     btcTx: Transaction,
     ckbVirtualResult: CKBVirtualResult,
-    signedTx: CKBRawTransaction | undefined,
+    signedTx: CKBRawTransaction,
   ) {
     if (this.cradle.paymaster.enablePaymasterReceivesUTXOCheck) {
       // make sure the paymaster received a UTXO as container fee
@@ -391,10 +388,17 @@ export default class TransactionProcessor
       this.cradle.logger.warn(`[TransactionProcessor] Paymaster receives UTXO check disabled`);
     }
 
+    const isSporeTransfer = this.hasSporeTypeDep(signedTx);
+    if (isSporeTransfer) {
+      signedTx.witnesses = signedTx.witnesses.slice(0, -1);
+    }
     const tx = await this.cradle.paymaster.appendCellAndSignTx(btcTx.txid, {
       ...ckbVirtualResult,
       ckbRawTx: signedTx!,
     });
+    if (isSporeTransfer) {
+      tx.witnesses.push('0x');
+    }
     return tx;
   }
 
@@ -451,6 +455,11 @@ export default class TransactionProcessor
           signedTx = await this.appendPaymasterCellAndSignTx(btcTx, ckbVirtualResult, signedTx);
         }
         this.cradle.logger.debug(`[TransactionProcessor] Transaction signed: ${JSON.stringify(signedTx)}`);
+
+        // append the spore cobuild witness to the transaction
+        if (this.hasSporeTypeDep(signedTx)) {
+          signedTx = await this.appendSporeCobuildWitness(signedTx);
+        }
 
         const txHash = await this.cradle.ckb.sendTransaction(signedTx);
         job.returnvalue = txHash;

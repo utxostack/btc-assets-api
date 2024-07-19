@@ -3,6 +3,7 @@ import { buildFastify } from '../../../src/app';
 import { describe } from 'node:test';
 import mockUTXOs from '../../__fixtures__/utxo.mock.json';
 import mockRgbppUtxoPairs from '../../__fixtures__/rgbpp-utxo-pairs.mock.json';
+import mockTransactions from '../../__fixtures__/transactions.mock.json';
 import { RgbppUtxoCellsPair } from '../../../src/services/rgbpp';
 
 let token: string;
@@ -161,6 +162,29 @@ describe('/rgbpp/v1/address', () => {
     expect(getPendingOuputCellsByTxidSpy).toHaveBeenCalledWith(
       '989f4e03179e17cbb6edd446f57ea6107a40ba23441056653f1cc34b7dd1e5ba',
     );
+    expect(response.statusCode).toBe(200);
+    expect(data).toMatchSnapshot();
+
+    await fastify.close();
+  });
+
+  test('/:btc_address/activity', async () => {
+    const fastify = buildFastify();
+    await fastify.ready();
+
+    const bitcoin = fastify.container.resolve('bitcoin');
+    vi.spyOn(bitcoin, 'getAddressTxs').mockResolvedValueOnce(mockTransactions);
+
+    const response = await fastify.inject({
+      method: 'GET',
+      url: '/rgbpp/v1/address/tb1q7yuyvms6z49qd65vwmtlpa4rp2rdt3nmjmpnpl/activity',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Origin: 'https://test.com',
+      },
+    });
+    const data = response.json();
+
     expect(response.statusCode).toBe(200);
     expect(data).toMatchSnapshot();
 
