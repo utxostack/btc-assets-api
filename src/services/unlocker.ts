@@ -17,7 +17,12 @@ import {
 import { btcTxIdFromBtcTimeLockArgs } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import { BtcAssetsApi } from '@rgbpp-sdk/service';
 import { Cradle } from '../container';
-import { BTC_MAINNET_SPV_START_BLOCK_HEIGHT, BTC_TESTNET_SPV_START_BLOCK_HEIGHT, TestnetTypeMap } from '../constants';
+import {
+  BTC_MAINNET_SPV_START_BLOCK_HEIGHT,
+  BTC_SIGNET_SPV_START_BLOCK_HEIGHT,
+  BTC_TESTNET_SPV_START_BLOCK_HEIGHT,
+  TestnetTypeMap,
+} from '../constants';
 
 interface IUnlocker {
   getNextBatchLockCell(): Promise<IndexerCell[]>;
@@ -55,7 +60,14 @@ export default class Unlocker implements IUnlocker {
   }
 
   private get btcSpvStartBlockHeight() {
-    return this.isMainnet ? BTC_MAINNET_SPV_START_BLOCK_HEIGHT : BTC_TESTNET_SPV_START_BLOCK_HEIGHT;
+    const network = this.cradle.env.NETWORK;
+    if (network === 'mainnet') {
+      return BTC_MAINNET_SPV_START_BLOCK_HEIGHT;
+    }
+    if (network === 'testnet') {
+      return BTC_TESTNET_SPV_START_BLOCK_HEIGHT;
+    }
+    return BTC_SIGNET_SPV_START_BLOCK_HEIGHT;
   }
 
   /**
