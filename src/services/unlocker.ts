@@ -17,7 +17,7 @@ import {
 import { btcTxIdFromBtcTimeLockArgs } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
 import { BtcAssetsApi } from '@rgbpp-sdk/service';
 import { Cradle } from '../container';
-import { TestnetTypeMap } from '../constants';
+import { BTC_MAINNET_SPV_START_BLOCK_HEIGHT, BTC_TESTNET_SPV_START_BLOCK_HEIGHT, TestnetTypeMap } from '../constants';
 
 interface IUnlocker {
   getNextBatchLockCell(): Promise<IndexerCell[]>;
@@ -54,6 +54,10 @@ export default class Unlocker implements IUnlocker {
     return getBtcTimeLockScript(this.isMainnet, this.testnetType);
   }
 
+  private get btcSpvStartBlockHeight() {
+    return this.isMainnet ? BTC_MAINNET_SPV_START_BLOCK_HEIGHT : BTC_TESTNET_SPV_START_BLOCK_HEIGHT;
+  }
+
   /**
    * Get next batch of BTC time lock cells
    */
@@ -72,6 +76,11 @@ export default class Unlocker implements IUnlocker {
       const { after } = BTCTimeLock.unpack(cell.cellOutput.lock.args);
       const btcTx = await this.cradle.bitcoin.getTx({ txid: btcTxid });
       const blockHeight = btcTx.status.block_height;
+
+      // skip if the block height of the btc txid is less than the BTC SPV start block height
+      if (blockHeight && blockHeight < this.btcSpvStartBlockHeight) {
+        continue;
+      }
 
       // skip if btc tx not confirmed $after blocks yet
       if (!blockHeight || blocks - blockHeight < after) {
