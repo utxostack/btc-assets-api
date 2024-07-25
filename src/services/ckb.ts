@@ -9,6 +9,7 @@ import {
 import { Cradle } from '../container';
 import { BI, Indexer, RPC, Script } from '@ckb-lumos/lumos';
 import { CKBRPC } from '@ckb-lumos/rpc';
+import { UngroupedIndexerTransaction } from '@ckb-lumos/ckb-indexer/lib/type';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
 import {
@@ -244,7 +245,9 @@ export default class CKBClient {
           script: searchScript,
           scriptType: 'type',
         },
+        // XXX: The returned result is not asc-ordered, maybe it is a bug in ckb-indexer
         'asc',
+        // TODO: There may be a maximum request limit.
         '0xffff', // 0xffff basically means no limit
       );
     });
@@ -255,8 +258,23 @@ export default class CKBClient {
     batchRequest = this.rpc.createBatchRequest();
     infoCellTxs.forEach((txs) => {
       txs.objects
-        .filter(({ ioType }) => ioType === 'output')
-        .forEach((tx) => {
+        .filter(({ ioType }: UngroupedIndexerTransaction) => ioType === 'output')
+        // make sure `infoCellTxs` are asc-ordered
+        .sort((txA: UngroupedIndexerTransaction, txB: UngroupedIndexerTransaction) => {
+          const aBlockNumber = BI.from(txA.blockNumber).toNumber();
+          const bBlockNumber = BI.from(txB.blockNumber).toNumber();
+          if (aBlockNumber < bBlockNumber) return -1;
+          else if (aBlockNumber > bBlockNumber) return 1;
+          else if (aBlockNumber === bBlockNumber) {
+            const aTxIndex = BI.from(txA.txIndex).toNumber();
+            const bTxIndex = BI.from(txB.txIndex).toNumber();
+            if (aTxIndex < bTxIndex) return -1;
+            else if (aTxIndex > bTxIndex) return 1;
+          }
+          // unreachable: aBlockNumber === bBlockNumber && aTxIndex === bTxIndex
+          return 0;
+        })
+        .forEach((tx: UngroupedIndexerTransaction) => {
           batchRequest.add('getTransaction', tx.txHash);
         });
     });
