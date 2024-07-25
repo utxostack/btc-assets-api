@@ -154,7 +154,7 @@ export default class CKBClient {
     this.indexer = new Indexer(cradle.env.CKB_RPC_URL);
     this.dataCache = new DataCache(cradle.redis, {
       prefix: 'ckb-info-cell-txs',
-      expire: 60 * 1000,
+      expire: 10 * 60 * 1000,
     });
   }
 
