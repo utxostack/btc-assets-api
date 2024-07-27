@@ -30,7 +30,7 @@ exports[`RgbppCollector > getRgbppBalanceByCells: should return the rgbpp balanc
     "amount": "0x5f5e100",
     "decimal": 8,
     "name": "Unique BBQ",
-    "symbol": "UBBQ",
+    "symbol": "",
     "type_hash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
     "type_script": {
       "args": "0x30d3fbec9ceba691770d57c6d06bdb98cf0f82bef0ca6e87687a118d6ce1e7b7",

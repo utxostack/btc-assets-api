@@ -6888,7 +6888,7 @@ exports[`/:btc_address/balance - with pending_amount 1`] = `
       "decimal": 8,
       "name": "Unique BBQ",
       "pending_amount": "0x5f5e100",
-      "symbol": "UBBQ",
+      "symbol": "",
       "total_amount": "0xbebc200",
       "type_hash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
       "type_script": {
@@ -6952,7 +6952,7 @@ exports[`/:btc_address/balance - without pending_amount 1`] = `
       "decimal": 8,
       "name": "Unique BBQ",
       "pending_amount": "0x0",
-      "symbol": "UBBQ",
+      "symbol": "",
       "total_amount": "0x5f5e100",
       "type_hash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
       "type_script": {
