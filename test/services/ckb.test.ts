@@ -23,6 +23,13 @@ describe('CKBClient', () => {
     hashType: 'type',
   };
 
+  // {"name":"tUTXO","symbol":"tUTXO","decimal":8}
+  const tUtxoTypeScript: Script = {
+    codeHash: '0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb',
+    args: '0x92b419a8d8e03c683a47b960f707f2b866f6114b70327b6628762719b243c5ca',
+    hashType: 'type',
+  };
+
   // CKBI
   const inscriptionTypeScript: Script = {
     codeHash: '0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb',
@@ -48,6 +55,17 @@ describe('CKBClient', () => {
       decimal: 8,
       name: 'XUDT Test Token',
       symbol: 'PDD',
+    });
+  });
+
+  test('getInfoCellData: should return the info cell data', async () => {
+    // related tx:
+    // https://pudge.explorer.nervos.org/transaction/0x38f88df8b0ce98ec0dee86249c8640b06439105a2500b4ca0638a1a229a52a48
+    const infoCellData = await ckb.getInfoCellData(tUtxoTypeScript);
+    expect(infoCellData).toEqual({
+      decimal: 8,
+      name: 'tUTXO',
+      symbol: 'tUTXO',
     });
   });
 
