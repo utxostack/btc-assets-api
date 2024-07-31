@@ -28,7 +28,7 @@ export function getTypeScript(type_script: string | Script | undefined) {
 /**
  * Filter cells by type script
  */
-export async function filterCellsByTypeScript(cells: Cell[], typeScript: Script) {
+export function filterCellsByTypeScript(cells: Cell[], typeScript: Script) {
   return cells.filter((cell) => {
     if (!cell.cellOutput.type) {
       return false;

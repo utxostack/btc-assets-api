@@ -6858,9 +6858,9 @@ exports[`/:btc_address/balance - with pending_amount 1`] = `
     {
       "available_amount": "0x624eee61",
       "decimal": 8,
-      "name": "",
+      "name": "CKB Fist Inscription",
       "pending_amount": "0x0",
-      "symbol": "LP-UTXOSwap V1",
+      "symbol": "CKBI",
       "total_amount": "0x624eee61",
       "type_hash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
       "type_script": {
@@ -6922,9 +6922,9 @@ exports[`/:btc_address/balance - without pending_amount 1`] = `
     {
       "available_amount": "0x624eee61",
       "decimal": 8,
-      "name": "",
+      "name": "CKB Fist Inscription",
       "pending_amount": "0x0",
-      "symbol": "LP-UTXOSwap V1",
+      "symbol": "CKBI",
       "total_amount": "0x624eee61",
       "type_hash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
       "type_script": {
