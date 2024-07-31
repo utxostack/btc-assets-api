@@ -17,8 +17,8 @@ exports[`RgbppCollector > getRgbppBalanceByCells: should return the rgbpp balanc
   "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2": {
     "amount": "0x624eee61",
     "decimal": 8,
-    "name": "",
-    "symbol": "LP-UTXOSwap V1",
+    "name": "CKB Fist Inscription",
+    "symbol": "CKBI",
     "type_hash": "0x7337d2075479d5c6789564516be1db11478e1d3ca70ad88050fe0bf3ff05acc2",
     "type_script": {
       "args": "0x1ba116c119d1cfd98a53e9d1a615cf2af2bb87d95515c9d217d367054cfc696b",

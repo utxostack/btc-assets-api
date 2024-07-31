@@ -253,31 +253,33 @@ export default class CKBClient {
     });
     type getTransactionsResult = ReturnType<typeof this.rpc.getTransactions<false>>;
     const infoCellTxs: Awaited<getTransactionsResult>[] = await batchRequest.exec();
+    const allIndexerTxs = infoCellTxs.reduce(
+      (acc, txs) => acc.concat(txs.objects.filter(({ ioType }: UngroupedIndexerTransaction) => ioType === 'output')),
+      [] as UngroupedIndexerTransaction[],
+    );
 
     // get all transactions that have the xudt type cell and info cell
     batchRequest = this.rpc.createBatchRequest();
-    infoCellTxs.forEach((txs) => {
-      txs.objects
-        .filter(({ ioType }: UngroupedIndexerTransaction) => ioType === 'output')
+    allIndexerTxs
+      .sort((txA: UngroupedIndexerTransaction, txB: UngroupedIndexerTransaction) => {
         // make sure `infoCellTxs` are asc-ordered
-        .sort((txA: UngroupedIndexerTransaction, txB: UngroupedIndexerTransaction) => {
-          const aBlockNumber = BI.from(txA.blockNumber).toNumber();
-          const bBlockNumber = BI.from(txB.blockNumber).toNumber();
-          if (aBlockNumber < bBlockNumber) return -1;
-          else if (aBlockNumber > bBlockNumber) return 1;
-          else if (aBlockNumber === bBlockNumber) {
-            const aTxIndex = BI.from(txA.txIndex).toNumber();
-            const bTxIndex = BI.from(txB.txIndex).toNumber();
-            if (aTxIndex < bTxIndex) return -1;
-            else if (aTxIndex > bTxIndex) return 1;
-          }
-          // unreachable: aBlockNumber === bBlockNumber && aTxIndex === bTxIndex
-          return 0;
-        })
-        .forEach((tx: UngroupedIndexerTransaction) => {
-          batchRequest.add('getTransaction', tx.txHash);
-        });
-    });
+        // related issue: https://github.com/nervosnetwork/ckb/issues/4549
+        const aBlockNumber = BI.from(txA.blockNumber).toNumber();
+        const bBlockNumber = BI.from(txB.blockNumber).toNumber();
+        if (aBlockNumber < bBlockNumber) return -1;
+        else if (aBlockNumber > bBlockNumber) return 1;
+        else if (aBlockNumber === bBlockNumber) {
+          const aTxIndex = BI.from(txA.txIndex).toNumber();
+          const bTxIndex = BI.from(txB.txIndex).toNumber();
+          if (aTxIndex < bTxIndex) return -1;
+          else if (aTxIndex > bTxIndex) return 1;
+        }
+        // unreachable: aBlockNumber === bBlockNumber && aTxIndex === bTxIndex
+        return 0;
+      })
+      .forEach((tx: UngroupedIndexerTransaction) => {
+        batchRequest.add('getTransaction', tx.txHash);
+      });
     const txs: TransactionWithStatus[] = await batchRequest.exec();
     await this.dataCache.set('all', txs);
     return txs;
@@ -315,6 +317,7 @@ export default class CKBClient {
       if (inscriptionCellIndex !== -1) {
         const infoCellData = this.getInscriptionInfoCellData(tx, inscriptionCellIndex, script);
         if (infoCellData) {
+          // TODO: `type:${typeHash}` could be cached for a longer time
           await this.dataCache.set(`type:${typeHash}`, infoCellData);
           return infoCellData;
         }
