@@ -1,9 +1,8 @@
-import { FastifyPluginCallback, FastifyRequest } from 'fastify';
+import { FastifyPluginCallback } from 'fastify';
 import { Server } from 'http';
 import validateBitcoinAddress from '../../utils/validators';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { CKBTransaction, Cell, IsomorphicTransaction, Script, XUDTBalance } from './types';
-import { blockchain } from '@ckb-lumos/base';
 import z from 'zod';
 import { Env } from '../../env';
 import { buildPreLockArgs, getXudtTypeScript, isScriptEqual, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
@@ -13,6 +12,7 @@ import { UTXO } from '../../services/bitcoin/schema';
 import { Transaction as BTCTransaction } from '../bitcoin/types';
 import { TransactionWithStatus } from '../../services/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
+import { filterCellsByTypeScript, getTypeScript } from '../../utils/typescript';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   const env: Env = fastify.container.resolve('env');
@@ -24,26 +24,6 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       throw fastify.httpErrors.badRequest('Invalid bitcoin address');
     }
   });
-
-  /**
-   * Get type script from request query
-   */
-  function getTypeScript(request: FastifyRequest) {
-    const { type_script } = request.query as { type_script: string | Script };
-    let typeScript: Script | undefined = undefined;
-    if (type_script) {
-      if (typeof type_script === 'string') {
-        if (type_script.startsWith('0x')) {
-          typeScript = blockchain.Script.unpack(type_script);
-        } else {
-          typeScript = JSON.parse(decodeURIComponent(type_script));
-        }
-      } else {
-        typeScript = type_script;
-      }
-    }
-    return typeScript;
-  }
 
   /**
    * Get UTXOs by btc address
@@ -70,23 +50,6 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     }
     const cells = rgbppUtxoCellsPairs.map((pair) => pair.cells).flat();
     return cells;
-  }
-
-  /**
-   * Filter cells by type script
-   */
-  function filterCellsByTypeScript(cells: Cell[], typeScript: Script) {
-    return cells.filter((cell) => {
-      if (!cell.cellOutput.type) {
-        return false;
-      }
-      // if typeScript.args is empty, only compare codeHash and hashType
-      if (!typeScript.args || typeScript.args === '0x') {
-        const script = { ...cell.cellOutput.type, args: '' };
-        return isScriptEqual(script, typeScript);
-      }
-      return isScriptEqual(cell.cellOutput.type, typeScript);
-    });
   }
 
   fastify.get(
@@ -125,7 +88,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { no_cache } = request.query;
       const utxos = await getUxtos(btc_address, no_cache);
       const cells = await getRgbppAssetsCells(btc_address, utxos, no_cache);
-      const typeScript = getTypeScript(request);
+      const typeScript = getTypeScript(request.query.type_script);
       const assetCells = typeScript ? filterCellsByTypeScript(cells, typeScript) : cells;
       return assetCells.map((cell) => {
         const typeHash = cell.cellOutput.type ? computeScriptHash(cell.cellOutput.type) : undefined;
@@ -175,7 +138,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { btc_address } = request.params;
       const { no_cache } = request.query;
 
-      const typeScript = getTypeScript(request);
+      const typeScript = getTypeScript(request.query.type_script);
       if (!typeScript || !isTypeAssetSupported(typeScript, env.NETWORK === 'mainnet')) {
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
@@ -189,6 +152,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
 
       let cells = await getRgbppAssetsCells(btc_address, utxos, no_cache);
       cells = typeScript ? filterCellsByTypeScript(cells, typeScript) : cells;
+
       const availableXudtBalances = await fastify.rgbppCollector.getRgbppBalanceByCells(cells);
       Object.keys(availableXudtBalances).forEach((key) => {
         const { amount, ...xudtInfo } = availableXudtBalances[key];
@@ -340,7 +304,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async (request) => {
       const { btc_address } = request.params;
       const { rgbpp_only, after_btc_txid } = request.query;
-      const typeScript = getTypeScript(request);
+      const typeScript = getTypeScript(request.query.type_script);
 
       const btcTxs = await fastify.bitcoin.getAddressTxs({
         address: btc_address,

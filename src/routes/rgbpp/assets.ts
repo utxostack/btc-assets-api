@@ -2,11 +2,18 @@ import { FastifyPluginCallback } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { Server } from 'http';
 import z from 'zod';
-import { Cell } from './types';
+import { Cell, Script, SporeTypeInfo, XUDTTypeInfo } from './types';
 import { UTXO } from '../../services/bitcoin/schema';
+import { getTypeScript } from '../../utils/typescript';
+import { Env } from '../../env';
+import { IndexerCell, isSporeTypeSupported, isUDTTypeSupported } from '@rgbpp-sdk/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
+import { getSporeConfig, unpackToRawClusterData, unpackToRawSporeData } from '../../utils/spore';
+import { SearchKey } from '../../services/rgbpp';
 
 const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
+  const env: Env = fastify.container.resolve('env');
+
   fastify.get(
     '/:btc_txid',
     {
@@ -94,6 +101,108 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
           typeHash,
         };
       });
+    },
+  );
+
+  fastify.get(
+    '/type',
+    {
+      schema: {
+        description: 'Get RGB++ assets type info by typescript',
+        tags: ['RGB++@Unstable'],
+        querystring: z.object({
+          type_script: Script.or(z.string())
+            .optional()
+            .describe(
+              `
+              type script to filter cells
+
+              two ways to provide:
+              - as a object: 'encodeURIComponent(JSON.stringify({"codeHash":"0x...", "args":"0x...", "hashType":"type"}))'
+              - as a hex string: '0x...' (You can pack by @ckb-lumos/codec blockchain.Script.pack({ "codeHash": "0x...", ... }))
+            `,
+            ),
+        }),
+        response: {
+          200: z
+            .union([
+              z
+                .object({
+                  type: z.literal('xudt'),
+                })
+                .merge(XUDTTypeInfo),
+              z
+                .object({
+                  type: z.literal('spore'),
+                })
+                .merge(SporeTypeInfo),
+            ])
+            .nullable(),
+        },
+      },
+    },
+    async (request) => {
+      const isMainnet = env.NETWORK === 'mainnet';
+      const typeScript = getTypeScript(request.query.type_script);
+      if (!typeScript) {
+        return null;
+      }
+      if (isUDTTypeSupported(typeScript, isMainnet)) {
+        const infoCell = await fastify.ckb.getInfoCellData(typeScript);
+        const typeHash = computeScriptHash(typeScript);
+        if (!infoCell) {
+          return null;
+        }
+        return {
+          type: 'xudt' as const,
+          type_hash: typeHash,
+          type_script: typeScript,
+          ...infoCell,
+        };
+      }
+      if (isSporeTypeSupported(typeScript, isMainnet)) {
+        const searchKey: SearchKey = {
+          script: typeScript,
+          scriptType: 'type',
+          withData: true,
+        };
+        const result = await fastify.ckb.rpc.getCells(searchKey, 'desc', '0x1');
+        const [sporeCell] = result.objects;
+        const sporeData = unpackToRawSporeData(sporeCell.outputData!);
+        const sporeInfo: SporeTypeInfo = {
+          contentType: sporeData.contentType,
+        };
+        if (sporeData.clusterId) {
+          const sporeConfig = getSporeConfig(isMainnet);
+          const batchRequest = fastify.ckb.rpc.createBatchRequest(
+            sporeConfig.scripts.Cluster.versions.map((version) => {
+              const clusterScript = {
+                ...version.script,
+                args: sporeData.clusterId!,
+              };
+              const searchKey: SearchKey = {
+                script: clusterScript,
+                scriptType: 'type',
+                withData: true,
+              };
+              return ['getCells', searchKey, 'desc', '0x1'];
+            }),
+          );
+          const cells = await batchRequest.exec();
+          const [cell] = cells.map(({ objects }: { objects: IndexerCell[] }) => objects).flat();
+          const clusterData = unpackToRawClusterData(cell.outputData!);
+          sporeInfo.cluster = {
+            id: sporeData.clusterId,
+            name: clusterData.name,
+            description: clusterData.description,
+          };
+        }
+        return {
+          type: 'spore' as const,
+          ...sporeInfo,
+        };
+      }
+      return null;
     },
   );
 
