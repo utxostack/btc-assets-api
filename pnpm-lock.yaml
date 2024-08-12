@@ -71,6 +71,9 @@ dependencies:
   '@sentry/profiling-node':
     specifier: ^7.102.1
     version: 7.102.1
+  '@spore-sdk/core':
+    specifier: ^0.2.0-beta.9
+    version: 0.2.0-beta.9(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
   async-retry:
     specifier: ^1.3.3
     version: 1.3.3
@@ -1300,7 +1303,7 @@ packages:
       '@nervosnetwork/ckb-sdk-utils': 0.109.1
       '@nervosnetwork/ckb-types': 0.109.1
       '@rgbpp-sdk/service': 0.4.0
-      '@spore-sdk/core': 0.2.0-beta.8(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
+      '@spore-sdk/core': 0.2.0-beta.9(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
       axios: 1.6.8
       camelcase-keys: 7.0.2
       js-sha256: 0.11.0
@@ -1538,8 +1541,8 @@ packages:
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
     dev: true
 
-  /@spore-sdk/core@0.2.0-beta.8(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21):
-    resolution: {integrity: sha512-2u0e544JDQMVnJOcO3QK9G7yNrbj6nju8PH78k7+/cf9EbOltDudZCpU3YpgffsdMOKhfmpY8xCAq4w/+Jjm1Q==}
+  /@spore-sdk/core@0.2.0-beta.9(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21):
+    resolution: {integrity: sha512-3X1UoVOjXNHwrucqSb3EjIZQ5xn6blyTEXyXS+n0t6v692bnQn9fjtHMIyT71u+fV6c78mtsL4pa3p7GhPYUhg==}
     peerDependencies:
       '@ckb-lumos/lumos': 0.22.0-next.5
       lodash: ^4.17.21

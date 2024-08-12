@@ -9,6 +9,7 @@ import {
 import { Cradle } from '../container';
 import { BI, Indexer, RPC, Script } from '@ckb-lumos/lumos';
 import { CKBRPC } from '@ckb-lumos/rpc';
+import { UngroupedIndexerTransaction } from '@ckb-lumos/ckb-indexer/lib/type';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
 import {
@@ -154,7 +155,7 @@ export default class CKBClient {
     this.indexer = new Indexer(cradle.env.CKB_RPC_URL);
     this.dataCache = new DataCache(cradle.redis, {
       prefix: 'ckb-info-cell-txs',
-      expire: 60 * 1000,
+      expire: 10 * 60 * 1000,
     });
   }
 
@@ -244,22 +245,41 @@ export default class CKBClient {
           script: searchScript,
           scriptType: 'type',
         },
+        // XXX: The returned result is not asc-ordered, maybe it is a bug in ckb-indexer
         'asc',
+        // TODO: There may be a maximum request limit.
         '0xffff', // 0xffff basically means no limit
       );
     });
     type getTransactionsResult = ReturnType<typeof this.rpc.getTransactions<false>>;
     const infoCellTxs: Awaited<getTransactionsResult>[] = await batchRequest.exec();
+    const allIndexerTxs = infoCellTxs.reduce(
+      (acc, txs) => acc.concat(txs.objects.filter(({ ioType }: UngroupedIndexerTransaction) => ioType === 'output')),
+      [] as UngroupedIndexerTransaction[],
+    );
 
     // get all transactions that have the xudt type cell and info cell
     batchRequest = this.rpc.createBatchRequest();
-    infoCellTxs.forEach((txs) => {
-      txs.objects
-        .filter(({ ioType }) => ioType === 'output')
-        .forEach((tx) => {
-          batchRequest.add('getTransaction', tx.txHash);
-        });
-    });
+    allIndexerTxs
+      .sort((txA: UngroupedIndexerTransaction, txB: UngroupedIndexerTransaction) => {
+        // make sure `infoCellTxs` are asc-ordered
+        // related issue: https://github.com/nervosnetwork/ckb/issues/4549
+        const aBlockNumber = BI.from(txA.blockNumber).toNumber();
+        const bBlockNumber = BI.from(txB.blockNumber).toNumber();
+        if (aBlockNumber < bBlockNumber) return -1;
+        else if (aBlockNumber > bBlockNumber) return 1;
+        else if (aBlockNumber === bBlockNumber) {
+          const aTxIndex = BI.from(txA.txIndex).toNumber();
+          const bTxIndex = BI.from(txB.txIndex).toNumber();
+          if (aTxIndex < bTxIndex) return -1;
+          else if (aTxIndex > bTxIndex) return 1;
+        }
+        // unreachable: aBlockNumber === bBlockNumber && aTxIndex === bTxIndex
+        return 0;
+      })
+      .forEach((tx: UngroupedIndexerTransaction) => {
+        batchRequest.add('getTransaction', tx.txHash);
+      });
     const txs: TransactionWithStatus[] = await batchRequest.exec();
     await this.dataCache.set('all', txs);
     return txs;
@@ -297,6 +317,7 @@ export default class CKBClient {
       if (inscriptionCellIndex !== -1) {
         const infoCellData = this.getInscriptionInfoCellData(tx, inscriptionCellIndex, script);
         if (infoCellData) {
+          // TODO: `type:${typeHash}` could be cached for a longer time
           await this.dataCache.set(`type:${typeHash}`, infoCellData);
           return infoCellData;
         }

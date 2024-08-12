@@ -55,3 +55,30 @@ exports[`Get RGB++ assets by BTC txid and vout 1`] = `
   },
 ]
 `;
+
+exports[`Get RGB++ assets type info (Spore) 1`] = `
+{
+  "cluster": {
+    "description": "{"description":"Lower body gear is custom-made to provide comfort, mobility, and fashion for our short-legged Nervapes, gearing them up for whatever adventure lies ahead.","dob":{"ver":0,"decoder":{"type":"code_hash","hash":"0x1c84212ebd817e9de09d2a79f85cc421b684eda63409cfa75688f98716e77b5f"},"pattern":[["prev.type","string",0,1,"options",["image"]],["prev.bg","string",0,74,"utf8"],["prev.view","number",74,1,"range",[0,255]],["Entity","number",75,8,"raw"]]}}",
+    "id": "0x99f2d34427694b1188d7ba462bd43e82c15f3a8238adab3bf5863c9bf97c9373",
+    "name": "Nervape Lower Body",
+  },
+  "contentType": "dob/0",
+  "type": "spore",
+}
+`;
+
+exports[`Get RGB++ assets type info (xUDT) 1`] = `
+{
+  "decimal": 8,
+  "name": "XUDT Test Token",
+  "symbol": "PDD",
+  "type": "xudt",
+  "type_hash": "0x10f511f2efb0027191b97ac5b4bd77374ffdac7399e8527d76f5f9bd32e7d35b",
+  "type_script": {
+    "args": "0x8c556e92974a8dd8237719020a259d606359ac2cc958cb8bda77a1c3bb3cd93b",
+    "codeHash": "0x25c29dc317811a6f6f3985a7a9ebc4838bd388d19d0feeecf0bcd60f6c0975bb",
+    "hashType": "type",
+  },
+}
+`;
