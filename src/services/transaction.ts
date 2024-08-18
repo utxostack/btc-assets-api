@@ -593,7 +593,7 @@ export default class TransactionProcessor
    * get pending output cells by txid, get ckb output cells from the uncompleted job
    * @param txid - the transaction id
    */
-  public async getPendingOuputCellsByTxid(txid: string) {
+  public async getPendingOutputCellsByTxid(txid: string): Promise<Cell[]> {
     const job = await this.getTransactionRequest(txid);
     if (!job) {
       return [];

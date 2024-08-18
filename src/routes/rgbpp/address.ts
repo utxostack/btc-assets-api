@@ -175,7 +175,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
 
       const pendingOutputCellsGroup = await Promise.all(
         pendingTxids.map(async (txid) => {
-          const cells = await fastify.transactionProcessor.getPendingOuputCellsByTxid(txid);
+          const cells = await fastify.transactionProcessor.getPendingOutputCellsByTxid(txid);
           const lockArgsSet = new Set(pendingUtxosGroup[txid].map((utxo) => buildPreLockArgs(utxo.vout)));
           return cells.filter((cell) => lockArgsSet.has(cell.cellOutput.lock.args));
         }),
