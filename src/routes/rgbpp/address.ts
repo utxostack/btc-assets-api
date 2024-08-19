@@ -125,7 +125,12 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     '/:btc_address/balance',
     {
       schema: {
-        description: 'Get RGB++ balance by btc address, support xUDT only for now',
+        description: `
+          Get RGB++ balance by btc address, support xUDT only for now. 
+          
+          An address with more than 50 pending BTC transactions is uncommon. 
+          However, if such a situation arises, it potentially affecting the returned total_amount.
+        `,
         tags: ['RGB++'],
         params: z.object({
           btc_address: z.string(),
@@ -171,7 +176,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const xudtBalances: Record<string, XUDTBalance> = {};
       const utxos = await getUxtos(btc_address, no_cache);
 
-      // Find confirmed RgbppLock Xudt assets
+      // Find confirmed RgbppLock XUDT assets
       const confirmedUtxos = utxos.filter((utxo) => utxo.status.confirmed);
       const confirmedCells = await getRgbppAssetsCells(btc_address, confirmedUtxos, no_cache);
       const confirmedTargetCells = filterCellsByTypeScript(confirmedCells, typeScript);
@@ -186,7 +191,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         };
       });
 
-      // Find all unconfirmed RgbppLock Xudt outputs
+      // Find all unconfirmed RgbppLock XUDT outputs
       const pendingUtxos = utxos.filter(
         (utxo) =>
           !utxo.status.confirmed ||
@@ -220,9 +225,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           .toHexString();
       });
 
-      // Find spent RgbppLock Xudt assets in unconfirmed transactions' inputs
-      const allTxs = await fastify.bitcoin.getAddressTxs({ address: btc_address });
-      const unconfirmedTxids = allTxs.filter((tx) => !tx.status.confirmed).map((tx) => tx.txid);
+      // Find spent RgbppLock XUDT assets in the inputs of the unconfirmed transactions
+      // XXX: the bitcoin.getAddressTxs() API only returns up to 50 mempool transactions
+      const latestTxs = await fastify.bitcoin.getAddressTxs({ address: btc_address });
+      const unconfirmedTxids = latestTxs.filter((tx) => !tx.status.confirmed).map((tx) => tx.txid);
       const spendingInputCellsGroup = await Promise.all(
         unconfirmedTxids.map(async (txid) => {
           const inputCells = await fastify.transactionProcessor.getPendingInputCellsByTxid(txid);
