@@ -5,14 +5,23 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { CKBTransaction, Cell, IsomorphicTransaction, Script, XUDTBalance } from './types';
 import z from 'zod';
 import { Env } from '../../env';
-import { buildPreLockArgs, getXudtTypeScript, isScriptEqual, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
-import { groupBy } from 'lodash';
+import {
+  isScriptEqual,
+  buildPreLockArgs,
+  getRgbppLockScript,
+  getXudtTypeScript,
+  isTypeAssetSupported,
+} from '@rgbpp-sdk/ckb';
+import { groupBy, uniq } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
 import { Transaction as BTCTransaction } from '../bitcoin/types';
 import { TransactionWithStatus } from '../../services/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { filterCellsByTypeScript, getTypeScript } from '../../utils/typescript';
+import { unpackRgbppLockArgs } from '@rgbpp-sdk/btc/lib/ckb/molecule';
+import { TestnetTypeMap } from '../../constants';
+import { remove0x } from '@rgbpp-sdk/btc';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   const env: Env = fastify.container.resolve('env');
@@ -50,6 +59,18 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     }
     const cells = rgbppUtxoCellsPairs.map((pair) => pair.cells).flat();
     return cells;
+  }
+
+  /**
+   * Filter RgbppLock cells by cells
+   */
+  function getRgbppLockCellsByCells(cells: Cell[]): Cell[] {
+    const rgbppLockScript = getRgbppLockScript(env.NETWORK === 'mainnet', TestnetTypeMap[env.NETWORK]);
+    return cells.filter(
+      (cell) =>
+        rgbppLockScript.codeHash === cell.cellOutput.lock.codeHash &&
+        rgbppLockScript.hashType === cell.cellOutput.lock.hashType,
+    );
   }
 
   fastify.get(
@@ -147,13 +168,14 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
 
-      const utxos = await getUxtos(btc_address, no_cache);
       const xudtBalances: Record<string, XUDTBalance> = {};
+      const utxos = await getUxtos(btc_address, no_cache);
 
-      let cells = await getRgbppAssetsCells(btc_address, utxos, no_cache);
-      cells = typeScript ? filterCellsByTypeScript(cells, typeScript) : cells;
-
-      const availableXudtBalances = await fastify.rgbppCollector.getRgbppBalanceByCells(cells);
+      // Find confirmed RgbppLock Xudt assets
+      const confirmedUtxos = utxos.filter((utxo) => utxo.status.confirmed);
+      const confirmedCells = await getRgbppAssetsCells(btc_address, confirmedUtxos, no_cache);
+      const confirmedTargetCells = filterCellsByTypeScript(confirmedCells, typeScript);
+      const availableXudtBalances = await fastify.rgbppCollector.getRgbppBalanceByCells(confirmedTargetCells);
       Object.keys(availableXudtBalances).forEach((key) => {
         const { amount, ...xudtInfo } = availableXudtBalances[key];
         xudtBalances[key] = {
@@ -164,6 +186,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         };
       });
 
+      // Find all unconfirmed RgbppLock Xudt outputs
       const pendingUtxos = utxos.filter(
         (utxo) =>
           !utxo.status.confirmed ||
@@ -172,7 +195,6 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       );
       const pendingUtxosGroup = groupBy(pendingUtxos, (utxo) => utxo.txid);
       const pendingTxids = Object.keys(pendingUtxosGroup);
-
       const pendingOutputCellsGroup = await Promise.all(
         pendingTxids.map(async (txid) => {
           const cells = await fastify.transactionProcessor.getPendingOutputCellsByTxid(txid);
@@ -180,11 +202,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           return cells.filter((cell) => lockArgsSet.has(cell.cellOutput.lock.args));
         }),
       );
-      let pendingOutputCells = pendingOutputCellsGroup.flat();
-      if (typeScript) {
-        pendingOutputCells = filterCellsByTypeScript(pendingOutputCells, typeScript);
-      }
-
+      const pendingOutputCells = filterCellsByTypeScript(pendingOutputCellsGroup.flat(), typeScript);
       const pendingXudtBalances = await fastify.rgbppCollector.getRgbppBalanceByCells(pendingOutputCells);
       Object.values(pendingXudtBalances).forEach(({ amount, type_hash, ...xudtInfo }) => {
         if (!xudtBalances[type_hash]) {
@@ -200,6 +218,49 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
         xudtBalances[type_hash].pending_amount = BI.from(xudtBalances[type_hash].pending_amount)
           .add(BI.from(amount))
           .toHexString();
+      });
+
+      // Find spent RgbppLock Xudt assets in unconfirmed transactions' inputs
+      const allTxs = await fastify.bitcoin.getAddressTxs({ address: btc_address });
+      const unconfirmedTxids = allTxs.filter((tx) => !tx.status.confirmed).map((tx) => tx.txid);
+      const spendingInputCellsGroup = await Promise.all(
+        unconfirmedTxids.map(async (txid) => {
+          const inputCells = await fastify.transactionProcessor.getPendingInputCellsByTxid(txid);
+          const inputRgbppCells = getRgbppLockCellsByCells(filterCellsByTypeScript(inputCells, typeScript));
+          const inputCellLockArgs = inputRgbppCells.map((cell) => unpackRgbppLockArgs(cell.cellOutput.lock.args));
+
+          const txids = uniq(inputCellLockArgs.map((args) => remove0x(args.btcTxid)));
+          const txs = await Promise.all(txids.map((txid) => fastify.bitcoin.getTx({ txid })));
+          const txsMap = txs.reduce(
+            (sum, tx, index) => {
+              const txid = txids[index];
+              sum[txid] = tx ?? null;
+              return sum;
+            },
+            {} as Record<string, BTCTransaction | null>,
+          );
+
+          return inputRgbppCells.filter((cell, index) => {
+            const lockArgs = inputCellLockArgs[index];
+            const tx = txsMap[remove0x(lockArgs.btcTxid)];
+            const utxo = tx?.vout[lockArgs.outIndex];
+            return utxo?.scriptpubkey_address === btc_address;
+          });
+        }),
+      );
+      const spendingInputCells = spendingInputCellsGroup.flat();
+      const spendingXudtBalances = await fastify.rgbppCollector.getRgbppBalanceByCells(spendingInputCells);
+      Object.values(spendingXudtBalances).forEach(({ amount, type_hash, ...xudtInfo }) => {
+        if (!xudtBalances[type_hash]) {
+          xudtBalances[type_hash] = {
+            ...xudtInfo,
+            type_hash,
+            total_amount: '0x0',
+            available_amount: '0x0',
+            pending_amount: '0x0',
+          };
+        }
+
         xudtBalances[type_hash].total_amount = BI.from(xudtBalances[type_hash].total_amount)
           .add(BI.from(amount))
           .toHexString();
@@ -322,10 +383,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             } as const;
           }
 
-          const inputOutpoints = isomorphicTx.ckbRawTx?.inputs || isomorphicTx.ckbTx?.inputs || [];
-          const inputs = await fastify.ckb.getInputCellsByOutPoint(
-            inputOutpoints.map((input) => input.previousOutput) as CKBComponents.OutPoint[],
-          );
+          const inputs = isomorphicTx.ckbRawTx?.inputs || isomorphicTx.ckbTx?.inputs || [];
+          const inputCells = await fastify.ckb.getInputCellsByOutPoint(inputs.map((input) => input.previousOutput!));
+          const inputCellOutputs = inputCells.map((cell) => cell.cellOutput);
+
           const outputs = isomorphicTx.ckbRawTx?.outputs || isomorphicTx.ckbTx?.outputs || [];
 
           return {
@@ -333,7 +394,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             isRgbpp: true,
             isomorphicTx: {
               ...isomorphicTx,
-              inputs,
+              inputs: inputCellOutputs,
               outputs,
             },
           } as const;

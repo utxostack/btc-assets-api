@@ -22,7 +22,8 @@ import {
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import DataCache from './base/data-cache';
 import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils';
-import { OutputCell } from '../routes/rgbpp/types';
+import { Cell } from '../routes/rgbpp/types';
+import { uniq } from 'lodash';
 
 export type TransactionWithStatus = Awaited<ReturnType<CKBRPC['getTransaction']>>;
 
@@ -326,14 +327,27 @@ export default class CKBClient {
     return null;
   }
 
-  public async getInputCellsByOutPoint(outPoints: CKBComponents.OutPoint[]): Promise<OutputCell[]> {
-    const batchRequest = this.rpc.createBatchRequest(outPoints.map((outPoint) => ['getTransaction', outPoint.txHash]));
-    const txs = await batchRequest.exec();
-    const inputs = txs.map((tx: TransactionWithStatus, index: number) => {
-      const outPoint = outPoints[index];
-      return tx.transaction.outputs[BI.from(outPoint.index).toNumber()];
+  public async getInputCellsByOutPoint(outPoints: CKBComponents.OutPoint[]): Promise<Cell[]> {
+    const txHashes = uniq(outPoints.map((outPoint) => outPoint.txHash));
+    const batchRequest = this.rpc.createBatchRequest(txHashes.map((txHash) => ['getTransaction', txHash]));
+    const txs: TransactionWithStatus[] = await batchRequest.exec();
+    const txsMap = txs.reduce(
+      (acc, tx: TransactionWithStatus) => {
+        acc[tx.transaction.hash] = tx;
+        return acc;
+      },
+      {} as Record<string, TransactionWithStatus>,
+    );
+    return outPoints.map((outPoint) => {
+      const tx = txsMap[outPoint.txHash];
+      const outPointIndex = BI.from(outPoint.index).toNumber();
+      return Cell.parse({
+        cellOutput: tx.transaction.outputs[outPointIndex],
+        data: tx.transaction.outputsData[outPointIndex],
+        blockHash: tx.txStatus.blockHash,
+        outPoint,
+      });
     });
-    return inputs;
   }
 
   /**
