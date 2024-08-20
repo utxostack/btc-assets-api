@@ -593,7 +593,7 @@ export default class TransactionProcessor
    * get pending output cells by txid, get ckb output cells from the uncompleted job
    * @param txid - the transaction id
    */
-  public async getPendingOuputCellsByTxid(txid: string) {
+  public async getPendingOutputCellsByTxid(txid: string): Promise<Cell[]> {
     const job = await this.getTransactionRequest(txid);
     if (!job) {
       return [];
@@ -608,12 +608,32 @@ export default class TransactionProcessor
     const { ckbVirtualResult } = job.data;
     const outputs = ckbVirtualResult.ckbRawTx.outputs;
     return outputs.map((output, index) => {
-      const cell: Cell = {
+      return Cell.parse({
         cellOutput: output,
         data: ckbVirtualResult.ckbRawTx.outputsData[index],
-      };
-      return cell;
+      });
     });
+  }
+
+  /**
+   * get pending input cells by txid, get ckb input cells from the uncompleted job
+   * @param txid - the transaction id
+   */
+  public async getPendingInputCellsByTxid(txid: string): Promise<Cell[]> {
+    const job = await this.getTransactionRequest(txid);
+    if (!job) {
+      return [];
+    }
+
+    // get ckb input cells from the uncompleted job only
+    const state = await job.getState();
+    if (state === 'completed' || state === 'failed') {
+      return [];
+    }
+
+    const { ckbVirtualResult } = job.data;
+    const inputOutPoints = ckbVirtualResult.ckbRawTx.inputs.map((input) => input.previousOutput!);
+    return await this.cradle.ckb.getInputCellsByOutPoint(inputOutPoints);
   }
 
   /**

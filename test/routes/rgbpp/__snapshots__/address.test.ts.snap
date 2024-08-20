@@ -6889,7 +6889,7 @@ exports[`/:btc_address/balance - with pending_amount 1`] = `
       "name": "Unique BBQ",
       "pending_amount": "0x5f5e100",
       "symbol": "",
-      "total_amount": "0xbebc200",
+      "total_amount": "0x5f5e100",
       "type_hash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
       "type_script": {
         "args": "0x30d3fbec9ceba691770d57c6d06bdb98cf0f82bef0ca6e87687a118d6ce1e7b7",
@@ -6903,7 +6903,7 @@ exports[`/:btc_address/balance - with pending_amount 1`] = `
       "name": "XUDT Test Token",
       "pending_amount": "0x5f5e100",
       "symbol": "PDD",
-      "total_amount": "0x5f5e100",
+      "total_amount": "0x0",
       "type_hash": "0x10f511f2efb0027191b97ac5b4bd77374ffdac7399e8527d76f5f9bd32e7d35b",
       "type_script": {
         "args": "0x8c556e92974a8dd8237719020a259d606359ac2cc958cb8bda77a1c3bb3cd93b",
