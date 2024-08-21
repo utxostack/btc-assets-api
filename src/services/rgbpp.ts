@@ -319,7 +319,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
 
     // Check inputs:
     // 1. Find the last index of the type inputs
-    // 2. Check if all rgbpp_lock inputs can be found in the btc_tx.vin
+    // 2. Check if all rgbpp_lock inputs can be found in the btc_tx.vin (regardless the position)
     // 3. Check if the inputs contain at least one rgbpp_lock cell (as L1-L1 and L1-L2 transactions should have)
     const inputs = await this.cradle.ckb.getInputCellsByOutPoint(ckbTx.inputs.map((input) => input.previousOutput!));
     const lastTypeInputIndex = findLastIndex(inputs, (input) => !!input.cellOutput.type);
@@ -327,16 +327,18 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     if (!anyRgbppLockInput) {
       return false;
     }
-    const allInputsValid = inputs.every((input, index) => {
+    const allInputsValid = inputs.every((input) => {
       if (!input.cellOutput.type) {
         return true;
       }
       if (!isRgbppLock(input.cellOutput.lock)) {
         return true;
       }
-      const btcInput = btcTx.vin[index];
       const rgbppLockArgs = unpackRgbppLockArgs(input.cellOutput.lock.args);
-      return btcInput && btcInput.txid === remove0x(rgbppLockArgs.btcTxid) && btcInput.vout === rgbppLockArgs.outIndex;
+      const matchingBtcInput = btcTx.vin.find(
+        (btcInput) => btcInput.txid === remove0x(rgbppLockArgs.btcTxid) && btcInput.vout === rgbppLockArgs.outIndex,
+      );
+      return !!matchingBtcInput;
     });
     if (!allInputsValid) {
       return false;
