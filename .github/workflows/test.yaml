@@ -32,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install PNPM
         uses: pnpm/action-setup@v3
@@ -59,6 +59,9 @@ jobs:
           PAYMASTER_RECEIVE_BTC_ADDRESS: ${{ secrets.PAYMASTER_RECEIVE_BTC_ADDRESS }}
           CKB_RPC_URL: ${{ secrets.CKB_RPC_URL }}
           CKB_INDEXER_URL: ${{ secrets.CKB_INDEXER_URL }}
-          REDIS_URL: redis://localhost:6379
-          CI_REDIS_URL: redis://localhost:6379
+
+          # using the strategy.job-index as a unique Redis database number
+          # where Redis databases are typically numbered from 0 to 15
+          REDIS_URL: redis://localhost:6379/${{ strategy.job-index }}
+          CI_REDIS_URL: redis://localhost:6379/${{ strategy.job-index }}
         run: pnpm test
