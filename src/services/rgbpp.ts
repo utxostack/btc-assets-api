@@ -345,35 +345,32 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     }
 
     // Check outputs:
-    // 1. Find the last index of the type outputs, and check if at least one type output exists
+    // 1. Find the last index of the type outputs
     // 2. Check if all type outputs are rgbpp_lock or btc_time_lock cells
     // 4. Check if each rgbpp_lock cell has an isomorphic UTXO in the btc_tx.vout
     // 5. Check if each btc_time_lock cell contains the corresponding btc_txid in the lock args
     const lastTypeOutputIndex = findLastIndex(ckbTx.outputs, (output) => !!output.type);
-    if (lastTypeOutputIndex < 0) {
-      return false;
-    }
-    const anyRelatedLockToTypeOutput = ckbTx.outputs.some(
-      (output) => output.type && (isRgbppLock(output.lock) || isBtcTimeLock(output.lock)),
-    );
-    if (!anyRelatedLockToTypeOutput) {
-      return false;
-    }
     const allOutputsValid = ckbTx.outputs.every((output) => {
+      if (!output.type) {
+        return true;
+      }
       if (isRgbppLock(output.lock)) {
         const rgbppLockArgs = unpackRgbppLockArgs(output.lock.args);
         const btcTxId = remove0x(rgbppLockArgs.btcTxid);
-        if (btcTxId !== RGBPP_TX_ID_PLACEHOLDER && (btcTxId !== btcTx.txid || !btcTx.vout[rgbppLockArgs.outIndex])) {
-          return false;
+        if (btcTxId === RGBPP_TX_ID_PLACEHOLDER) {
+          return true;
+        }
+        if (btcTxId === btcTx.txid && btcTx.vout[rgbppLockArgs.outIndex] !== undefined) {
+          return true;
         }
       }
       if (isBtcTimeLock(output.lock)) {
         const btcTxId = remove0x(btcTxIdFromBtcTimeLockArgs(output.lock.args));
-        if (btcTxId !== RGBPP_TX_ID_PLACEHOLDER && btcTx.txid !== btcTxId) {
-          return false;
+        if (btcTxId === RGBPP_TX_ID_PLACEHOLDER || btcTx.txid === btcTxId) {
+          return true;
         }
       }
-      return true;
+      return false;
     });
     if (!allOutputsValid) {
       return false;
