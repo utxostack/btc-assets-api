@@ -6,7 +6,7 @@ import { Cradle } from '../../container';
 import { IBitcoinBroadcastBackuper, IBitcoinDataProvider } from './interface';
 import { MempoolClient } from './mempool';
 import { ElectrsClient } from './electrs';
-import { NetworkType } from '../../constants';
+import { IS_MAINNET, NetworkType } from '../../constants';
 import { ChainInfo } from './schema';
 
 // https://github.com/mempool/electrs/blob/d4f788fc3d7a2b4eca4c5629270e46baba7d0f19/src/errors.rs#L6
@@ -169,7 +169,7 @@ export default class BitcoinClient implements IBitcoinClient {
 
     const { difficulty, mediantime } = tip;
     return {
-      chain: this.cradle.env.NETWORK === 'mainnet' ? 'main' : 'test',
+      chain: IS_MAINNET ? 'main' : 'test',
       blocks: tip.height,
       bestblockhash: hash,
       difficulty,

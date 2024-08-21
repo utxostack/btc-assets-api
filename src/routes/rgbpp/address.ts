@@ -5,13 +5,7 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { CKBTransaction, Cell, IsomorphicTransaction, Script, XUDTBalance } from './types';
 import z from 'zod';
 import { Env } from '../../env';
-import {
-  isScriptEqual,
-  buildPreLockArgs,
-  getRgbppLockScript,
-  getXudtTypeScript,
-  isTypeAssetSupported,
-} from '@rgbpp-sdk/ckb';
+import { isScriptEqual, buildPreLockArgs, getXudtTypeScript, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
 import { groupBy, uniq } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
@@ -20,8 +14,9 @@ import { TransactionWithStatus } from '../../services/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { filterCellsByTypeScript, getTypeScript } from '../../utils/typescript';
 import { unpackRgbppLockArgs } from '@rgbpp-sdk/btc/lib/ckb/molecule';
-import { TestnetTypeMap } from '../../constants';
 import { remove0x } from '@rgbpp-sdk/btc';
+import { isRgbppLock } from '../../utils/lockscript';
+import { IS_MAINNET } from '../../constants';
 
 const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
   const env: Env = fastify.container.resolve('env');
@@ -37,7 +32,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
   /**
    * Get UTXOs by btc address
    */
-  async function getUxtos(btc_address: string, no_cache?: string) {
+  async function getUtxos(btc_address: string, no_cache?: string) {
     const utxos = await fastify.utxoSyncer.getUtxosByAddress(btc_address, no_cache === 'true');
     if (env.UTXO_SYNC_DATA_CACHE_ENABLE) {
       await fastify.utxoSyncer.enqueueSyncJob(btc_address);
@@ -65,12 +60,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
    * Filter RgbppLock cells by cells
    */
   function getRgbppLockCellsByCells(cells: Cell[]): Cell[] {
-    const rgbppLockScript = getRgbppLockScript(env.NETWORK === 'mainnet', TestnetTypeMap[env.NETWORK]);
-    return cells.filter(
-      (cell) =>
-        rgbppLockScript.codeHash === cell.cellOutput.lock.codeHash &&
-        rgbppLockScript.hashType === cell.cellOutput.lock.hashType,
-    );
+    return cells.filter((cell) => isRgbppLock(cell.cellOutput.lock));
   }
 
   fastify.get(
@@ -107,7 +97,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async (request) => {
       const { btc_address } = request.params;
       const { no_cache } = request.query;
-      const utxos = await getUxtos(btc_address, no_cache);
+      const utxos = await getUtxos(btc_address, no_cache);
       const cells = await getRgbppAssetsCells(btc_address, utxos, no_cache);
       const typeScript = getTypeScript(request.query.type_script);
       const assetCells = typeScript ? filterCellsByTypeScript(cells, typeScript) : cells;
@@ -146,7 +136,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
               - as a hex string: '0x...' (You can pack by @ckb-lumos/codec blockchain.Script.pack({ "codeHash": "0x...", ... }))
             `,
             )
-            .default(getXudtTypeScript(env.NETWORK === 'mainnet')),
+            .default(getXudtTypeScript(IS_MAINNET)),
           no_cache: z
             .enum(['true', 'false'])
             .default('false')
@@ -165,7 +155,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { no_cache } = request.query;
 
       const typeScript = getTypeScript(request.query.type_script);
-      if (!typeScript || !isTypeAssetSupported(typeScript, env.NETWORK === 'mainnet')) {
+      if (!typeScript || !isTypeAssetSupported(typeScript, IS_MAINNET)) {
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
       const scripts = fastify.ckb.getScripts();
@@ -174,7 +164,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       }
 
       const xudtBalances: Record<string, XUDTBalance> = {};
-      const utxos = await getUxtos(btc_address, no_cache);
+      const utxos = await getUtxos(btc_address, no_cache);
 
       // Find confirmed RgbppLock XUDT assets
       const confirmedUtxos = utxos.filter((utxo) => utxo.status.confirmed);

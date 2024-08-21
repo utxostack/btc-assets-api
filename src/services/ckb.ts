@@ -24,6 +24,7 @@ import DataCache from './base/data-cache';
 import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils';
 import { Cell } from '../routes/rgbpp/types';
 import { uniq } from 'lodash';
+import { IS_MAINNET } from '../constants';
 
 export type TransactionWithStatus = Awaited<ReturnType<CKBRPC['getTransaction']>>;
 
@@ -164,11 +165,10 @@ export default class CKBClient {
    * Get the ckb script configs
    */
   public getScripts() {
-    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
-    const xudtTypeScript = getXudtTypeScript(isMainnet);
-    const sporeTypeScript = getSporeTypeScript(isMainnet);
-    const uniqueCellTypeScript = getUniqueTypeScript(isMainnet);
-    const inscriptionTypeScript = getInscriptionInfoTypeScript(isMainnet);
+    const xudtTypeScript = getXudtTypeScript(IS_MAINNET);
+    const sporeTypeScript = getSporeTypeScript(IS_MAINNET);
+    const uniqueCellTypeScript = getUniqueTypeScript(IS_MAINNET);
+    const inscriptionTypeScript = getInscriptionInfoTypeScript(IS_MAINNET);
     return {
       XUDT: xudtTypeScript,
       SPORE: sporeTypeScript,
@@ -297,12 +297,11 @@ export default class CKBClient {
       return cachedData as ReturnType<typeof decodeInfoCellData>;
     }
 
-    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
     const txs = await this.getAllInfoCellTxs();
     for (const tx of txs) {
       // check if the unique cell is the info cell of the xudt type
       const uniqueCellIndex = tx.transaction.outputs.findIndex((cell) => {
-        return cell.type && isUniqueCellTypeScript(cell.type, isMainnet);
+        return cell.type && isUniqueCellTypeScript(cell.type, IS_MAINNET);
       });
       if (uniqueCellIndex !== -1) {
         const infoCellData = this.getUniqueCellData(tx, uniqueCellIndex, script);
@@ -313,7 +312,7 @@ export default class CKBClient {
       }
       // check if the inscription cell is the info cell of the xudt type
       const inscriptionCellIndex = tx.transaction.outputs.findIndex((cell) => {
-        return cell.type && isInscriptionInfoTypeScript(cell.type, isMainnet);
+        return cell.type && isInscriptionInfoTypeScript(cell.type, IS_MAINNET);
       });
       if (inscriptionCellIndex !== -1) {
         const infoCellData = this.getInscriptionInfoCellData(tx, inscriptionCellIndex, script);

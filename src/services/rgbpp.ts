@@ -66,7 +66,7 @@ class RgbppCollectorError extends Error {
  * will be recollected when the utxos are updated or new collect job is enqueued.
  */
 export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest, IRgbppCollectJobReturn> {
-  private readonly limit: pLimit.Limit;
+  private limit: pLimit.Limit;
   private dataCache: DataCache<IRgbppCollectJobReturn>;
 
   constructor(private cradle: Cradle) {
