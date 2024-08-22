@@ -1,4 +1,4 @@
-import { isAdminMode } from './env';
+import { env, isAdminMode } from './env';
 import { BTCTestnetType } from '@rgbpp-sdk/ckb';
 
 export enum NetworkType {
@@ -41,3 +41,6 @@ export const BTC_SIGNET_SPV_START_BLOCK_HEIGHT = 199800;
 // estimate time: 2024-04-02 06:20:03
 // ref: https://mempool.space/block/0000000000000000000077d98a103858c7d7cbc5ba67a4135f348a436bec1748
 export const BTC_MAINNET_SPV_START_BLOCK_HEIGHT = 837300;
+
+export const IS_MAINNET = env.NETWORK === NetworkType.mainnet.toString();
+export const TESTNET_TYPE = TestnetTypeMap[env.NETWORK];
