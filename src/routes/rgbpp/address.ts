@@ -309,7 +309,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const ckbTx = await fastify.ckb.rpc.getTransaction(rgbppLockTx.txHash);
       setCkbTxAndStatus(ckbTx);
     } else {
-      const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTxId(btcTx);
+      const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTx(btcTx);
       if (btcTimeLockTx) {
         setCkbTxAndStatus(btcTimeLockTx);
       }

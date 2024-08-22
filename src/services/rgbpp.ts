@@ -268,7 +268,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     return null;
   }
 
-  public async queryBtcTimeLockTxByBtcTxId(btcTx: Transaction) {
+  public async queryBtcTimeLockTxByBtcTx(btcTx: Transaction) {
     const rgbppLock = getRgbppLock();
     const relatedCkbTxs = (
       await Promise.all(
