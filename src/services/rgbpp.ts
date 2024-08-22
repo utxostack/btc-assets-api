@@ -4,7 +4,6 @@ import * as Sentry from '@sentry/node';
 import {
   IndexerCell,
   leToU128,
-  isScriptEqual,
   buildRgbppLockArgs,
   genRgbppLockScript,
   btcTxIdFromBtcTimeLockArgs,
@@ -13,11 +12,10 @@ import {
 } from '@rgbpp-sdk/ckb';
 import { remove0x } from '@rgbpp-sdk/btc';
 import { unpackRgbppLockArgs } from '@rgbpp-sdk/btc/lib/ckb/molecule';
-import { groupBy, uniq, findLastIndex } from 'lodash';
+import { groupBy, findLastIndex } from 'lodash';
 import { z } from 'zod';
 import { Job } from 'bullmq';
 import { BI, RPC, Script } from '@ckb-lumos/lumos';
-import { TransactionWithStatus } from '@ckb-lumos/base';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { Cell, XUDTBalance } from '../routes/rgbpp/types';
 import { Transaction, UTXO } from './bitcoin/schema';
@@ -25,7 +23,7 @@ import BaseQueueWorker from './base/queue-worker';
 import DataCache from './base/data-cache';
 import { Cradle } from '../container';
 import { isCommitmentMatchToCkbTx, tryGetCommitmentFromBtcTx } from '../utils/commitment';
-import { getBtcTimeLock, isBtcTimeLock, isRgbppLock } from '../utils/lockscript';
+import { getRgbppLock, isBtcTimeLock, isRgbppLock } from '../utils/lockscript';
 import { IS_MAINNET, TESTNET_TYPE } from '../constants';
 
 type GetCellsParams = Parameters<RPC['getCells']>;
@@ -270,37 +268,41 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
     return null;
   }
 
-  public async queryBtcTimeLockTxByBtcTxId(btcTxId: string) {
-    // XXX: unstable, need to be improved: https://github.com/ckb-cell/btc-assets-api/issues/45
-    const btcTimeLockTxs = await this.cradle.ckb.indexer.getTransactions(
-      {
-        script: {
-          ...getBtcTimeLock(),
-          args: '0x',
-        },
-        scriptType: 'lock',
-        groupByTransaction: true,
-      },
-      {
-        order: 'asc',
-      },
-    );
+  public async queryBtcTimeLockTxByBtcTxId(btcTx: Transaction) {
+    const rgbppLock = getRgbppLock();
+    const relatedCkbTxs = (
+      await Promise.all(
+        btcTx.vin.map(({ txid, vout }) => {
+          const args = buildRgbppLockArgs(vout, txid);
+          return this.cradle.ckb.rpc.getTransactions(
+            {
+              script: {
+                ...rgbppLock,
+                args,
+              },
+              scriptType: 'lock',
+              groupByTransaction: true,
+            },
+            'asc',
+            '0x64',
+          );
+        }),
+      )
+    )
+      .map(({ objects }) => objects)
+      .flat();
 
-    const txHashes = uniq(btcTimeLockTxs.objects.map(({ txHash }) => txHash));
-    const batchRequest = this.cradle.ckb.rpc.createBatchRequest(txHashes.map((txHash) => ['getTransaction', txHash]));
-    const transactions: TransactionWithStatus[] = await batchRequest.exec();
-    if (transactions.length > 0) {
-      for (const tx of transactions) {
-        const isBtcTimeLockTx = tx.transaction.outputs.some((output) => {
-          if (!isScriptEqual(output.lock, getBtcTimeLock())) {
-            return false;
-          }
-          const outputBtcTxId = btcTxIdFromBtcTimeLockArgs(output.lock.args);
-          return remove0x(outputBtcTxId) === btcTxId;
-        });
-        if (isBtcTimeLockTx) {
-          return tx;
+    for (const tx of relatedCkbTxs) {
+      const ckbTx = await this.cradle.ckb.rpc.getTransaction(tx.txHash);
+      const isBtcTimeLockTx = ckbTx.transaction.outputs.some((output) => {
+        if (!isBtcTimeLock(output.lock)) {
+          return false;
         }
+        const outputBtcTxId = btcTxIdFromBtcTimeLockArgs(output.lock.args);
+        return remove0x(outputBtcTxId) === btcTx.txid;
+      });
+      if (isBtcTimeLockTx) {
+        return ckbTx;
       }
     }
     return null;
