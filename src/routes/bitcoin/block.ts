@@ -13,7 +13,7 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
         description: 'Get a block by its hash',
         tags: ['Bitcoin'],
         params: z.object({
-          hash: z.string().describe('The Bitcoin block hash'),
+          hash: z.string().length(64, 'should be a 64-character hex string').describe('The Bitcoin block hash'),
         }),
         response: {
           200: Block,
@@ -35,7 +35,7 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
         description: 'Get block transaction ids by its hash',
         tags: ['Bitcoin'],
         params: z.object({
-          hash: z.string().describe('The Bitcoin block hash'),
+          hash: z.string().length(64, 'should be a 64-character hex string').describe('The Bitcoin block hash'),
         }),
         response: {
           200: z.object({
@@ -59,7 +59,7 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
         description: 'Get a block header by its hash',
         tags: ['Bitcoin'],
         params: z.object({
-          hash: z.string().describe('The Bitcoin block hash'),
+          hash: z.string().length(64, 'should be a 64-character hex string').describe('The Bitcoin block hash'),
         }),
         response: {
           200: z.object({
@@ -85,7 +85,11 @@ const blockRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
         description: 'Get a block hash by its height',
         tags: ['Bitcoin'],
         params: z.object({
-          height: z.coerce.number().describe('The Bitcoin block height'),
+          height: z
+            .string()
+            .min(1, 'cannot be empty')
+            .pipe(z.coerce.number().min(0, 'cannot be negative'))
+            .describe('The Bitcoin block height'),
         }),
         response: {
           200: z.object({

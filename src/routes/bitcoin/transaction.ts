@@ -38,7 +38,7 @@ const transactionRoutes: FastifyPluginCallback<Record<never, never>, Server, Zod
         description: 'Get a transaction by its txid',
         tags: ['Bitcoin'],
         params: z.object({
-          txid: z.string().describe('The Bitcoin transaction id'),
+          txid: z.string().length(64, 'should be a 64-character hex string').describe('The Bitcoin transaction id'),
         }),
         response: {
           200: Transaction,
@@ -62,7 +62,7 @@ const transactionRoutes: FastifyPluginCallback<Record<never, never>, Server, Zod
         description: 'Get a transaction hex by its txid',
         tags: ['Bitcoin'],
         params: z.object({
-          txid: z.string().describe('The Bitcoin transaction id'),
+          txid: z.string().length(64, 'should be a 64-character hex string').describe('The Bitcoin transaction id'),
         }),
         response: {
           200: z.object({

@@ -1,4 +1,4 @@
-import fastify from 'fastify';
+import fastify, { type FastifySchemaCompiler } from 'fastify';
 import { FastifyInstance } from 'fastify';
 import sensible from '@fastify/sensible';
 import compress from '@fastify/compress';
@@ -12,7 +12,7 @@ import { getSafeEnvs } from './env';
 import container from './container';
 import { asValue } from 'awilix';
 import options from './options';
-import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
+import { serializerCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import cors from './plugins/cors';
 import { NetworkType } from './constants';
 import rgbppRoutes from './routes/rgbpp';
@@ -23,6 +23,7 @@ import internalRoutes from './routes/internal';
 import healthcheck from './plugins/healthcheck';
 import sentry from './plugins/sentry';
 import cron from './plugins/cron';
+import { ZodAny, ZodError } from 'zod';
 
 async function routes(fastify: FastifyInstance) {
   fastify.log.info(`Process env: ${JSON.stringify(getSafeEnvs(), null, 2)}`);
@@ -58,6 +59,23 @@ async function routes(fastify: FastifyInstance) {
     });
   }
 }
+
+export const validatorCompiler: FastifySchemaCompiler<ZodAny> =
+  ({ schema }) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (data): any => {
+    try {
+      return { value: schema.parse(data) };
+    } catch (error) {
+      if (error instanceof ZodError && error.errors.length) {
+        const firstError = error.errors[0];
+        return {
+          error: new Error(`Invalid ${firstError.path.join('.')}: ${error.errors[0].message}`),
+        };
+      }
+      return { error };
+    }
+  };
 
 export function buildFastify() {
   const app = fastify(options).withTypeProvider<ZodTypeProvider>();

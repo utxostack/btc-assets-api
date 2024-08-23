@@ -54,7 +54,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         description: `Get the CKB transaction hash by BTC txid.`,
         tags: ['RGB++'],
         params: z.object({
-          btc_txid: z.string(),
+          btc_txid: z.string().length(64, 'should be a 64-character hex string'),
         }),
         response: {
           200: z.object({
@@ -116,7 +116,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         `,
         tags: ['RGB++'],
         params: z.object({
-          btc_txid: z.string(),
+          btc_txid: z.string().length(64, 'should be a 64-character hex string'),
         }),
         querystring: z.object({
           with_data: z.enum(['true', 'false']).default('false'),
