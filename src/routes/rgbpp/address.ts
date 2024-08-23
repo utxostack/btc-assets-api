@@ -309,10 +309,9 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const ckbTx = await fastify.ckb.rpc.getTransaction(rgbppLockTx.txHash);
       setCkbTxAndStatus(ckbTx);
     } else {
-      // XXX: this is a performance bottleneck, need to optimize
-      const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTxId(btcTx.txid);
+      const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTx(btcTx);
       if (btcTimeLockTx) {
-        setCkbTxAndStatus(btcTimeLockTx as TransactionWithStatus);
+        setCkbTxAndStatus(btcTimeLockTx);
       }
     }
     return isomorphicTx;

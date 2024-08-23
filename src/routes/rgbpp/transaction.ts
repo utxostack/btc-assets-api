@@ -77,7 +77,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
         return { txhash: rgbppLockTx.txHash };
       }
-      const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTxId(btc_txid);
+      const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTx(btcTx);
       if (btcTimeLockTx) {
         reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
         return { txhash: btcTimeLockTx.transaction.hash };
