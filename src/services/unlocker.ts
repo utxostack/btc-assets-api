@@ -6,7 +6,6 @@ import {
   IndexerCell,
   buildBtcTimeCellsSpentTx,
   buildSporeBtcTimeCellsSpentTx,
-  getBtcTimeLockScript,
   isClusterSporeTypeSupported,
   isTypeAssetSupported,
   isUDTTypeSupported,
@@ -21,8 +20,10 @@ import {
   BTC_MAINNET_SPV_START_BLOCK_HEIGHT,
   BTC_SIGNET_SPV_START_BLOCK_HEIGHT,
   BTC_TESTNET_SPV_START_BLOCK_HEIGHT,
-  TestnetTypeMap,
+  TESTNET_TYPE,
+  IS_MAINNET,
 } from '../constants';
+import { getBtcTimeLock } from '../utils/lockscript';
 
 interface IUnlocker {
   getNextBatchLockCell(): Promise<IndexerCell[]>;
@@ -47,16 +48,8 @@ export default class Unlocker implements IUnlocker {
     }) as CellCollector;
   }
 
-  private get isMainnet() {
-    return this.cradle.env.NETWORK === 'mainnet';
-  }
-
-  private get testnetType() {
-    return TestnetTypeMap[this.cradle.env.NETWORK];
-  }
-
   private get lockScript() {
-    return getBtcTimeLockScript(this.isMainnet, this.testnetType);
+    return getBtcTimeLock();
   }
 
   private get btcSpvStartBlockHeight() {
@@ -80,7 +73,7 @@ export default class Unlocker implements IUnlocker {
     const { blocks } = await this.cradle.bitcoin.getBlockchainInfo();
     for await (const cell of collect) {
       // allow supported asset types only
-      if (!cell.cellOutput.type || !isTypeAssetSupported(cell.cellOutput.type, this.isMainnet)) {
+      if (!cell.cellOutput.type || !isTypeAssetSupported(cell.cellOutput.type, IS_MAINNET)) {
         continue;
       }
 
@@ -136,25 +129,25 @@ export default class Unlocker implements IUnlocker {
     const ckbRawTxs = [];
 
     // udt type cells unlock
-    const udtTypeCells = cells.filter((cell) => isUDTTypeSupported(cell.output.type!, this.isMainnet));
+    const udtTypeCells = cells.filter((cell) => isUDTTypeSupported(cell.output.type!, IS_MAINNET));
     if (udtTypeCells.length > 0) {
       const ckbRawTx = await buildBtcTimeCellsSpentTx({
         btcTimeCells: udtTypeCells,
         btcAssetsApi,
-        isMainnet: this.isMainnet,
-        btcTestnetType: this.testnetType,
+        isMainnet: IS_MAINNET,
+        btcTestnetType: TESTNET_TYPE,
       });
       ckbRawTxs.push(ckbRawTx);
     }
 
     // spore type cells unlock
-    const sporeTypeCells = cells.filter((cell) => isClusterSporeTypeSupported(cell.output.type!, this.isMainnet));
+    const sporeTypeCells = cells.filter((cell) => isClusterSporeTypeSupported(cell.output.type!, IS_MAINNET));
     if (sporeTypeCells.length > 0) {
       const ckbRawTx = await buildSporeBtcTimeCellsSpentTx({
         btcTimeCells: sporeTypeCells,
         btcAssetsApi,
-        isMainnet: this.isMainnet,
-        btcTestnetType: this.testnetType,
+        isMainnet: IS_MAINNET,
+        btcTestnetType: TESTNET_TYPE,
       });
       ckbRawTxs.push(ckbRawTx);
     }
@@ -181,7 +174,7 @@ export default class Unlocker implements IUnlocker {
       collector,
       outputCapacityRange,
       ckbRawTx,
-      isMainnet: this.isMainnet,
+      isMainnet: IS_MAINNET,
     });
     this.cradle.logger.debug(`[Unlocker] Transaction signed: ${JSON.stringify(signedTx)}`);
 

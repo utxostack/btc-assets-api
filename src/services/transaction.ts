@@ -5,8 +5,6 @@ import {
   RGBPP_TX_ID_PLACEHOLDER,
   appendCkbTxWitnesses,
   generateSporeTransferCoBuild,
-  getBtcTimeLockScript,
-  getRgbppLockScript,
   getSecp256k1CellDep,
   getSporeTypeDep,
   isClusterSporeTypeSupported,
@@ -37,8 +35,9 @@ import { BitcoinClientAPIError } from './bitcoin';
 import { HttpStatusCode } from 'axios';
 import BaseQueueWorker from './base/queue-worker';
 import { Env } from '../env';
-import { TestnetTypeMap } from '../constants';
 import { getCommitmentFromBtcTx } from '../utils/commitment';
+import { isBtcTimeLock, isRgbppLock } from '../utils/lockscript';
+import { IS_MAINNET } from '../constants';
 
 export interface ITransactionRequest {
   txid: string;
@@ -123,30 +122,6 @@ export default class TransactionProcessor
     };
   }
 
-  private get isMainnet() {
-    return this.cradle.env.NETWORK === 'mainnet';
-  }
-
-  private get testnetType() {
-    return TestnetTypeMap[this.cradle.env.NETWORK];
-  }
-
-  private get rgbppLockScript() {
-    return getRgbppLockScript(this.isMainnet, this.testnetType);
-  }
-
-  private get btcTimeLockScript() {
-    return getBtcTimeLockScript(this.isMainnet, this.testnetType);
-  }
-
-  private isRgbppLock(lock: CKBComponents.Script) {
-    return lock.codeHash === this.rgbppLockScript.codeHash && lock.hashType === this.rgbppLockScript.hashType;
-  }
-
-  private isBtcTimeLock(lock: CKBComponents.Script) {
-    return lock.codeHash === this.btcTimeLockScript.codeHash && lock.hashType === this.btcTimeLockScript.hashType;
-  }
-
   /**
    * Clear the btcTxId in the RGBPP_LOCK/BTC_TIME_LOCK script to avoid the mismatch between the CKB and BTC transactions
    * @param ckbRawTx - CKB Raw Transaction
@@ -155,7 +130,7 @@ export default class TransactionProcessor
   private async resetOutputLockScript(ckbRawTx: CKBRawTransaction, txid: string) {
     const outputs = ckbRawTx.outputs.map((output) => {
       const { lock } = output;
-      if (this.isRgbppLock(lock)) {
+      if (isRgbppLock(lock)) {
         const unpack = RGBPPLock.unpack(lock.args);
         // https://github.com/ckb-cell/rgbpp-sdk/tree/main/examples/rgbpp#what-you-must-know-about-btc-transaction-id
         const btcTxid = bytes.hexify(bytes.bytify(unpack.btcTxid).reverse());
@@ -164,10 +139,10 @@ export default class TransactionProcessor
         }
         return {
           ...output,
-          lock: genRgbppLockScript(buildPreLockArgs(unpack.outIndex), this.isMainnet),
+          lock: genRgbppLockScript(buildPreLockArgs(unpack.outIndex), IS_MAINNET),
         };
       }
-      if (this.isBtcTimeLock(lock)) {
+      if (isBtcTimeLock(lock)) {
         const btcTxid = btcTxIdFromBtcTimeLockArgs(lock.args);
         if (remove0x(btcTxid) !== txid) {
           return output;
@@ -175,7 +150,7 @@ export default class TransactionProcessor
         const toLock = lockScriptFromBtcTimeLockArgs(lock.args);
         return {
           ...output,
-          lock: genBtcTimeLockScript(toLock, this.isMainnet),
+          lock: genBtcTimeLockScript(toLock, IS_MAINNET),
         };
       }
       return output;
@@ -253,31 +228,23 @@ export default class TransactionProcessor
   private getCkbRawTxWithRealBtcTxid(ckbVirtualResult: CKBVirtualResult, txid: string) {
     let ckbRawTx = ckbVirtualResult.ckbRawTx;
     const needUpdateCkbTx = ckbRawTx.outputs.some((output) => {
-      if (this.isRgbppLock(output.lock)) {
+      if (isRgbppLock(output.lock)) {
         const { btcTxid } = RGBPPLock.unpack(output.lock.args);
         const txid = remove0x(btcTxid);
         this.cradle.logger.debug(`[TransactionProcessor] RGBPP_LOCK args txid: ${btcTxid}`);
-        return (
-          output.lock.codeHash === this.rgbppLockScript.codeHash &&
-          output.lock.hashType === this.rgbppLockScript.hashType &&
-          txid === RGBPP_TX_ID_PLACEHOLDER
-        );
+        return txid === RGBPP_TX_ID_PLACEHOLDER;
       }
-      if (this.isBtcTimeLock(output.lock)) {
+      if (isBtcTimeLock(output.lock)) {
         const btcTxid = btcTxIdFromBtcTimeLockArgs(output.lock.args);
         const txid = remove0x(btcTxid);
         this.cradle.logger.debug(`[TransactionProcessor] BTC_TIME_LOCK args txid: ${txid}`);
-        return (
-          output.lock.codeHash === this.btcTimeLockScript.codeHash &&
-          output.lock.hashType === this.btcTimeLockScript.hashType &&
-          txid === RGBPP_TX_ID_PLACEHOLDER
-        );
+        return txid === RGBPP_TX_ID_PLACEHOLDER;
       }
       return false;
     });
     if (needUpdateCkbTx) {
       this.cradle.logger.info(`[TransactionProcessor] Update CKB Raw Transaction with real BTC txid: ${txid}`);
-      ckbRawTx = updateCkbTxWithRealBtcTxId({ ckbRawTx, btcTxId: txid, isMainnet: this.isMainnet });
+      ckbRawTx = updateCkbTxWithRealBtcTxId({ ckbRawTx, btcTxId: txid, isMainnet: IS_MAINNET });
     }
     return ckbRawTx;
   }
@@ -331,7 +298,7 @@ export default class TransactionProcessor
    * if the transaction has spore type dep, we need to append the spore cobuild witness to the transaction
    */
   private hasSporeTypeDep(tx: CKBRawTransaction) {
-    const sporeTypeDep = getSporeTypeDep(this.isMainnet);
+    const sporeTypeDep = getSporeTypeDep(IS_MAINNET);
     const hasSporeTypeDep = tx.cellDeps.some((cellDep) => {
       return serializeCellDep(cellDep) === serializeCellDep(sporeTypeDep);
     });
@@ -351,7 +318,7 @@ export default class TransactionProcessor
     );
     const sporeLiveCells = inputs
       .filter(({ status, cell }) => {
-        return status === 'live' && cell?.output.type && isClusterSporeTypeSupported(cell?.output.type, this.isMainnet);
+        return status === 'live' && cell?.output.type && isClusterSporeTypeSupported(cell?.output.type, IS_MAINNET);
       })
       .map((liveCell) => liveCell.cell!);
     if (sporeLiveCells.length > 0) {
@@ -413,7 +380,7 @@ export default class TransactionProcessor
     const { txid, ckbVirtualResult } = job.data;
     const { ckbRawTx } = ckbVirtualResult;
     // append the secp256k1 cell dep to the transaction
-    ckbRawTx.cellDeps.push(getSecp256k1CellDep(this.isMainnet));
+    ckbRawTx.cellDeps.push(getSecp256k1CellDep(IS_MAINNET));
     // update the job data to append the paymaster cell next time
     job.updateData({
       txid,
