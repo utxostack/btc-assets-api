@@ -72,8 +72,9 @@ export const validatorCompiler: FastifySchemaCompiler<ZodAny> =
     const error = result.error;
     if (error.errors.length) {
       const firstError = error.errors[0];
+      const propName = firstError.path.length ? firstError.path.join('.') : 'param';
       return {
-        error: httpErrors.badRequest(`Invalid ${firstError.path.join('.')}: ${error.errors[0].message}`),
+        error: httpErrors.badRequest(`Invalid ${propName}: ${error.errors[0].message}`),
       };
     }
     return { error };
