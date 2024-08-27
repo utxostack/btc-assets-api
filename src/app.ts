@@ -66,7 +66,7 @@ export const validatorCompiler: FastifySchemaCompiler<ZodAny> =
   (data) => {
     const result = schema.safeParse(data);
     if (result.success) {
-      return result.data;
+      return { value: result.data };
     }
 
     const error = result.error;
