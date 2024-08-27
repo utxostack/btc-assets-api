@@ -22,7 +22,9 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
             }
             const parsed = CKBVirtualResult.safeParse(value);
             if (!parsed.success) {
-              throw new Error(`Invalid CKB virtual result: ${JSON.stringify(parsed.error.flatten())}`);
+              throw fastify.httpErrors.badRequest(
+                `Invalid CKB virtual result: ${JSON.stringify(parsed.error.flatten())}`,
+              );
             }
             return parsed.data;
           }),
