@@ -1,13 +1,3 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`\`/token/generate\` - without params 1`] = `
-"[
-  {
-    "code": "invalid_type",
-    "expected": "object",
-    "received": "null",
-    "path": [],
-    "message": "Expected object, received null"
-  }
-]"
-`;
+exports[`\`/token/generate\` - without params 1`] = `"Invalid param: Expected object, received null"`;
