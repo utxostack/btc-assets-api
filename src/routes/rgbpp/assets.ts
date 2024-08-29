@@ -19,7 +19,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
         description: `Get RGB++ assets by BTC txid.`,
         tags: ['RGB++'],
         params: z.object({
-          btc_txid: z.string(),
+          btc_txid: z.string().length(64, 'Should be a 64-character hex string'),
         }),
         response: {
           200: z.array(
@@ -65,8 +65,8 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
         description: 'Get RGB++ assets by btc txid and vout',
         tags: ['RGB++'],
         params: z.object({
-          btc_txid: z.string(),
-          vout: z.coerce.number(),
+          btc_txid: z.string().length(64, 'should be a 64-character hex string'),
+          vout: z.string().min(1, 'cannot be empty').pipe(z.coerce.number().min(0, 'cannot be negative')),
         }),
         response: {
           200: z.array(
