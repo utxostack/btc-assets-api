@@ -84,7 +84,7 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1
       axios:
-        specifier: ^1.6.7
+        specifier: ^1.7.7
         version: 1.7.7
       bloom-filters:
         specifier: ^3.0.1
