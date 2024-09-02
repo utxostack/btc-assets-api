@@ -1,6 +1,6 @@
 {
   "packages": [
-    "nodejs@20",
+    "nodejs@21",
     "nodePackages.pnpm@latest",
     "redis@latest"
   ]
