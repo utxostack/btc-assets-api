@@ -1,28 +1,30 @@
-import { Transaction, UTXO } from './bitcoin/schema';
 import pLimit from 'p-limit';
 import asyncRetry from 'async-retry';
-import { Cradle } from '../container';
+import * as Sentry from '@sentry/node';
 import {
   IndexerCell,
-  btcTxIdFromBtcTimeLockArgs,
+  leToU128,
   buildRgbppLockArgs,
   genRgbppLockScript,
-  getBtcTimeLockScript,
-  isScriptEqual,
-  leToU128,
+  btcTxIdFromBtcTimeLockArgs,
+  RGBPP_TX_ID_PLACEHOLDER,
+  RGBPP_TX_INPUTS_MAX_LENGTH,
 } from '@rgbpp-sdk/ckb';
-import * as Sentry from '@sentry/node';
-import { BI, RPC, Script } from '@ckb-lumos/lumos';
-import { Job } from 'bullmq';
+import { remove0x } from '@rgbpp-sdk/btc';
+import { unpackRgbppLockArgs } from '@rgbpp-sdk/btc/lib/ckb/molecule';
+import { groupBy, findLastIndex } from 'lodash';
 import { z } from 'zod';
+import { Job } from 'bullmq';
+import { BI, RPC, Script } from '@ckb-lumos/lumos';
+import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { Cell, XUDTBalance } from '../routes/rgbpp/types';
+import { Transaction, UTXO } from './bitcoin/schema';
 import BaseQueueWorker from './base/queue-worker';
 import DataCache from './base/data-cache';
-import { groupBy } from 'lodash';
-import { computeScriptHash } from '@ckb-lumos/lumos/utils';
-import { remove0x } from '@rgbpp-sdk/btc';
-import { TestnetTypeMap } from '../constants';
-import { TransactionWithStatus } from '@ckb-lumos/base';
+import { Cradle } from '../container';
+import { isCommitmentMatchToCkbTx, tryGetCommitmentFromBtcTx } from '../utils/commitment';
+import { getRgbppLock, isBtcTimeLock, isRgbppLock } from '../utils/lockscript';
+import { IS_MAINNET, TESTNET_TYPE } from '../constants';
 
 type GetCellsParams = Parameters<RPC['getCells']>;
 export type SearchKey = GetCellsParams[0];
@@ -59,7 +61,7 @@ class RgbppCollectorError extends Error {
 /**
  * RgbppCollector is used to collect the cells for the utxos.
  * The cells are stored in the cache with the btc address as the key,
- * will be recollect when the utxos are updated or new collect job is enqueued.
+ * will be recollected when the utxos are updated or new collect job is enqueued.
  */
 export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest, IRgbppCollectJobReturn> {
   private limit: pLimit.Limit;
@@ -151,13 +153,12 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
    * @param typeScript - the type script to filter the cells
    */
   public async getRgbppCellsByBatchRequest(utxos: UTXO[], typeScript?: Script) {
-    const network = this.cradle.env.NETWORK;
     const batchRequest: CKBBatchRequest = this.cradle.ckb.rpc.createBatchRequest(
       utxos.map((utxo: UTXO) => {
         const { txid, vout } = utxo;
         const args = buildRgbppLockArgs(vout, txid);
         const searchKey: SearchKey = {
-          script: genRgbppLockScript(args, network === 'mainnet', TestnetTypeMap[network]),
+          script: genRgbppLockScript(args, IS_MAINNET, TESTNET_TYPE),
           scriptType: 'lock',
         };
         if (typeScript) {
@@ -165,7 +166,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
             script: typeScript,
           };
         }
-        // TOOD: In extreme cases, the num of search target cells may be more than limit=0x64=100
+        // TODO: In extreme cases, the num of search target cells may be more than limit=0x64=100
         // Priority: Low
         const params: GetCellsParams = [searchKey, 'desc', '0x64'];
         return ['getCells', ...params];
@@ -240,67 +241,153 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
   }
 
   public async queryRgbppLockTxByBtcTx(btcTx: Transaction) {
-    const network = this.cradle.env.NETWORK;
-    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
-
+    // Only query the first RGBPP_TX_INPUTS_MAX_LENGTH transactions for performance reasons
+    const maxRecords = `0x${RGBPP_TX_INPUTS_MAX_LENGTH.toString(16)}`;
     const batchRequest = this.cradle.ckb.rpc.createBatchRequest(
       btcTx.vout.map((_, index) => {
         const args = buildRgbppLockArgs(index, btcTx.txid);
-        const lock = genRgbppLockScript(args, isMainnet, TestnetTypeMap[network]);
+        const lock = genRgbppLockScript(args, IS_MAINNET, TESTNET_TYPE);
         const searchKey: SearchKey = {
           script: lock,
           scriptType: 'lock',
         };
-        return ['getTransactions', searchKey, 'desc', '0x1'];
+        return ['getTransactions', searchKey, 'asc', maxRecords];
       }),
     );
     type getTransactionsResult = ReturnType<typeof this.cradle.ckb.rpc.getTransactions<false>>;
     const transactions: Awaited<getTransactionsResult>[] = await batchRequest.exec();
-    for (const { objects } of transactions) {
-      if (objects.length > 0) {
-        const [tx] = objects;
-        return tx;
-      }
-    }
-    return null;
-  }
-
-  public async queryBtcTimeLockTxByBtcTxId(btcTxId: string) {
-    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
-    // XXX: unstable, need to be improved: https://github.com/ckb-cell/btc-assets-api/issues/45
-    const btcTimeLockScript = getBtcTimeLockScript(isMainnet);
-    const btcTimeLockTxs = await this.cradle.ckb.indexer.getTransactions({
-      script: {
-        ...btcTimeLockScript,
-        args: '0x',
-      },
-      scriptType: 'lock',
-    });
-
-    const batchRequest = this.cradle.ckb.rpc.createBatchRequest(
-      btcTimeLockTxs.objects.map(({ txHash }) => ['getTransaction', txHash]),
-    );
-    const transactions: TransactionWithStatus[] = await batchRequest.exec();
-    if (transactions.length > 0) {
-      for (const tx of transactions) {
-        const isBtcTimeLockTx = tx.transaction.outputs.some((output) => {
-          if (!isScriptEqual(output.lock, btcTimeLockScript)) {
-            return false;
-          }
-          const btcTxid = btcTxIdFromBtcTimeLockArgs(output.lock.args);
-          return remove0x(btcTxid) === btcTxId;
-        });
-        if (isBtcTimeLockTx) {
-          return tx;
+    for (const tx of transactions) {
+      for (const indexerTx of tx.objects) {
+        const ckbTx = await this.cradle.ckb.rpc.getTransaction(indexerTx.txHash);
+        const isIsomorphic = await this.isIsomorphicTx(btcTx, ckbTx.transaction);
+        if (isIsomorphic) {
+          return indexerTx;
         }
       }
     }
     return null;
   }
 
+  public async queryBtcTimeLockTxByBtcTx(btcTx: Transaction) {
+    const rgbppLock = getRgbppLock();
+    const relatedCkbTxs = (
+      await Promise.all(
+        btcTx.vin.map(({ txid, vout }) => {
+          const args = buildRgbppLockArgs(vout, txid);
+          return this.cradle.ckb.rpc.getTransactions(
+            {
+              script: {
+                ...rgbppLock,
+                args,
+              },
+              scriptType: 'lock',
+              groupByTransaction: true,
+            },
+            'asc',
+            '0x64',
+          );
+        }),
+      )
+    )
+      .map(({ objects }) => objects)
+      .flat();
+
+    for (const tx of relatedCkbTxs) {
+      const ckbTx = await this.cradle.ckb.rpc.getTransaction(tx.txHash);
+      const isBtcTimeLockTx = ckbTx.transaction.outputs.some((output) => {
+        if (!isBtcTimeLock(output.lock)) {
+          return false;
+        }
+        const outputBtcTxId = btcTxIdFromBtcTimeLockArgs(output.lock.args);
+        return remove0x(outputBtcTxId) === btcTx.txid;
+      });
+      if (isBtcTimeLockTx) {
+        return ckbTx;
+      }
+    }
+    return null;
+  }
+
+  async isIsomorphicTx(
+    btcTx: Transaction,
+    ckbTx: CKBComponents.RawTransaction,
+    validateCommitment?: boolean,
+  ): Promise<boolean> {
+    // Find the commitment from the btc_tx
+    const btcTxCommitment = tryGetCommitmentFromBtcTx(btcTx);
+    if (!btcTxCommitment) {
+      return false;
+    }
+
+    // Check inputs:
+    // 1. Find the last index of the type inputs
+    // 2. Check if all rgbpp_lock inputs can be found in the btc_tx.vin (regardless the position)
+    // 3. Check if the inputs contain at least one rgbpp_lock cell (as L1-L1 and L1-L2 transactions should have)
+    const inputs = await this.cradle.ckb.getInputCellsByOutPoint(ckbTx.inputs.map((input) => input.previousOutput!));
+    const lastTypeInputIndex = findLastIndex(inputs, (input) => !!input.cellOutput.type);
+    const anyRgbppLockInput = inputs.some((input) => isRgbppLock(input.cellOutput.lock));
+    if (!anyRgbppLockInput) {
+      return false;
+    }
+    const allInputsValid = inputs.every((input) => {
+      if (!input.cellOutput.type) {
+        return true;
+      }
+      if (!isRgbppLock(input.cellOutput.lock)) {
+        return true;
+      }
+      const rgbppLockArgs = unpackRgbppLockArgs(input.cellOutput.lock.args);
+      const matchingBtcInput = btcTx.vin.find(
+        (btcInput) => btcInput.txid === remove0x(rgbppLockArgs.btcTxid) && btcInput.vout === rgbppLockArgs.outIndex,
+      );
+      return !!matchingBtcInput;
+    });
+    if (!allInputsValid) {
+      return false;
+    }
+
+    // Check outputs:
+    // 1. Find the last index of the type outputs
+    // 2. Check if all type outputs are rgbpp_lock or btc_time_lock cells
+    // 4. Check if each rgbpp_lock cell has an isomorphic UTXO in the btc_tx.vout
+    // 5. Check if each btc_time_lock cell contains the corresponding btc_txid in the lock args
+    const lastTypeOutputIndex = findLastIndex(ckbTx.outputs, (output) => !!output.type);
+    const allOutputsValid = ckbTx.outputs.every((output) => {
+      if (!output.type) {
+        return true;
+      }
+      if (isRgbppLock(output.lock)) {
+        const rgbppLockArgs = unpackRgbppLockArgs(output.lock.args);
+        const btcTxId = remove0x(rgbppLockArgs.btcTxid);
+        if (btcTxId === RGBPP_TX_ID_PLACEHOLDER) {
+          return true;
+        }
+        if (btcTxId === btcTx.txid && btcTx.vout[rgbppLockArgs.outIndex] !== undefined) {
+          return true;
+        }
+      }
+      if (isBtcTimeLock(output.lock)) {
+        const btcTxId = remove0x(btcTxIdFromBtcTimeLockArgs(output.lock.args));
+        if (btcTxId === RGBPP_TX_ID_PLACEHOLDER || btcTx.txid === btcTxId) {
+          return true;
+        }
+      }
+      return false;
+    });
+    if (!allOutputsValid) {
+      return false;
+    }
+
+    // Compare commitment between btc_tx and ckb_tx
+    if (!validateCommitment) {
+      return true;
+    }
+    const btcTxCommitmentHex = btcTxCommitment.toString('hex');
+    return isCommitmentMatchToCkbTx(btcTxCommitmentHex, ckbTx, lastTypeInputIndex, lastTypeOutputIndex);
+  }
+
   /**
    * Enqueue a collect job to the queue
-   * @param utxos - the utxos to collect
    */
   public async enqueueCollectJob(btcAddress: string, allowDuplicate?: boolean): Promise<Job<IRgbppCollectRequest>> {
     let jobId = btcAddress;

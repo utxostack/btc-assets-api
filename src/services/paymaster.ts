@@ -5,6 +5,7 @@ import { AppendPaymasterCellAndSignTxParams, IndexerCell, appendPaymasterCellAnd
 import { hd, config, BI } from '@ckb-lumos/lumos';
 import * as Sentry from '@sentry/node';
 import { Transaction } from '../routes/bitcoin/types';
+import { IS_MAINNET } from '../constants';
 
 interface IPaymaster {
   getNextCell(token: string): Promise<IndexerCell | null>;
@@ -60,8 +61,7 @@ export default class Paymaster implements IPaymaster {
 
   private get lockScript() {
     const args = hd.key.privateKeyToBlake160(this.ckbPrivateKey);
-    const scripts =
-      this.cradle.env.NETWORK === 'mainnet' ? config.predefined.LINA.SCRIPTS : config.predefined.AGGRON4.SCRIPTS;
+    const scripts = IS_MAINNET ? config.MAINNET.SCRIPTS : config.TESTNET.SCRIPTS;
     const template = scripts['SECP256K1_BLAKE160']!;
     const lockScript = {
       codeHash: template.CODE_HASH,
@@ -123,8 +123,7 @@ export default class Paymaster implements IPaymaster {
    * The paymaster CKB address to pay the time cells spent tx fee
    */
   public get ckbAddress() {
-    const isMainnet = this.cradle.env.NETWORK === 'mainnet';
-    const lumosConfig = isMainnet ? config.predefined.LINA : config.predefined.AGGRON4;
+    const lumosConfig = IS_MAINNET ? config.MAINNET : config.TESTNET;
     const args = hd.key.privateKeyToBlake160(this.ckbPrivateKey);
     const template = lumosConfig.SCRIPTS['SECP256K1_BLAKE160'];
     const lockScript = {
@@ -296,7 +295,7 @@ export default class Paymaster implements IPaymaster {
         sumInputsCapacity,
         paymasterCell,
         secp256k1PrivateKey: this.ckbPrivateKey,
-        isMainnet: this.cradle.env.NETWORK === 'mainnet',
+        isMainnet: IS_MAINNET,
       });
       this.cradle.logger.info(`[Paymaster] Signed transaction: ${JSON.stringify(signedTx)}`);
       return signedTx;

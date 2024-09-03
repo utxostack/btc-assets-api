@@ -22,7 +22,9 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
             }
             const parsed = CKBVirtualResult.safeParse(value);
             if (!parsed.success) {
-              throw new Error(`Invalid CKB virtual result: ${JSON.stringify(parsed.error.flatten())}`);
+              throw fastify.httpErrors.badRequest(
+                `Invalid CKB virtual result: ${JSON.stringify(parsed.error.flatten())}`,
+              );
             }
             return parsed.data;
           }),
@@ -54,7 +56,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         description: `Get the CKB transaction hash by BTC txid.`,
         tags: ['RGB++'],
         params: z.object({
-          btc_txid: z.string(),
+          btc_txid: z.string().length(64, 'should be a 64-character hex string'),
         }),
         response: {
           200: z.object({
@@ -77,7 +79,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
         return { txhash: rgbppLockTx.txHash };
       }
-      const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTxId(btc_txid);
+      const btcTimeLockTx = await fastify.rgbppCollector.queryBtcTimeLockTxByBtcTx(btcTx);
       if (btcTimeLockTx) {
         reply.header(CUSTOM_HEADERS.ResponseCacheable, 'true');
         return { txhash: btcTimeLockTx.transaction.hash };
@@ -116,7 +118,7 @@ const transactionRoute: FastifyPluginCallback<Record<never, never>, Server, ZodT
         `,
         tags: ['RGB++'],
         params: z.object({
-          btc_txid: z.string(),
+          btc_txid: z.string().length(64, 'should be a 64-character hex string'),
         }),
         querystring: z.object({
           with_data: z.enum(['true', 'false']).default('false'),

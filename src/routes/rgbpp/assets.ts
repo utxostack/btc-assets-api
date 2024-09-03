@@ -5,15 +5,13 @@ import z from 'zod';
 import { Cell, Script, SporeTypeInfo, XUDTTypeInfo } from './types';
 import { UTXO } from '../../services/bitcoin/schema';
 import { getTypeScript } from '../../utils/typescript';
-import { Env } from '../../env';
 import { IndexerCell, isSporeTypeSupported, isUDTTypeSupported } from '@rgbpp-sdk/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { getSporeConfig, unpackToRawClusterData, unpackToRawSporeData } from '../../utils/spore';
 import { SearchKey } from '../../services/rgbpp';
+import { IS_MAINNET } from '../../constants';
 
 const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypeProvider> = (fastify, _, done) => {
-  const env: Env = fastify.container.resolve('env');
-
   fastify.get(
     '/:btc_txid',
     {
@@ -21,7 +19,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
         description: `Get RGB++ assets by BTC txid.`,
         tags: ['RGB++'],
         params: z.object({
-          btc_txid: z.string(),
+          btc_txid: z.string().length(64, 'Should be a 64-character hex string'),
         }),
         response: {
           200: z.array(
@@ -67,8 +65,8 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
         description: 'Get RGB++ assets by btc txid and vout',
         tags: ['RGB++'],
         params: z.object({
-          btc_txid: z.string(),
-          vout: z.coerce.number(),
+          btc_txid: z.string().length(64, 'should be a 64-character hex string'),
+          vout: z.string().min(1, 'cannot be empty').pipe(z.coerce.number().min(0, 'cannot be negative')),
         }),
         response: {
           200: z.array(
@@ -142,12 +140,11 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
       },
     },
     async (request) => {
-      const isMainnet = env.NETWORK === 'mainnet';
       const typeScript = getTypeScript(request.query.type_script);
       if (!typeScript) {
         return null;
       }
-      if (isUDTTypeSupported(typeScript, isMainnet)) {
+      if (isUDTTypeSupported(typeScript, IS_MAINNET)) {
         const infoCell = await fastify.ckb.getInfoCellData(typeScript);
         const typeHash = computeScriptHash(typeScript);
         if (!infoCell) {
@@ -160,7 +157,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
           ...infoCell,
         };
       }
-      if (isSporeTypeSupported(typeScript, isMainnet)) {
+      if (isSporeTypeSupported(typeScript, IS_MAINNET)) {
         const searchKey: SearchKey = {
           script: typeScript,
           scriptType: 'type',
@@ -173,7 +170,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
           contentType: sporeData.contentType,
         };
         if (sporeData.clusterId) {
-          const sporeConfig = getSporeConfig(isMainnet);
+          const sporeConfig = getSporeConfig(IS_MAINNET);
           const batchRequest = fastify.ckb.rpc.createBatchRequest(
             sporeConfig.scripts.Cluster.versions.map((version) => {
               const clusterScript = {

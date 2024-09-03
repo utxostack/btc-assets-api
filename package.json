@@ -1,6 +1,6 @@
 {
   "name": "btc-assets-api",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "title": "Bitcoin/RGB++ Assets API",
   "description": "",
   "main": "index.js",
@@ -50,7 +50,7 @@
     "@spore-sdk/core": "^0.2.0-beta.9",
     "async-retry": "^1.3.3",
     "awilix": "^10.0.1",
-    "axios": "^1.6.7",
+    "axios": "^1.7.7",
     "bloom-filters": "^3.0.1",
     "bullmq": "^5.4.2",
     "dotenv": "^16.4.2",

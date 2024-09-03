@@ -124,11 +124,14 @@ describe('transactionProcessor', () => {
       },
     };
 
-    transactionProcessor.enqueueTransaction(transactionRequest);
-    const count = await transactionProcessor['queue'].getJobCounts();
-    const job = await transactionProcessor['queue'].getJob(transactionRequest.txid);
-    expect(count.delayed).toBe(1);
-    expect(job?.delay).toBe(cradle.env.TRANSACTION_QUEUE_JOB_DELAY);
+    await transactionProcessor.enqueueTransaction(transactionRequest);
+    const jobs = await transactionProcessor['queue'].getJobs('delayed');
+    const jobFromApi = await transactionProcessor['queue'].getJob(transactionRequest.txid);
+    const jobFromList = jobs.find((row) => row.id === transactionRequest.txid);
+
+    expect(jobFromApi).toBeDefined();
+    expect(jobFromApi!.id).toStrictEqual(jobFromList?.id);
+    expect(jobFromApi!.delay).toBe(cradle.env.TRANSACTION_QUEUE_JOB_DELAY);
   });
 
   test('retryMissingTransactions: should be retry transaction job when missing', async () => {

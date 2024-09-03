@@ -1,6 +1,6 @@
-import fastify from 'fastify';
+import fastify, { type FastifySchemaCompiler } from 'fastify';
 import { FastifyInstance } from 'fastify';
-import sensible from '@fastify/sensible';
+import sensible, { httpErrors } from '@fastify/sensible';
 import compress from '@fastify/compress';
 import bitcoinRoutes from './routes/bitcoin';
 import tokenRoutes from './routes/token';
@@ -12,7 +12,7 @@ import { getSafeEnvs } from './env';
 import container from './container';
 import { asValue } from 'awilix';
 import options from './options';
-import { serializerCompiler, validatorCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
+import { serializerCompiler, ZodTypeProvider } from 'fastify-type-provider-zod';
 import cors from './plugins/cors';
 import { NetworkType } from './constants';
 import rgbppRoutes from './routes/rgbpp';
@@ -23,6 +23,7 @@ import internalRoutes from './routes/internal';
 import healthcheck from './plugins/healthcheck';
 import sentry from './plugins/sentry';
 import cron from './plugins/cron';
+import { ZodAny } from 'zod';
 
 async function routes(fastify: FastifyInstance) {
   fastify.log.info(`Process env: ${JSON.stringify(getSafeEnvs(), null, 2)}`);
@@ -58,6 +59,26 @@ async function routes(fastify: FastifyInstance) {
     });
   }
 }
+
+export const validatorCompiler: FastifySchemaCompiler<ZodAny> =
+  ({ schema }) =>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (data) => {
+    const result = schema.safeParse(data);
+    if (result.success) {
+      return { value: result.data };
+    }
+
+    const error = result.error;
+    if (error.errors.length) {
+      const firstError = error.errors[0];
+      const propName = firstError.path.length ? firstError.path.join('.') : 'param';
+      return {
+        error: httpErrors.badRequest(`Invalid ${propName}: ${error.errors[0].message}`),
+      };
+    }
+    return { error };
+  };
 
 export function buildFastify() {
   const app = fastify(options).withTypeProvider<ZodTypeProvider>();
