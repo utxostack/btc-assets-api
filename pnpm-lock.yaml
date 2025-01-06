@@ -48,8 +48,8 @@ importers:
         specifier: ^5.5.0
         version: 5.6.0
       '@fastify/swagger':
-        specifier: ^8.14.0
-        version: 8.15.0
+        specifier: 8.14.0
+        version: 8.14.0
       '@fastify/swagger-ui':
         specifier: ^3.0.0
         version: 3.1.0
@@ -90,8 +90,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.4
       bullmq:
-        specifier: ^5.4.2
-        version: 5.34.5
+        specifier: 5.4.2
+        version: 5.4.2
       dotenv:
         specifier: ^16.4.2
         version: 16.4.7
@@ -711,8 +711,8 @@ packages:
   '@fastify/swagger-ui@3.1.0':
     resolution: {integrity: sha512-68jm6k8VzvHXkEBT4Dakm/kkzUlPO4POIi0agWJSWxsYichPBqzjo+IpfqPl4pSJR1zCToQhEOo+cv+yJL2qew==}
 
-  '@fastify/swagger@8.15.0':
-    resolution: {integrity: sha512-zy+HEEKFqPMS2sFUsQU5X0MHplhKJvWeohBwTCkBAJA/GDYGLGUWQaETEhptiqxK7Hs0fQB9B4MDb3pbwIiCwA==}
+  '@fastify/swagger@8.14.0':
+    resolution: {integrity: sha512-sGiznEb3rl6pKGGUZ+JmfI7ct5cwbTQGo+IjewaTvtzfrshnryu4dZwEsjw0YHABpBA+kCz3kpRaHB7qpa67jg==}
 
   '@humanwhocodes/config-array@0.13.0':
     resolution: {integrity: sha512-DZLEEqFWQFiyK6h5YIeynKx7JlvCYWL0cImfSRXZ9l4Sg2efkFGTuFf6vzXjK1cq6IYkU+Eg/JizXw+TD2vRNw==}
@@ -1486,8 +1486,8 @@ packages:
   buffer@6.0.3:
     resolution: {integrity: sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==}
 
-  bullmq@5.34.5:
-    resolution: {integrity: sha512-MHho9EOhLCTY3ZF+dd0wHv0VlY2FtpBcopMRsvj0kPra4TAwBFh2pik/s4WbX56cIfCE+VzfHIHy4xvqp3g1+Q==}
+  bullmq@5.4.2:
+    resolution: {integrity: sha512-dkR/KGUw18miLe3QWtvSlmGvEe08aZF+w1jZyqEHMWFW3RP4162qp6OGud0/QCAOjusiRI8UOxUhbnortPY+rA==}
 
   bundle@2.1.0:
     resolution: {integrity: sha512-d7TeT8m2HuymDjSEmMppWe/h5SSPPUZkaWKrAofx6gNXDdZ3FL/81oOTGPG+LIaZbNr9m4rtUi98Yw0Q1vHIIw==}
@@ -4238,7 +4238,7 @@ snapshots:
       rfdc: 1.4.1
       yaml: 2.6.1
 
-  '@fastify/swagger@8.15.0':
+  '@fastify/swagger@8.14.0':
     dependencies:
       fastify-plugin: 4.5.1
       json-schema-resolver: 2.0.0
@@ -5184,10 +5184,11 @@ snapshots:
       base64-js: 1.5.1
       ieee754: 1.2.1
 
-  bullmq@5.34.5:
+  bullmq@5.4.2:
     dependencies:
       cron-parser: 4.9.0
       ioredis: 5.4.2
+      lodash: 4.17.21
       msgpackr: 1.11.2
       node-abort-controller: 3.1.1
       semver: 7.6.3
