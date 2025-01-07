@@ -11,13 +11,13 @@ import {
   updateCkbTxWithRealBtcTxId,
 } from '@rgbpp-sdk/ckb';
 import {
-  btcTxIdFromBtcTimeLockArgs,
+  btcTxIdAndAfterFromBtcTimeLockArgs,
   buildPreLockArgs,
   calculateCommitment,
   genBtcTimeLockScript,
   genRgbppLockScript,
   lockScriptFromBtcTimeLockArgs,
-} from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+} from '@rgbpp-sdk/ckb';
 import * as Sentry from '@sentry/node';
 import { Transaction as BitcoinTransaction } from 'bitcoinjs-lib';
 import { DelayedError, Job } from 'bullmq';
@@ -143,8 +143,8 @@ export default class TransactionProcessor
         };
       }
       if (isBtcTimeLock(lock)) {
-        const btcTxid = btcTxIdFromBtcTimeLockArgs(lock.args);
-        if (remove0x(btcTxid) !== txid) {
+        const { btcTxId } = btcTxIdAndAfterFromBtcTimeLockArgs(lock.args);
+        if (remove0x(btcTxId) !== txid) {
           return output;
         }
         const toLock = lockScriptFromBtcTimeLockArgs(lock.args);
@@ -235,8 +235,8 @@ export default class TransactionProcessor
         return txid === RGBPP_TX_ID_PLACEHOLDER;
       }
       if (isBtcTimeLock(output.lock)) {
-        const btcTxid = btcTxIdFromBtcTimeLockArgs(output.lock.args);
-        const txid = remove0x(btcTxid);
+        const { btcTxId } = btcTxIdAndAfterFromBtcTimeLockArgs(output.lock.args);
+        const txid = remove0x(btcTxId);
         this.cradle.logger.debug(`[TransactionProcessor] BTC_TIME_LOCK args txid: ${txid}`);
         return txid === RGBPP_TX_ID_PLACEHOLDER;
       }

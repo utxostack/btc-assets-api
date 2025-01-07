@@ -13,7 +13,7 @@ import {
   sendCkbTx,
   signBtcTimeCellSpentTx,
 } from '@rgbpp-sdk/ckb';
-import { btcTxIdFromBtcTimeLockArgs } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+import { btcTxIdAndAfterFromBtcTimeLockArgs } from '@rgbpp-sdk/ckb';
 import { BtcAssetsApi } from '@rgbpp-sdk/service';
 import { Cradle } from '../container';
 import {
@@ -77,7 +77,7 @@ export default class Unlocker implements IUnlocker {
         continue;
       }
 
-      const btcTxid = remove0x(btcTxIdFromBtcTimeLockArgs(cell.cellOutput.lock.args));
+      const btcTxid = remove0x(btcTxIdAndAfterFromBtcTimeLockArgs(cell.cellOutput.lock.args).btcTxId);
       const { after } = BTCTimeLock.unpack(cell.cellOutput.lock.args);
       const btcTx = await this.cradle.bitcoin.getTx({ txid: btcTxid });
       const blockHeight = btcTx.status.block_height;

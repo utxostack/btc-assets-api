@@ -7,7 +7,6 @@ import { HttpStatusCode, isAxiosError } from 'axios';
 import { BitcoinClientAPIError } from '../services/bitcoin';
 
 export default fp(async (fastify) => {
-  // @ts-expect-error - fastify-sentry types are not up to date
   await fastify.register(fastifySentry, {
     dsn: env.SENTRY_DSN_URL,
     tracesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE,

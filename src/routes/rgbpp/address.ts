@@ -13,7 +13,7 @@ import { Transaction as BTCTransaction } from '../bitcoin/types';
 import { TransactionWithStatus } from '../../services/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { filterCellsByTypeScript, getTypeScript } from '../../utils/typescript';
-import { unpackRgbppLockArgs } from '@rgbpp-sdk/btc/lib/ckb/molecule';
+import { unpackRgbppLockArgs } from '@rgbpp-sdk/ckb';
 import { remove0x } from '@rgbpp-sdk/btc';
 import { isRgbppLock } from '../../utils/lockscript';
 import { IS_MAINNET } from '../../constants';
@@ -225,7 +225,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           const inputRgbppCells = getRgbppLockCellsByCells(filterCellsByTypeScript(inputCells, typeScript));
           const inputCellLockArgs = inputRgbppCells.map((cell) => unpackRgbppLockArgs(cell.cellOutput.lock.args));
 
-          const txids = uniq(inputCellLockArgs.map((args) => remove0x(args.btcTxid)));
+          const txids = uniq(inputCellLockArgs.map((args) => remove0x(args.btcTxId)));
           const txs = await Promise.all(txids.map((txid) => fastify.bitcoin.getTx({ txid })));
           const txsMap = txs.reduce(
             (sum, tx, index) => {
@@ -236,9 +236,9 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             {} as Record<string, BTCTransaction | null>,
           );
 
-          return inputRgbppCells.filter((cell, index) => {
+          return inputRgbppCells.filter((_, index) => {
             const lockArgs = inputCellLockArgs[index];
-            const tx = txsMap[remove0x(lockArgs.btcTxid)];
+            const tx = txsMap[remove0x(lockArgs.btcTxId)];
             const utxo = tx?.vout[lockArgs.outIndex];
             return utxo?.scriptpubkey_address === btc_address;
           });

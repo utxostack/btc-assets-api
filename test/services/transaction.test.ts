@@ -3,7 +3,7 @@ import TransactionProcessor, { ITransactionRequest } from '../../src/services/tr
 import container from '../../src/container';
 import { CKBVirtualResult, InputCell, OutputCell } from '../../src/routes/rgbpp/types';
 import { ChainInfo, Transaction } from '../../src/routes/bitcoin/types';
-import { calculateCommitment } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+import { calculateCommitment } from '@rgbpp-sdk/ckb';
 import { Job } from 'bullmq';
 
 const commitment = calculateCommitment({

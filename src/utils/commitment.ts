@@ -1,6 +1,6 @@
 import { cloneDeep } from 'lodash';
 import { opReturnScriptPubKeyToData } from '@rgbpp-sdk/btc';
-import { calculateCommitment } from '@rgbpp-sdk/ckb/lib/utils/rgbpp';
+import { calculateCommitment } from '@rgbpp-sdk/ckb';
 import { RGBPP_TX_ID_PLACEHOLDER, BTCTimeLock, buildPreLockArgs, genBtcTimeLockArgs } from '@rgbpp-sdk/ckb';
 import { Transaction } from '../routes/bitcoin/types';
 import { isBtcTimeLock, isRgbppLock } from './lockscript';
@@ -60,8 +60,8 @@ export function isCommitmentMatchToCkbTx(
       cell.lock.args = buildPreLockArgs(outputIndex + 1);
     }
     if (isBtcTimeLock(cell.lock)) {
-      const lockArgs = BTCTimeLock.unpack(cell.lock.args);
-      cell.lock.args = genBtcTimeLockArgs(lockArgs.lockScript, RGBPP_TX_ID_PLACEHOLDER, lockArgs.after);
+      const { lockScript, after } = BTCTimeLock.unpack(cell.lock.args);
+      cell.lock.args = genBtcTimeLockArgs(lockScript as CKBComponents.Script, RGBPP_TX_ID_PLACEHOLDER, after);
     }
     return cell;
   }
