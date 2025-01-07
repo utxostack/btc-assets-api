@@ -158,10 +158,6 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       if (!typeScript || !isTypeAssetSupported(typeScript, IS_MAINNET)) {
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
-      const scripts = fastify.ckb.getScripts();
-      if (!isScriptEqual({ ...typeScript, args: '' }, scripts.XUDT)) {
-        throw fastify.httpErrors.badRequest('Unsupported type asset');
-      }
 
       const xudtBalances: Record<string, XUDTBalance> = {};
       const utxos = await getUtxos(btc_address, no_cache);
