@@ -78,8 +78,8 @@ importers:
         specifier: ^0.2.0-beta.9
         version: 0.2.1(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
       '@utxostack/metadata':
-        specifier: ^0.0.2
-        version: 0.0.2
+        specifier: ^0.0.3
+        version: 0.0.3
       async-retry:
         specifier: ^1.3.3
         version: 1.3.3
@@ -1158,8 +1158,8 @@ packages:
   '@ungap/structured-clone@1.2.1':
     resolution: {integrity: sha512-fEzPV3hSkSMltkw152tJKNARhOupqbH96MZWyRjNaYZOMIzbrTeQDG+MTc6Mr2pgzFQzFxAfmhGDNP5QK++2ZA==}
 
-  '@utxostack/metadata@0.0.2':
-    resolution: {integrity: sha512-cdijFAo8vfDZ6iA8bofT25IZz3djZ45FlnZ/6QHwDH5I3iwf6I/L8mGSTvnxp4I2SnPm8Vhy7PoCdXOrC8Z5SA==}
+  '@utxostack/metadata@0.0.3':
+    resolution: {integrity: sha512-/OPotiMgvvk7nnx9rv/ZMM+43VsEarKwvwex21BVYl4TzfGGu0eCkkgysB0IwTAVLV+AFGZyqzFsndW3tnN54Q==}
 
   '@vercel/build-utils@7.11.0':
     resolution: {integrity: sha512-UFrx1hNIjNJJkd0NZrYfaOrmcWhQmrVsbKe9o3L9jX9J1iufG685wIZ9tFCKKC0Fa2HWbNDNzNxrE5SCAS2lyA==}
@@ -4727,7 +4727,7 @@ snapshots:
 
   '@ungap/structured-clone@1.2.1': {}
 
-  '@utxostack/metadata@0.0.2': {}
+  '@utxostack/metadata@0.0.3': {}
 
   '@vercel/build-utils@7.11.0': {}
 
