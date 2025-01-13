@@ -38,6 +38,22 @@ exports[`RgbppCollector > getRgbppBalanceByCells: should return the rgbpp balanc
       "hashType": "type",
     },
   },
+  "0xe5ee2fdd79aaa218bd74a821c305fa40305408fae2dbfedf8243ea2b4d7af8e4": {
+    "amount": "0x0",
+    "circulatingSupply": "0x0",
+    "decimal": 0,
+    "issuer": "0x75f11d14d0d8dfc084ce777961cfd9e75ace8c77282217bcc16f57533ea2ee09",
+    "name": "Pre-claim -Airdrop Badge",
+    "symbol": "UTXO-AIRDROP",
+    "tokenInfoCellTypeHash": "0xb18540dcfde52a96232ec865401284b8b94e1692db54f45803e90d93a4e0d9c7",
+    "totalSupply": "0x3e8",
+    "type_hash": "0xe5ee2fdd79aaa218bd74a821c305fa40305408fae2dbfedf8243ea2b4d7af8e4",
+    "type_script": {
+      "args": "0xa63d308c04b4c075eb1d7d5cac891cf20276e3ddb2ec855fc981c88d8134dbe2",
+      "codeHash": "0xf5da9003e31fa9301a3915fe304de9bdb80524b5f0d8fc325fb699317998ee7a",
+      "hashType": "type",
+    },
+  },
 }
 `;
 

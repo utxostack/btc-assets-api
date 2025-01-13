@@ -5940,6 +5940,29 @@ exports[`/:btc_address/assets 1`] = `
     "txIndex": "0x1",
     "typeHash": "0xf0d58aed78476f0aa4fab18f45de1fdcf4f42426fb03570de236dfd36638f3ed",
   },
+  {
+    "blockNumber": "0xf17dd7",
+    "cellOutput": {
+      "capacity": "0x1b381be34e00",
+      "lock": {
+        "args": "0x9787495f518fec240d7857067f3016daf705286d",
+        "codeHash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+        "hashType": "type",
+      },
+      "type": {
+        "args": "0xa63d308c04b4c075eb1d7d5cac891cf20276e3ddb2ec855fc981c88d8134dbe2",
+        "codeHash": "0xf5da9003e31fa9301a3915fe304de9bdb80524b5f0d8fc325fb699317998ee7a",
+        "hashType": "type",
+      },
+    },
+    "data": "0x00000000000000000000000000000000",
+    "outPoint": {
+      "index": "0x2",
+      "txHash": "0xe4e156943c82ee5500d39343a01dda0c48946a6000f449c58ac91708576cf669",
+    },
+    "txIndex": "0x1",
+    "typeHash": "0xe5ee2fdd79aaa218bd74a821c305fa40305408fae2dbfedf8243ea2b4d7af8e4",
+  },
 ]
 `;
 
