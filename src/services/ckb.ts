@@ -148,7 +148,7 @@ export class CKBRpcError extends Error {
   }
 }
 
-type TokenInfoMetadata = TokenInfo | (TokenInfo & Metadata);
+type TokenInfoMetadata = TokenInfo & Partial<Metadata>;
 export default class CKBClient {
   public rpc: RPC;
   public indexer: Indexer;
