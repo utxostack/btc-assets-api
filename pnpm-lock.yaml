@@ -60,14 +60,14 @@ importers:
         specifier: ^0.109.1
         version: 0.109.4
       '@rgbpp-sdk/btc':
-        specifier: 0.0.0-snap-20250106033736
-        version: 0.0.0-snap-20250106033736(@ckb-lumos/lumos@0.22.2)
+        specifier: 0.0.0-snap-20250110025940
+        version: 0.0.0-snap-20250110025940(@ckb-lumos/lumos@0.22.2)
       '@rgbpp-sdk/ckb':
-        specifier: 0.0.0-snap-20250106033736
-        version: 0.0.0-snap-20250106033736(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
+        specifier: 0.0.0-snap-20250110025940
+        version: 0.0.0-snap-20250110025940(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
       '@rgbpp-sdk/service':
-        specifier: 0.0.0-snap-20250106033736
-        version: 0.0.0-snap-20250106033736
+        specifier: 0.0.0-snap-20250110025940
+        version: 0.0.0-snap-20250110025940
       '@sentry/node':
         specifier: ^7.102.1
         version: 7.120.2
@@ -77,6 +77,9 @@ importers:
       '@spore-sdk/core':
         specifier: ^0.2.0-beta.9
         version: 0.2.1(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
+      '@utxostack/metadata':
+        specifier: ^0.0.2
+        version: 0.0.2
       async-retry:
         specifier: ^1.3.3
         version: 1.3.3
@@ -854,14 +857,14 @@ packages:
   '@polka/url@1.0.0-next.28':
     resolution: {integrity: sha512-8LduaNlMZGwdZ6qWrKlfa+2M4gahzFkprZiAt2TF8uS0qQgBizKXpXURqvTJ4WtmupWxaLqjRb2UCTe72mu+Aw==}
 
-  '@rgbpp-sdk/btc@0.0.0-snap-20250106033736':
-    resolution: {integrity: sha512-exqUYZ1Eo0APFJ8kDzTY+ckIks8Makr14FGvhHc6VFOiC8X8IqYA+0kuyluLS2oxsyN1HeBJdUwOuwPBJpQaaQ==}
+  '@rgbpp-sdk/btc@0.0.0-snap-20250110025940':
+    resolution: {integrity: sha512-pm9Ry4YwmZvg4D/T/E2m8X9/VJW5zYz8K79yQQ5yaPuF8ALGjz1u0JmGte4i/rTm1strk7gc4fgVkfDyDHiTgw==}
 
-  '@rgbpp-sdk/ckb@0.0.0-snap-20250106033736':
-    resolution: {integrity: sha512-eLoT9V1KgyoBHz+f1S/mLqf2Fjs/GrF1kqymEyExn+25RDKD+2lePA9qZD826HRprNT6VQ3pwW/svYZfKdSqew==}
+  '@rgbpp-sdk/ckb@0.0.0-snap-20250110025940':
+    resolution: {integrity: sha512-3EQXudkcPPphnZgc4X/ANie1nXkmnuln8SbqzjATtobn7+hICu/1+LVYRJfmnl9+sTyHq3a1BYa71NkrcigrDQ==}
 
-  '@rgbpp-sdk/service@0.0.0-snap-20250106033736':
-    resolution: {integrity: sha512-nSQp4gVFYN5ShefZsag4pMUdOGMTECIGhTjyK4BKFX8YTVlcYb+kbagvwfLpi58XhFP+/YXe1PGWmAHxwaJf6w==}
+  '@rgbpp-sdk/service@0.0.0-snap-20250110025940':
+    resolution: {integrity: sha512-oXRb+QmHnHKUpDH7jrtFJGRq1iekGS7KiXu614BRJ8i1jNTec7diEdYr7Mi/6nFjI986eozxIGjtrWdCcwr3ag==}
 
   '@rollup/pluginutils@4.2.1':
     resolution: {integrity: sha512-iKnFXr7NkdZAIHiIWE+BX5ULi/ucVFYWD6TbAV+rZctiRTY2PL6tsIKhoIOaoskiWAkgu+VsbXgUVDNLHf+InQ==}
@@ -1154,6 +1157,9 @@ packages:
 
   '@ungap/structured-clone@1.2.1':
     resolution: {integrity: sha512-fEzPV3hSkSMltkw152tJKNARhOupqbH96MZWyRjNaYZOMIzbrTeQDG+MTc6Mr2pgzFQzFxAfmhGDNP5QK++2ZA==}
+
+  '@utxostack/metadata@0.0.2':
+    resolution: {integrity: sha512-cdijFAo8vfDZ6iA8bofT25IZz3djZ45FlnZ/6QHwDH5I3iwf6I/L8mGSTvnxp4I2SnPm8Vhy7PoCdXOrC8Z5SA==}
 
   '@vercel/build-utils@7.11.0':
     resolution: {integrity: sha512-UFrx1hNIjNJJkd0NZrYfaOrmcWhQmrVsbKe9o3L9jX9J1iufG685wIZ9tFCKKC0Fa2HWbNDNzNxrE5SCAS2lyA==}
@@ -4404,13 +4410,13 @@ snapshots:
 
   '@polka/url@1.0.0-next.28': {}
 
-  '@rgbpp-sdk/btc@0.0.0-snap-20250106033736(@ckb-lumos/lumos@0.22.2)':
+  '@rgbpp-sdk/btc@0.0.0-snap-20250110025940(@ckb-lumos/lumos@0.22.2)':
     dependencies:
       '@bitcoinerlab/secp256k1': 1.2.0
       '@ckb-lumos/codec': 0.22.2
       '@nervosnetwork/ckb-types': 0.109.3
-      '@rgbpp-sdk/ckb': 0.0.0-snap-20250106033736(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
-      '@rgbpp-sdk/service': 0.0.0-snap-20250106033736
+      '@rgbpp-sdk/ckb': 0.0.0-snap-20250110025940(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
+      '@rgbpp-sdk/service': 0.0.0-snap-20250110025940
       bip32: 4.0.0
       bitcoinjs-lib: 6.1.7
       ecpair: 2.1.0
@@ -4420,7 +4426,7 @@ snapshots:
       - '@ckb-lumos/lumos'
       - debug
 
-  '@rgbpp-sdk/ckb@0.0.0-snap-20250106033736(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)':
+  '@rgbpp-sdk/ckb@0.0.0-snap-20250110025940(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)':
     dependencies:
       '@ckb-lumos/base': 0.22.2
       '@ckb-lumos/codec': 0.22.2
@@ -4428,7 +4434,7 @@ snapshots:
       '@nervosnetwork/ckb-sdk-core': 0.109.3
       '@nervosnetwork/ckb-sdk-utils': 0.109.3
       '@nervosnetwork/ckb-types': 0.109.3
-      '@rgbpp-sdk/service': 0.0.0-snap-20250106033736
+      '@rgbpp-sdk/service': 0.0.0-snap-20250110025940
       '@spore-sdk/core': 0.2.1(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
       axios: 1.7.9
       camelcase-keys: 7.0.2
@@ -4438,7 +4444,7 @@ snapshots:
       - debug
       - lodash
 
-  '@rgbpp-sdk/service@0.0.0-snap-20250106033736':
+  '@rgbpp-sdk/service@0.0.0-snap-20250110025940':
     dependencies:
       '@ckb-lumos/base': 0.22.2
       '@ckb-lumos/codec': 0.22.2
@@ -4720,6 +4726,8 @@ snapshots:
       eslint-visitor-keys: 3.4.3
 
   '@ungap/structured-clone@1.2.1': {}
+
+  '@utxostack/metadata@0.0.2': {}
 
   '@vercel/build-utils@7.11.0': {}
 

@@ -13,7 +13,6 @@ import { UngroupedIndexerTransaction } from '@ckb-lumos/ckb-indexer/lib/type';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
 import {
-  decodeInfoCellData,
   decodeUDTHashFromInscriptionData,
   getInscriptionInfoTypeScript,
   isInscriptionInfoTypeScript,
@@ -25,6 +24,7 @@ import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils';
 import { Cell } from '../routes/rgbpp/types';
 import { uniq } from 'lodash';
 import { IS_MAINNET } from '../constants';
+import { decodeTokenInfo, TokenInfo } from '@utxostack/metadata';
 
 export type TransactionWithStatus = Awaited<ReturnType<CKBRPC['getTransaction']>>;
 
@@ -199,7 +199,7 @@ export default class CKBClient {
     if (!encodeData) {
       return null;
     }
-    const data = decodeInfoCellData(encodeData);
+    const data = decodeTokenInfo(encodeData);
     return data;
   }
 
@@ -221,7 +221,7 @@ export default class CKBClient {
     if (decodeUDTHashFromInscriptionData(encodeData) !== xudtTypeHash) {
       return null;
     }
-    const data = decodeInfoCellData(encodeData);
+    const data = decodeTokenInfo(encodeData);
     return data;
   }
 
@@ -294,7 +294,7 @@ export default class CKBClient {
     const typeHash = computeScriptHash(script);
     const cachedData = await this.dataCache.get(`type:${typeHash}`);
     if (cachedData) {
-      return cachedData as ReturnType<typeof decodeInfoCellData>;
+      return cachedData as TokenInfo;
     }
 
     const txs = await this.getAllInfoCellTxs();
