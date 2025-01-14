@@ -4,6 +4,7 @@ import {
   getUniqueTypeScript,
   getXudtTypeScript,
   isScriptEqual,
+  isTokenMetadataType,
   sendCkbTx,
 } from '@rgbpp-sdk/ckb';
 import { Cradle } from '../container';
@@ -13,7 +14,6 @@ import { UngroupedIndexerTransaction } from '@ckb-lumos/ckb-indexer/lib/type';
 import { z } from 'zod';
 import * as Sentry from '@sentry/node';
 import {
-  decodeInfoCellData,
   decodeUDTHashFromInscriptionData,
   getInscriptionInfoTypeScript,
   isInscriptionInfoTypeScript,
@@ -25,6 +25,7 @@ import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils';
 import { Cell } from '../routes/rgbpp/types';
 import { uniq } from 'lodash';
 import { IS_MAINNET } from '../constants';
+import { decodeMetadata, decodeTokenInfo, Metadata, TokenInfo } from '@utxostack/metadata';
 
 export type TransactionWithStatus = Awaited<ReturnType<CKBRPC['getTransaction']>>;
 
@@ -147,6 +148,7 @@ export class CKBRpcError extends Error {
   }
 }
 
+type TokenInfoMetadata = TokenInfo & Partial<Metadata>;
 export default class CKBClient {
   public rpc: RPC;
   public indexer: Indexer;
@@ -183,7 +185,7 @@ export default class CKBClient {
    * @param index - the index of the unique cell in the transaction
    * @param xudtTypeScript - the xudt type script
    * reference:
-   * - https://github.com/ckb-cell/unique-cell
+   * - https://github.com/utxostack/unique-cell/metadata
    */
   public getUniqueCellData(tx: TransactionWithStatus, index: number, xudtTypeScript: Script) {
     // find the xudt cell index in the transaction
@@ -199,7 +201,33 @@ export default class CKBClient {
     if (!encodeData) {
       return null;
     }
-    const data = decodeInfoCellData(encodeData);
+    const data = decodeTokenInfo(encodeData);
+    return data;
+  }
+
+  /**
+   * Get the token metadata data of the given xudt type script from the transaction
+   * @param tx - the ckb transaction that contains the token metadata cell
+   * @param index - the index of the token metadata cell in the transaction
+   * @param xudtTypeScript - the xudt type script
+   * reference:
+   * - https://github.com/utxostack/unique-cell/metadata
+   */
+  public getTokenMetadataData(tx: TransactionWithStatus, index: number, xudtTypeScript: Script) {
+    // find the xudt cell index in the transaction
+    // generally, the xudt cell and token metadata cell are in the same transaction
+    const xudtCellIndex = tx.transaction.outputs.findIndex((cell) => {
+      return cell.type && isScriptEqual(cell.type, xudtTypeScript);
+    });
+    if (xudtCellIndex === -1) {
+      return null;
+    }
+
+    const encodeData = tx.transaction.outputsData[index];
+    if (!encodeData) {
+      return null;
+    }
+    const data = decodeMetadata(encodeData);
     return data;
   }
 
@@ -221,7 +249,7 @@ export default class CKBClient {
     if (decodeUDTHashFromInscriptionData(encodeData) !== xudtTypeHash) {
       return null;
     }
-    const data = decodeInfoCellData(encodeData);
+    const data = decodeTokenInfo(encodeData);
     return data;
   }
 
@@ -290,26 +318,41 @@ export default class CKBClient {
    * Get the unique cell of the given xudt type
    * @param script - the xudt type script
    */
-  public async getInfoCellData(script: Script) {
+  public async getInfoCellData(script: Script): Promise<TokenInfoMetadata | null> {
     const typeHash = computeScriptHash(script);
     const cachedData = await this.dataCache.get(`type:${typeHash}`);
     if (cachedData) {
-      return cachedData as ReturnType<typeof decodeInfoCellData>;
+      return cachedData as TokenInfoMetadata;
     }
 
+    let infoData: TokenInfoMetadata | null = null;
     const txs = await this.getAllInfoCellTxs();
     for (const tx of txs) {
-      // check if the unique cell is the info cell of the xudt type
-      const uniqueCellIndex = tx.transaction.outputs.findIndex((cell) => {
-        return cell.type && isUniqueCellTypeScript(cell.type, IS_MAINNET);
-      });
+      // check if the unique cell is one of the info cells of the xudt type
+      const uniqueCellIndex = tx.transaction.outputs.findIndex(
+        (cell) => cell.type && isUniqueCellTypeScript(cell.type, IS_MAINNET),
+      );
       if (uniqueCellIndex !== -1) {
-        const infoCellData = this.getUniqueCellData(tx, uniqueCellIndex, script);
-        if (infoCellData) {
-          await this.dataCache.set(`type:${typeHash}`, infoCellData);
-          return infoCellData;
+        infoData = this.getUniqueCellData(tx, uniqueCellIndex, script);
+        if (infoData) {
+          // check if the token metadata cell is one of the info cells of the xudt type
+          const metadataCellIndex = tx.transaction.outputs.findIndex(
+            (cell) => cell.type && isTokenMetadataType(cell.type, IS_MAINNET),
+          );
+          if (metadataCellIndex !== -1) {
+            const metadataData = this.getTokenMetadataData(tx, metadataCellIndex, script);
+            if (metadataData) {
+              infoData = {
+                ...infoData,
+                ...metadataData,
+              };
+            }
+          }
+          await this.dataCache.set(`type:${typeHash}`, infoData);
+          return infoData;
         }
       }
+
       // check if the inscription cell is the info cell of the xudt type
       const inscriptionCellIndex = tx.transaction.outputs.findIndex((cell) => {
         return cell.type && isInscriptionInfoTypeScript(cell.type, IS_MAINNET);
