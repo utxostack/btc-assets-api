@@ -5,7 +5,13 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { CKBTransaction, Cell, IsomorphicTransaction, Script, XUDTBalance } from './types';
 import z from 'zod';
 import { Env } from '../../env';
-import { isScriptEqual, buildPreLockArgs, getXudtTypeScript, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
+import {
+  isScriptEqual,
+  buildPreLockArgs,
+  getXudtTypeScript,
+  isTypeAssetSupported,
+  isUtxoAirdropBadgeType,
+} from '@rgbpp-sdk/ckb';
 import { groupBy, uniq } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
@@ -116,7 +122,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     {
       schema: {
         description: `
-          Get RGB++ balance by btc address, support xUDT only for now. 
+          Get RGB++ balance by btc address, support xUDT, compatible-xUDT and Pre-claim UTXO Airdrop Badge for now. 
           
           An address with more than 50 pending BTC transactions is uncommon. 
           However, if such a situation arises, it potentially affecting the returned total_amount.
@@ -155,7 +161,11 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { no_cache } = request.query;
 
       const typeScript = getTypeScript(request.query.type_script);
-      if (!typeScript || !isTypeAssetSupported(typeScript, IS_MAINNET)) {
+      if (
+        !typeScript ||
+        !isTypeAssetSupported(typeScript, IS_MAINNET) ||
+        !isUtxoAirdropBadgeType(typeScript, IS_MAINNET)
+      ) {
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
 
