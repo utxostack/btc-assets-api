@@ -163,8 +163,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const typeScript = getTypeScript(request.query.type_script);
       if (
         !typeScript ||
-        !isTypeAssetSupported(typeScript, IS_MAINNET) ||
-        !isUtxoAirdropBadgeType(typeScript, IS_MAINNET)
+        !(isTypeAssetSupported(typeScript, IS_MAINNET) || isUtxoAirdropBadgeType(typeScript, IS_MAINNET))
       ) {
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }

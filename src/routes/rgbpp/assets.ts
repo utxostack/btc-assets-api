@@ -144,8 +144,8 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
       if (!typeScript) {
         return null;
       }
-      // The pre-claimed airdrop badge type is not fully compatible with the standard xUDT type
-      // and its token info and metadata should be decoded from the info cells.
+      // The pre-claimed airdrop badge type script asset is not fully compatible with the standard xUDT
+      // type script and its token info and metadata should be decoded from the info cells.
       if (isUDTTypeSupported(typeScript, IS_MAINNET) || isUtxoAirdropBadgeType(typeScript, IS_MAINNET)) {
         const infoCell = await fastify.ckb.getInfoCellData(typeScript);
         const typeHash = computeScriptHash(typeScript);
