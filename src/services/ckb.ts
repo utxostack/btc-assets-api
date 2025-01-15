@@ -25,7 +25,7 @@ import { scriptToHash } from '@nervosnetwork/ckb-sdk-utils';
 import { Cell } from '../routes/rgbpp/types';
 import { uniq } from 'lodash';
 import { IS_MAINNET } from '../constants';
-import { decodeMetadata, decodeTokenInfo, Metadata, TokenInfo } from '@utxostack/metadata';
+import { decodeMetadata, decodeTokenInfo } from '@utxostack/metadata';
 
 export type TransactionWithStatus = Awaited<ReturnType<CKBRPC['getTransaction']>>;
 
@@ -148,7 +148,15 @@ export class CKBRpcError extends Error {
   }
 }
 
-type TokenInfoMetadata = TokenInfo & Partial<Metadata>;
+type TokenInfoMetadata = {
+  decimal: number;
+  name: string;
+  symbol: string;
+  total_supply?: string;
+  issuer?: string;
+  circulating_supply?: string;
+  token_info_cell_type_hash?: string;
+};
 export default class CKBClient {
   public rpc: RPC;
   public indexer: Indexer;
@@ -201,8 +209,13 @@ export default class CKBClient {
     if (!encodeData) {
       return null;
     }
-    const data = decodeTokenInfo(encodeData);
-    return data;
+    const { symbol, name, decimal, totalSupply } = decodeTokenInfo(encodeData);
+    return {
+      symbol,
+      name,
+      decimal,
+      total_supply: totalSupply,
+    };
   }
 
   /**
@@ -227,8 +240,12 @@ export default class CKBClient {
     if (!encodeData) {
       return null;
     }
-    const data = decodeMetadata(encodeData);
-    return data;
+    const { issuer, circulatingSupply, tokenInfoCellTypeHash } = decodeMetadata(encodeData);
+    return {
+      issuer,
+      circulating_supply: circulatingSupply,
+      token_info_cell_type_hash: tokenInfoCellTypeHash,
+    };
   }
 
   /**
