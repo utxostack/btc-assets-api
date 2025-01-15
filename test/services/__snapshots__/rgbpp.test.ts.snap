@@ -31,6 +31,7 @@ exports[`RgbppCollector > getRgbppBalanceByCells: should return the rgbpp balanc
     "decimal": 8,
     "name": "Unique BBQ",
     "symbol": "",
+    "total_supply": undefined,
     "type_hash": "0x78e21efcf107e7886eadeadecd1a01cfb88f1e5617f4438685db55b3a540d202",
     "type_script": {
       "args": "0x30d3fbec9ceba691770d57c6d06bdb98cf0f82bef0ca6e87687a118d6ce1e7b7",
@@ -40,13 +41,13 @@ exports[`RgbppCollector > getRgbppBalanceByCells: should return the rgbpp balanc
   },
   "0xe5ee2fdd79aaa218bd74a821c305fa40305408fae2dbfedf8243ea2b4d7af8e4": {
     "amount": "0x0",
-    "circulatingSupply": "0x0",
+    "circulating_supply": "0x0",
     "decimal": 0,
     "issuer": "0x75f11d14d0d8dfc084ce777961cfd9e75ace8c77282217bcc16f57533ea2ee09",
     "name": "Pre-claim -Airdrop Badge",
     "symbol": "UTXO-AIRDROP",
-    "tokenInfoCellTypeHash": "0xb18540dcfde52a96232ec865401284b8b94e1692db54f45803e90d93a4e0d9c7",
-    "totalSupply": "0x3e8",
+    "token_info_cell_type_hash": "0xb18540dcfde52a96232ec865401284b8b94e1692db54f45803e90d93a4e0d9c7",
+    "total_supply": "0x3e8",
     "type_hash": "0xe5ee2fdd79aaa218bd74a821c305fa40305408fae2dbfedf8243ea2b4d7af8e4",
     "type_script": {
       "args": "0xa63d308c04b4c075eb1d7d5cac891cf20276e3ddb2ec855fc981c88d8134dbe2",

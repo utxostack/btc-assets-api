@@ -107,7 +107,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     {
       schema: {
         description: 'Get RGB++ assets type info by typescript',
-        tags: ['RGB++@Unstable'],
+        tags: ['RGB++'],
         querystring: z.object({
           type_script: Script.or(z.string())
             .optional()
