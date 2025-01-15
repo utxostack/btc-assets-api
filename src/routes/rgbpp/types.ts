@@ -87,6 +87,10 @@ export const XUDTTypeInfo = z.object({
   symbol: z.string(),
   name: z.string(),
   decimal: z.number(),
+  total_supply: z.string().optional(),
+  issuer: z.string().optional(),
+  circulating_supply: z.string().optional(),
+  token_info_cell_type_hash: z.string().optional(),
   type_hash: z.string(),
   type_script: Script,
 });
