@@ -44,3 +44,29 @@ export const BTC_MAINNET_SPV_START_BLOCK_HEIGHT = 837300;
 
 export const IS_MAINNET = env.NETWORK === NetworkType.mainnet.toString();
 export const TESTNET_TYPE = TestnetTypeMap[env.NETWORK];
+
+// Using unique cell as xUDT information is recommended and refer: https://github.com/utxostack/unique-cell/metadata
+export const COMPATIBLE_UDT_INFO_WHITELIST = [
+  {
+    // USDI: mainnet and testnet codeHashes and information
+    codeHashes: [
+      '0xbfa35a9c38a676682b65ade8f02be164d48632281477e36f8dc2f41f79e56bfc',
+      '0xcc9dc33ef234e14bc788c43a4848556a5fb16401a04662fc55db9bb201987037',
+    ],
+    hashType: 'type',
+    name: 'USDI',
+    symbol: 'USDI',
+    decimal: 6,
+  },
+  {
+    // RUSD: mainnet and testnet codeHashes and information
+    codeHashes: [
+      '0x26a33e0815888a4a0614a0b7d09fa951e0993ff21e55905510104a0b1312032b',
+      '0x1142755a044bf2ee358cba9f2da187ce928c91cd4dc8692ded0337efa677d21a',
+    ],
+    hashType: 'type',
+    name: 'RUSD',
+    symbol: 'RUSD',
+    decimal: 8,
+  },
+];

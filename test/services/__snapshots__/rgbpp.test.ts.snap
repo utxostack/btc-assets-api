@@ -55,6 +55,19 @@ exports[`RgbppCollector > getRgbppBalanceByCells: should return the rgbpp balanc
       "hashType": "type",
     },
   },
+  "0x45b32a2bc4285d0a09678eb11960ddc8707bc2779887a09d482e9bfe9a2cdf52": {
+    "amount": "0x4a817c800",
+    "decimal": 8,
+    "name": "RUSD",
+    "symbol": "RUSD",
+    "total_supply": undefined,
+    "type_hash": "0x45b32a2bc4285d0a09678eb11960ddc8707bc2779887a09d482e9bfe9a2cdf52",
+    "type_script": {
+      "args": "0x878fcc6f1f08d48e87bb1c3b3d5083f23f8a39c5d5c764f253b55b998526439b",
+      "codeHash": "0x1142755a044bf2ee358cba9f2da187ce928c91cd4dc8692ded0337efa677d21a",
+      "hashType": "type",
+    },
+  },
 }
 `;
 
