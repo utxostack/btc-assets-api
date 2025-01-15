@@ -5964,7 +5964,6 @@ exports[`/:btc_address/assets 1`] = `
     "typeHash": "0xe5ee2fdd79aaa218bd74a821c305fa40305408fae2dbfedf8243ea2b4d7af8e4",
   },
   {
-    "blockNumber": "0xd7f732",
     "cellOutput": {
       "capacity": "0xbe5cc1f00",
       "lock": {
@@ -5984,7 +5983,7 @@ exports[`/:btc_address/assets 1`] = `
       "txHash": "0xe6b4da0fe4f1bad78c0d404bd92753373092c21ac58694425cf104e953a01964",
     },
     "txIndex": "0x1",
-    "typeHash": "0xe5ee2fdd79aaa218bd74a821c305fa40305408fae2dbfedf8243ea2b4d7af8e4",
+    "typeHash": "0x45b32a2bc4285d0a09678eb11960ddc8707bc2779887a09d482e9bfe9a2cdf52",
   },
 ]
 `;
