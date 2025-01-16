@@ -226,6 +226,15 @@ const envSchema = z
          */
         BITCOIN_ELECTRS_API_URL: z.string().optional(),
         /**
+         * The IBitcoinClient methods to use Electrs as default data provider
+         * use electrs as default, mempool.space as fallback
+         */
+        BITCOIN_METHODS_USE_ELECTRS_BY_DEFAULT: z
+          .string()
+          .default('')
+          .transform((value) => value.split(','))
+          .pipe(z.string().array()),
+        /**
          * Bitcoin data provider, support mempool and electrs
          * use mempool.space as default, electrs as fallback
          * change to electrs if you want to use electrs as default and mempool.space as fallback
