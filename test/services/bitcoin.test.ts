@@ -23,6 +23,23 @@ describe('BitcoinClient', () => {
     }
   });
 
+  test('BitcoinClient: Should be use Electrs as default data provider for methods', async () => {
+    const cradle = container.cradle;
+    if (cradle.env.BITCOIN_DATA_PROVIDER === 'mempool') {
+      cradle.env.BITCOIN_METHODS_USE_ELECTRS_BY_DEFAULT = ['getAddressTxs'];
+      bitcoin = new BitcoinClient(cradle);
+      expect(bitcoin['source'].constructor).toBe(MempoolClient);
+      expect(bitcoin['fallback']?.constructor).toBe(ElectrsClient);
+
+      // @ts-expect-error just for test, so we don't need to check the return value
+      const mempoolFn = vi.spyOn(bitcoin['source']!, 'getAddressTxs').mockResolvedValue([{}]);
+      const electrsFn = vi.spyOn(bitcoin['fallback']!, 'getAddressTxs').mockResolvedValue([]);
+      expect(await bitcoin.getAddressTxs({ address: 'test' })).toEqual([]);
+      expect(mempoolFn).not.toHaveBeenCalled();
+      expect(electrsFn).toHaveBeenCalled();
+    }
+  });
+
   test('BitcoinClient: throw BitcoinClientError when source provider failed', async () => {
     bitcoin['fallback'] = undefined;
     vi.spyOn(bitcoin['source'], 'postTx').mockRejectedValue(new AxiosError('source provider error'));
