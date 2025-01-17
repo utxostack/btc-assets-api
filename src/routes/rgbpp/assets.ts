@@ -5,7 +5,7 @@ import z from 'zod';
 import { Cell, Script, SporeTypeInfo, XUDTTypeInfo } from './types';
 import { UTXO } from '../../services/bitcoin/schema';
 import { getTypeScript } from '../../utils/typescript';
-import { IndexerCell, isSporeTypeSupported, isUDTTypeSupported } from '@rgbpp-sdk/ckb';
+import { IndexerCell, isSporeTypeSupported, isUDTTypeSupported, isUtxoAirdropBadgeType } from '@rgbpp-sdk/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { getSporeConfig, unpackToRawClusterData, unpackToRawSporeData } from '../../utils/spore';
 import { SearchKey } from '../../services/rgbpp';
@@ -107,7 +107,7 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
     {
       schema: {
         description: 'Get RGB++ assets type info by typescript',
-        tags: ['RGB++@Unstable'],
+        tags: ['RGB++'],
         querystring: z.object({
           type_script: Script.or(z.string())
             .optional()
@@ -144,7 +144,9 @@ const assetsRoute: FastifyPluginCallback<Record<never, never>, Server, ZodTypePr
       if (!typeScript) {
         return null;
       }
-      if (isUDTTypeSupported(typeScript, IS_MAINNET)) {
+      // The pre-claimed airdrop badge type script asset is not fully compatible with the standard xUDT
+      // type script and its token info and metadata should be decoded from the info cells.
+      if (isUDTTypeSupported(typeScript, IS_MAINNET) || isUtxoAirdropBadgeType(typeScript, IS_MAINNET)) {
         const infoCell = await fastify.ckb.getInfoCellData(typeScript);
         const typeHash = computeScriptHash(typeScript);
         if (!infoCell) {

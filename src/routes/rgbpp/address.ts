@@ -5,7 +5,13 @@ import { ZodTypeProvider } from 'fastify-type-provider-zod';
 import { CKBTransaction, Cell, IsomorphicTransaction, Script, XUDTBalance } from './types';
 import z from 'zod';
 import { Env } from '../../env';
-import { isScriptEqual, buildPreLockArgs, getXudtTypeScript, isTypeAssetSupported } from '@rgbpp-sdk/ckb';
+import {
+  isScriptEqual,
+  buildPreLockArgs,
+  getXudtTypeScript,
+  isTypeAssetSupported,
+  isUtxoAirdropBadgeType,
+} from '@rgbpp-sdk/ckb';
 import { groupBy, uniq } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
 import { UTXO } from '../../services/bitcoin/schema';
@@ -13,7 +19,7 @@ import { Transaction as BTCTransaction } from '../bitcoin/types';
 import { TransactionWithStatus } from '../../services/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { filterCellsByTypeScript, getTypeScript } from '../../utils/typescript';
-import { unpackRgbppLockArgs } from '@rgbpp-sdk/btc/lib/ckb/molecule';
+import { unpackRgbppLockArgs } from '@rgbpp-sdk/ckb';
 import { remove0x } from '@rgbpp-sdk/btc';
 import { isRgbppLock } from '../../utils/lockscript';
 import { IS_MAINNET } from '../../constants';
@@ -116,7 +122,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     {
       schema: {
         description: `
-          Get RGB++ balance by btc address, support xUDT only for now. 
+          Get RGB++ balance by btc address, support xUDT, compatible-xUDT and Pre-claim UTXO Airdrop Badge for now. 
           
           An address with more than 50 pending BTC transactions is uncommon. 
           However, if such a situation arises, it potentially affecting the returned total_amount.
@@ -155,11 +161,10 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
       const { no_cache } = request.query;
 
       const typeScript = getTypeScript(request.query.type_script);
-      if (!typeScript || !isTypeAssetSupported(typeScript, IS_MAINNET)) {
-        throw fastify.httpErrors.badRequest('Unsupported type asset');
-      }
-      const scripts = fastify.ckb.getScripts();
-      if (!isScriptEqual({ ...typeScript, args: '' }, scripts.XUDT)) {
+      if (
+        !typeScript ||
+        !(isTypeAssetSupported(typeScript, IS_MAINNET) || isUtxoAirdropBadgeType(typeScript, IS_MAINNET))
+      ) {
         throw fastify.httpErrors.badRequest('Unsupported type asset');
       }
 
@@ -225,7 +230,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
           const inputRgbppCells = getRgbppLockCellsByCells(filterCellsByTypeScript(inputCells, typeScript));
           const inputCellLockArgs = inputRgbppCells.map((cell) => unpackRgbppLockArgs(cell.cellOutput.lock.args));
 
-          const txids = uniq(inputCellLockArgs.map((args) => remove0x(args.btcTxid)));
+          const txids = uniq(inputCellLockArgs.map((args) => remove0x(args.btcTxId)));
           const txs = await Promise.all(txids.map((txid) => fastify.bitcoin.getTx({ txid })));
           const txsMap = txs.reduce(
             (sum, tx, index) => {
@@ -236,9 +241,9 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
             {} as Record<string, BTCTransaction | null>,
           );
 
-          return inputRgbppCells.filter((cell, index) => {
+          return inputRgbppCells.filter((_, index) => {
             const lockArgs = inputCellLockArgs[index];
-            const tx = txsMap[remove0x(lockArgs.btcTxid)];
+            const tx = txsMap[remove0x(lockArgs.btcTxId)];
             const utxo = tx?.vout[lockArgs.outIndex];
             return utxo?.scriptpubkey_address === btc_address;
           });
@@ -312,7 +317,7 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     {
       schema: {
         description: 'Get RGB++ activity by btc address',
-        tags: ['RGB++@Unstable'],
+        tags: ['RGB++'],
         params: z.object({
           btc_address: z.string(),
         }),

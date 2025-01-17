@@ -102,20 +102,31 @@ export default class BitcoinClient implements IBitcoinClient {
     method: K,
     ...args: MethodParameters<IBitcoinDataProvider, K>
   ): Promise<MethodReturnType<IBitcoinDataProvider, K>> {
+    const dataSource = { source: this.source, fallback: this.fallback };
+
+    const { env } = this.cradle;
+    if (env.BITCOIN_DATA_PROVIDER === 'mempool' && env.BITCOIN_METHODS_USE_ELECTRS_BY_DEFAULT.includes(method)) {
+      if (this.fallback) {
+        dataSource.source = this.fallback;
+        dataSource.fallback = this.source;
+      } else {
+        this.cradle.logger.warn('No fallback provider, skip using Electrs as default');
+      }
+    }
+
+    const { source, fallback } = dataSource;
     try {
       this.cradle.logger.debug(`Calling ${method} with args: ${JSON.stringify(args)}`);
-      const result = await (this.source[method] as Function).apply(this.source, args);
+      const result = await (source[method] as Function).apply(source, args);
       return result as MethodReturnType<IBitcoinDataProvider, K>;
     } catch (err) {
       let calledError = err;
       this.cradle.logger.error(err);
       Sentry.captureException(err);
-      if (this.fallback) {
-        this.cradle.logger.warn(
-          `Fallback to ${this.fallback.constructor.name} due to error: ${(err as Error).message}`,
-        );
+      if (fallback) {
+        this.cradle.logger.warn(`Fallback to ${fallback.constructor.name} due to error: ${(err as Error).message}`);
         try {
-          const result = await (this.fallback[method] as Function).apply(this.fallback, args);
+          const result = await (fallback[method] as Function).apply(fallback, args);
           return result as MethodReturnType<IBitcoinDataProvider, K>;
         } catch (fallbackError) {
           this.cradle.logger.error(fallbackError);

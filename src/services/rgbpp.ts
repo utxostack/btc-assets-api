@@ -6,12 +6,12 @@ import {
   leToU128,
   buildRgbppLockArgs,
   genRgbppLockScript,
-  btcTxIdFromBtcTimeLockArgs,
+  btcTxIdAndAfterFromBtcTimeLockArgs,
   RGBPP_TX_ID_PLACEHOLDER,
   RGBPP_TX_INPUTS_MAX_LENGTH,
 } from '@rgbpp-sdk/ckb';
 import { remove0x } from '@rgbpp-sdk/btc';
-import { unpackRgbppLockArgs } from '@rgbpp-sdk/btc/lib/ckb/molecule';
+import { unpackRgbppLockArgs } from '@rgbpp-sdk/ckb';
 import { groupBy, findLastIndex } from 'lodash';
 import { z } from 'zod';
 import { Job } from 'bullmq';
@@ -298,7 +298,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         if (!isBtcTimeLock(output.lock)) {
           return false;
         }
-        const outputBtcTxId = btcTxIdFromBtcTimeLockArgs(output.lock.args);
+        const { btcTxId: outputBtcTxId } = btcTxIdAndAfterFromBtcTimeLockArgs(output.lock.args);
         return remove0x(outputBtcTxId) === btcTx.txid;
       });
       if (isBtcTimeLockTx) {
@@ -338,7 +338,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
       }
       const rgbppLockArgs = unpackRgbppLockArgs(input.cellOutput.lock.args);
       const matchingBtcInput = btcTx.vin.find(
-        (btcInput) => btcInput.txid === remove0x(rgbppLockArgs.btcTxid) && btcInput.vout === rgbppLockArgs.outIndex,
+        (btcInput) => btcInput.txid === remove0x(rgbppLockArgs.btcTxId) && btcInput.vout === rgbppLockArgs.outIndex,
       );
       return !!matchingBtcInput;
     });
@@ -358,7 +358,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
       }
       if (isRgbppLock(output.lock)) {
         const rgbppLockArgs = unpackRgbppLockArgs(output.lock.args);
-        const btcTxId = remove0x(rgbppLockArgs.btcTxid);
+        const btcTxId = remove0x(rgbppLockArgs.btcTxId);
         if (btcTxId === RGBPP_TX_ID_PLACEHOLDER) {
           return true;
         }
@@ -367,7 +367,7 @@ export default class RgbppCollector extends BaseQueueWorker<IRgbppCollectRequest
         }
       }
       if (isBtcTimeLock(output.lock)) {
-        const btcTxId = remove0x(btcTxIdFromBtcTimeLockArgs(output.lock.args));
+        const btcTxId = remove0x(btcTxIdAndAfterFromBtcTimeLockArgs(output.lock.args).btcTxId);
         if (btcTxId === RGBPP_TX_ID_PLACEHOLDER || btcTx.txid === btcTxId) {
           return true;
         }

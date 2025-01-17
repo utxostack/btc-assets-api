@@ -5940,6 +5940,51 @@ exports[`/:btc_address/assets 1`] = `
     "txIndex": "0x1",
     "typeHash": "0xf0d58aed78476f0aa4fab18f45de1fdcf4f42426fb03570de236dfd36638f3ed",
   },
+  {
+    "blockNumber": "0xf17dd7",
+    "cellOutput": {
+      "capacity": "0x1b381be34e00",
+      "lock": {
+        "args": "0x9787495f518fec240d7857067f3016daf705286d",
+        "codeHash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+        "hashType": "type",
+      },
+      "type": {
+        "args": "0xa63d308c04b4c075eb1d7d5cac891cf20276e3ddb2ec855fc981c88d8134dbe2",
+        "codeHash": "0xf5da9003e31fa9301a3915fe304de9bdb80524b5f0d8fc325fb699317998ee7a",
+        "hashType": "type",
+      },
+    },
+    "data": "0x00000000000000000000000000000000",
+    "outPoint": {
+      "index": "0x2",
+      "txHash": "0xe4e156943c82ee5500d39343a01dda0c48946a6000f449c58ac91708576cf669",
+    },
+    "txIndex": "0x1",
+    "typeHash": "0xe5ee2fdd79aaa218bd74a821c305fa40305408fae2dbfedf8243ea2b4d7af8e4",
+  },
+  {
+    "cellOutput": {
+      "capacity": "0xbe5cc1f00",
+      "lock": {
+        "args": "0x5ee4738bd0a9a6b94fc203cf76e95790e05fd740",
+        "codeHash": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+        "hashType": "type",
+      },
+      "type": {
+        "args": "0x878fcc6f1f08d48e87bb1c3b3d5083f23f8a39c5d5c764f253b55b998526439b",
+        "codeHash": "0x1142755a044bf2ee358cba9f2da187ce928c91cd4dc8692ded0337efa677d21a",
+        "hashType": "type",
+      },
+    },
+    "data": "0x00c817a8040000000000000000000000",
+    "outPoint": {
+      "index": "0x2",
+      "txHash": "0xe6b4da0fe4f1bad78c0d404bd92753373092c21ac58694425cf104e953a01964",
+    },
+    "txIndex": "0x1",
+    "typeHash": "0x45b32a2bc4285d0a09678eb11960ddc8707bc2779887a09d482e9bfe9a2cdf52",
+  },
 ]
 `;
 
