@@ -114,20 +114,19 @@ export default class BitcoinClient implements IBitcoinClient {
       }
     }
 
+    const { source, fallback } = dataSource;
     try {
       this.cradle.logger.debug(`Calling ${method} with args: ${JSON.stringify(args)}`);
-      const result = await (dataSource.source[method] as Function).apply(this.source, args);
+      const result = await (source[method] as Function).apply(source, args);
       return result as MethodReturnType<IBitcoinDataProvider, K>;
     } catch (err) {
       let calledError = err;
       this.cradle.logger.error(err);
       Sentry.captureException(err);
-      if (dataSource.fallback) {
-        this.cradle.logger.warn(
-          `Fallback to ${dataSource.fallback.constructor.name} due to error: ${(err as Error).message}`,
-        );
+      if (fallback) {
+        this.cradle.logger.warn(`Fallback to ${fallback.constructor.name} due to error: ${(err as Error).message}`);
         try {
-          const result = await (dataSource.fallback[method] as Function).apply(this.fallback, args);
+          const result = await (fallback[method] as Function).apply(fallback, args);
           return result as MethodReturnType<IBitcoinDataProvider, K>;
         } catch (fallbackError) {
           this.cradle.logger.error(fallbackError);
