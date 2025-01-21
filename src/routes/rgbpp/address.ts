@@ -11,7 +11,6 @@ import {
   getXudtTypeScript,
   isTypeAssetSupported,
   isUtxoAirdropBadgeType,
-  CompatibleXUDTRegistry,
   unpackRgbppLockArgs,
 } from '@rgbpp-sdk/ckb';
 import { groupBy, uniq } from 'lodash';
@@ -160,11 +159,6 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async (request) => {
       const { btc_address } = request.params;
       const { no_cache } = request.query;
-
-      // Refresh the cache by fetching the latest compatible xUDT list from the specified URL.
-      // The default URL is:
-      // https://raw.githubusercontent.com/utxostack/typeid-contract-cell-deps/main/compatible-udt.json
-      await CompatibleXUDTRegistry.refreshCache();
 
       const typeScript = getTypeScript(request.query.type_script);
       if (

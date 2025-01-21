@@ -3,7 +3,6 @@ import {
   BTCTimeLock,
   BTC_JUMP_CONFIRMATION_BLOCKS,
   Collector,
-  CompatibleXUDTRegistry,
   IndexerCell,
   buildBtcTimeCellsSpentTx,
   buildSporeBtcTimeCellsSpentTx,
@@ -70,11 +69,6 @@ export default class Unlocker implements IUnlocker {
   public async getNextBatchLockCell() {
     const collect = this.collector.collect();
     const cells: IndexerCell[] = [];
-
-    // Refresh the cache by fetching the latest compatible xUDT list from the specified URL.
-    // The default URL is:
-    // https://raw.githubusercontent.com/utxostack/typeid-contract-cell-deps/main/compatible-udt.json
-    await CompatibleXUDTRegistry.refreshCache();
 
     const { blocks } = await this.cradle.bitcoin.getBlockchainInfo();
     for await (const cell of collect) {
