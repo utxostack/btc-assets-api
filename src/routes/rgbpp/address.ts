@@ -11,6 +11,8 @@ import {
   getXudtTypeScript,
   isTypeAssetSupported,
   isUtxoAirdropBadgeType,
+  CompatibleXUDTRegistry,
+  unpackRgbppLockArgs,
 } from '@rgbpp-sdk/ckb';
 import { groupBy, uniq } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
@@ -19,7 +21,6 @@ import { Transaction as BTCTransaction } from '../bitcoin/types';
 import { TransactionWithStatus } from '../../services/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { filterCellsByTypeScript, getTypeScript } from '../../utils/typescript';
-import { unpackRgbppLockArgs } from '@rgbpp-sdk/ckb';
 import { remove0x } from '@rgbpp-sdk/btc';
 import { isRgbppLock } from '../../utils/lockscript';
 import { IS_MAINNET } from '../../constants';
@@ -159,6 +160,11 @@ const addressRoutes: FastifyPluginCallback<Record<never, never>, Server, ZodType
     async (request) => {
       const { btc_address } = request.params;
       const { no_cache } = request.query;
+
+      // Refresh the cache by fetching the latest compatible xUDT list from the specified URL.
+      // The default URL is:
+      // https://raw.githubusercontent.com/utxostack/typeid-contract-cell-deps/main/compatible-udt.json
+      await CompatibleXUDTRegistry.refreshCache();
 
       const typeScript = getTypeScript(request.query.type_script);
       if (
