@@ -11,6 +11,7 @@ import {
   getXudtTypeScript,
   isTypeAssetSupported,
   isUtxoAirdropBadgeType,
+  unpackRgbppLockArgs,
 } from '@rgbpp-sdk/ckb';
 import { groupBy, uniq } from 'lodash';
 import { BI } from '@ckb-lumos/lumos';
@@ -19,7 +20,6 @@ import { Transaction as BTCTransaction } from '../bitcoin/types';
 import { TransactionWithStatus } from '../../services/ckb';
 import { computeScriptHash } from '@ckb-lumos/lumos/utils';
 import { filterCellsByTypeScript, getTypeScript } from '../../utils/typescript';
-import { unpackRgbppLockArgs } from '@rgbpp-sdk/ckb';
 import { remove0x } from '@rgbpp-sdk/btc';
 import { isRgbppLock } from '../../utils/lockscript';
 import { IS_MAINNET } from '../../constants';
