@@ -57,17 +57,17 @@ importers:
         specifier: ^8.0.1
         version: 8.0.2
       '@nervosnetwork/ckb-sdk-utils':
-        specifier: ^0.109.1
-        version: 0.109.4
+        specifier: ^0.109.5
+        version: 0.109.5
       '@rgbpp-sdk/btc':
-        specifier: 0.0.0-snap-20250214040152
-        version: 0.0.0-snap-20250214040152(@ckb-lumos/lumos@0.22.2)
+        specifier: 0.0.0-snap-20250214153203
+        version: 0.0.0-snap-20250214153203(@ckb-lumos/lumos@0.22.2)
       '@rgbpp-sdk/ckb':
-        specifier: 0.0.0-snap-20250214040152
-        version: 0.0.0-snap-20250214040152(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
+        specifier: 0.0.0-snap-20250214153203
+        version: 0.0.0-snap-20250214153203(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
       '@rgbpp-sdk/service':
-        specifier: 0.0.0-snap-20250214040152
-        version: 0.0.0-snap-20250214040152
+        specifier: 0.0.0-snap-20250214153203
+        version: 0.0.0-snap-20250214153203
       '@sentry/node':
         specifier: ^7.102.1
         version: 7.120.3
@@ -155,7 +155,7 @@ importers:
         version: 9.0.8
       '@typescript-eslint/eslint-plugin':
         specifier: ^6.21.0
-        version: 6.21.0(@typescript-eslint/parser@6.21.0)(eslint@8.57.1)(typescript@5.7.3)
+        version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.7.3))(eslint@8.57.1)(typescript@5.7.3)
       '@typescript-eslint/parser':
         specifier: ^6.21.0
         version: 6.21.0(eslint@8.57.1)(typescript@5.7.3)
@@ -203,7 +203,7 @@ importers:
         version: 33.7.1
       vitest:
         specifier: ^1.3.1
-        version: 1.6.1(@types/node@20.17.19)(@vitest/ui@1.6.1)
+        version: 1.6.1(@edge-runtime/vm@3.2.0)(@types/node@20.17.19)(@vitest/ui@1.6.1)
 
 packages:
 
@@ -808,23 +808,17 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@nervosnetwork/ckb-sdk-core@0.109.3':
-    resolution: {integrity: sha512-YASdkmfvw6eu/q+7X2OTrnshhWb5bVtPPkzaryEfvGrRAhHzh45Q/umyvX3GOBxU5wncdTuptNsWI5A/T2ZjVw==}
+  '@nervosnetwork/ckb-sdk-core@0.109.5':
+    resolution: {integrity: sha512-eh3RjJlf8LqIAf03m81YLnuDaTOzs8C2cqXGJT9pdJIwEAaRcmgG6xZr5m9fdOMaeFMvaF4BQyjCeGjTQCFRGA==}
 
-  '@nervosnetwork/ckb-sdk-rpc@0.109.3':
-    resolution: {integrity: sha512-7CHY8S78IvwyawqVaBwTrqUjiNQ31GdovPRuUommtxv6JYetoZEWQuzdcIMipqEGXZT6jIfuAYeKS2mZJWQmCw==}
+  '@nervosnetwork/ckb-sdk-rpc@0.109.5':
+    resolution: {integrity: sha512-rT7iVRtagP3TxWel4zwXo6BAKfne4TBrGTnjmVTfqa/mrMNonVwOyJcFhWNSvq/r8HufL3QlYhngLHVDNomURQ==}
 
-  '@nervosnetwork/ckb-sdk-utils@0.109.3':
-    resolution: {integrity: sha512-sV3WXlZmd765qtFsXpwl0Bl3hOgGev15Og810acO6iC0cVHEVvv/Uiabd8a2xkqyfziRDI0tfWC0DewOJB28rg==}
+  '@nervosnetwork/ckb-sdk-utils@0.109.5':
+    resolution: {integrity: sha512-Tx642hcJWbN8W3KzCIhIo49yzJ8LMqWopQCSBDKuRmwHesO/bvJqYojCVwfrOyROtFOPhgjyiGm5RXBuxm0KpQ==}
 
-  '@nervosnetwork/ckb-sdk-utils@0.109.4':
-    resolution: {integrity: sha512-Td/vGKHMQ2zxumt1ViFLqMGBws/G2j5XvcOdXAqhKV4vKIdzhmR18ve6fNhdIjE7xGWH5bHO/dbXVbgVGUsPNQ==}
-
-  '@nervosnetwork/ckb-types@0.109.3':
-    resolution: {integrity: sha512-i9EVTXCT0bTLpAQXAoF5zHGLWYCXNE5AP4Zl0Niwl3ZplaVAZHNU6ygsh2O3EGmCFv5qlkoY2DuLmsjysEaNLA==}
-
-  '@nervosnetwork/ckb-types@0.109.4':
-    resolution: {integrity: sha512-paA5URfnR58enL3OvT/Bv0ZuQpAZGlk5pjvzly4Q/pkRAeJVA0ks94zf4y8hTcvBCjSlEG8KCt0fI4r/sAylTg==}
+  '@nervosnetwork/ckb-types@0.109.5':
+    resolution: {integrity: sha512-5jQNjFw76YCd+Ppl+0RvBWzxwvWaKfWC5wjVFFdNAieX7xksCHfZFIeow8je7AF8uVypwe56WlLBlblxw9NBBQ==}
 
   '@noble/curves@1.8.1':
     resolution: {integrity: sha512-warwspo+UYUPep0Q+vtdVB4Ugn8GGQj8iyB3gnRWsztmUHTI3S1nhdiWNsPUGL0vud7JlRRk1XEu7Lq1KGTnMQ==}
@@ -853,14 +847,14 @@ packages:
   '@polka/url@1.0.0-next.28':
     resolution: {integrity: sha512-8LduaNlMZGwdZ6qWrKlfa+2M4gahzFkprZiAt2TF8uS0qQgBizKXpXURqvTJ4WtmupWxaLqjRb2UCTe72mu+Aw==}
 
-  '@rgbpp-sdk/btc@0.0.0-snap-20250214040152':
-    resolution: {integrity: sha512-e2bMjHSQ+WFbYoJ7kpva6d9QgqWmip+1KlFDHSUvE1cikBtODgPrypF4NSWyJbiYQFJbE6irOVNUh6AYzvoJKg==}
+  '@rgbpp-sdk/btc@0.0.0-snap-20250214153203':
+    resolution: {integrity: sha512-6AwBZSi+1lmJ6Rskqn92mditGmvkFM4kAfkXtDTN4RurAoGWXF2WdyKwnQ0TQcRt5wARUHJjwb9Z4yFWWvD5dw==}
 
-  '@rgbpp-sdk/ckb@0.0.0-snap-20250214040152':
-    resolution: {integrity: sha512-hTrH/UI4d478Mx9GO6d3SGge4ihd1xD/eL7WeAQxv3UkcIWJceNoWj9x/1LrKR5Ub2NERekvZ6PZoQdm4TO6TA==}
+  '@rgbpp-sdk/ckb@0.0.0-snap-20250214153203':
+    resolution: {integrity: sha512-JnoyKHa1topcmhoSMygz4WFuV/rPGnzmYma6VD88Au3SBoNt9V9OKb775tykU3V1uXlMQ4qBoo7nY+uC5ZXASw==}
 
-  '@rgbpp-sdk/service@0.0.0-snap-20250214040152':
-    resolution: {integrity: sha512-j1B0KpgHWWYhbqQ3VYemaWpvnoF19k5xYxh0FezqOaOf8KnBSZUSxtXdqLIus3/3j22VCMdFuIBOPPzwLkvWAA==}
+  '@rgbpp-sdk/service@0.0.0-snap-20250214153203':
+    resolution: {integrity: sha512-tV7ZMc6xJBJA6QLq13zNeH4VD4axHbz6gULEbDUKeQKIM8L/OOki7RZmgZteS2Vg64g+fnq1erga3rJE7hQCMg==}
 
   '@rollup/pluginutils@4.2.1':
     resolution: {integrity: sha512-iKnFXr7NkdZAIHiIWE+BX5ULi/ucVFYWD6TbAV+rZctiRTY2PL6tsIKhoIOaoskiWAkgu+VsbXgUVDNLHf+InQ==}
@@ -1373,6 +1367,9 @@ packages:
   axios@1.6.7:
     resolution: {integrity: sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==}
 
+  axios@1.7.4:
+    resolution: {integrity: sha512-DukmaFRnY6AzAALSH4J2M3k6PkaC+MfaAGdEERRWcC9q3/TWQwLpHR8ZRLKTdQ3aBDL64EdluRDjJqKw+BPZEw==}
+
   axios@1.7.9:
     resolution: {integrity: sha512-LhLcE7Hbiryz8oMDdDptSrWowmB4Bl6RCt6sIJKpRB4XtVf0iEgewX3au/pJqm+Py1kCASkb/FFKjxQaLtxJvw==}
 
@@ -1745,12 +1742,6 @@ packages:
 
   electron-to-chromium@1.5.99:
     resolution: {integrity: sha512-77c/+fCyL2U+aOyqfIFi89wYLBeSTCs55xCZL0oFH0KjqsvSvyh6AdQ+UIl1vgpnQQE6g+/KK8hOIupH6VwPtg==}
-
-  elliptic@6.5.4:
-    resolution: {integrity: sha512-iLhC6ULemrljPZb+QutR5TQGB+pdW6KGD5RSegS+8sorOZT+rdQFbsQFJgvN3eRqNALqJer4oQ16YvJHlU8hzQ==}
-
-  elliptic@6.6.0:
-    resolution: {integrity: sha512-dpwoQcLc/2WLQvJvLRHKZ+f9FgOdjnq11rurqwekGQygGPsYSK29OMMD2WalatiqQ+XGFDglTNixpPfI+lpaAA==}
 
   elliptic@6.6.1:
     resolution: {integrity: sha512-RaddvvMatK2LJHqFJ+YA4WysVN5Ita9E35botqIYspQ4TkRAlCicdzKOjlyv/1Za5RyTNn7di//eEV0uTAfe3g==}
@@ -4336,42 +4327,32 @@ snapshots:
   '@msgpackr-extract/msgpackr-extract-win32-x64@3.0.3':
     optional: true
 
-  '@nervosnetwork/ckb-sdk-core@0.109.3':
+  '@nervosnetwork/ckb-sdk-core@0.109.5':
     dependencies:
-      '@nervosnetwork/ckb-sdk-rpc': 0.109.3
-      '@nervosnetwork/ckb-sdk-utils': 0.109.3
-      '@nervosnetwork/ckb-types': 0.109.3
+      '@nervosnetwork/ckb-sdk-rpc': 0.109.5
+      '@nervosnetwork/ckb-sdk-utils': 0.109.5
+      '@nervosnetwork/ckb-types': 0.109.5
       tslib: 2.3.1
     transitivePeerDependencies:
       - debug
 
-  '@nervosnetwork/ckb-sdk-rpc@0.109.3':
+  '@nervosnetwork/ckb-sdk-rpc@0.109.5':
     dependencies:
-      '@nervosnetwork/ckb-sdk-utils': 0.109.3
-      axios: 1.6.7
+      '@nervosnetwork/ckb-sdk-utils': 0.109.5
+      axios: 1.7.4
       tslib: 2.3.1
     transitivePeerDependencies:
       - debug
 
-  '@nervosnetwork/ckb-sdk-utils@0.109.3':
+  '@nervosnetwork/ckb-sdk-utils@0.109.5':
     dependencies:
-      '@nervosnetwork/ckb-types': 0.109.3
+      '@nervosnetwork/ckb-types': 0.109.5
       bech32: 2.0.0
-      elliptic: 6.5.4
+      elliptic: 6.6.1
       jsbi: 3.1.3
       tslib: 2.3.1
 
-  '@nervosnetwork/ckb-sdk-utils@0.109.4':
-    dependencies:
-      '@nervosnetwork/ckb-types': 0.109.4
-      bech32: 2.0.0
-      elliptic: 6.6.0
-      jsbi: 3.1.3
-      tslib: 2.3.1
-
-  '@nervosnetwork/ckb-types@0.109.3': {}
-
-  '@nervosnetwork/ckb-types@0.109.4': {}
+  '@nervosnetwork/ckb-types@0.109.5': {}
 
   '@noble/curves@1.8.1':
     dependencies:
@@ -4396,13 +4377,13 @@ snapshots:
 
   '@polka/url@1.0.0-next.28': {}
 
-  '@rgbpp-sdk/btc@0.0.0-snap-20250214040152(@ckb-lumos/lumos@0.22.2)':
+  '@rgbpp-sdk/btc@0.0.0-snap-20250214153203(@ckb-lumos/lumos@0.22.2)':
     dependencies:
       '@bitcoinerlab/secp256k1': 1.2.0
       '@ckb-lumos/codec': 0.22.2
-      '@nervosnetwork/ckb-types': 0.109.3
-      '@rgbpp-sdk/ckb': 0.0.0-snap-20250214040152(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
-      '@rgbpp-sdk/service': 0.0.0-snap-20250214040152
+      '@nervosnetwork/ckb-types': 0.109.5
+      '@rgbpp-sdk/ckb': 0.0.0-snap-20250214153203(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
+      '@rgbpp-sdk/service': 0.0.0-snap-20250214153203
       bip32: 4.0.0
       bitcoinjs-lib: 6.1.7
       ecpair: 2.1.0
@@ -4412,15 +4393,15 @@ snapshots:
       - '@ckb-lumos/lumos'
       - debug
 
-  '@rgbpp-sdk/ckb@0.0.0-snap-20250214040152(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)':
+  '@rgbpp-sdk/ckb@0.0.0-snap-20250214153203(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)':
     dependencies:
       '@ckb-lumos/base': 0.22.2
       '@ckb-lumos/codec': 0.22.2
       '@exact-realty/multipart-parser': 1.0.14
-      '@nervosnetwork/ckb-sdk-core': 0.109.3
-      '@nervosnetwork/ckb-sdk-utils': 0.109.3
-      '@nervosnetwork/ckb-types': 0.109.3
-      '@rgbpp-sdk/service': 0.0.0-snap-20250214040152
+      '@nervosnetwork/ckb-sdk-core': 0.109.5
+      '@nervosnetwork/ckb-sdk-utils': 0.109.5
+      '@nervosnetwork/ckb-types': 0.109.5
+      '@rgbpp-sdk/service': 0.0.0-snap-20250214153203
       '@spore-sdk/core': 0.2.1(@ckb-lumos/lumos@0.22.2)(lodash@4.17.21)
       axios: 1.7.9
       camelcase-keys: 7.0.2
@@ -4430,11 +4411,11 @@ snapshots:
       - debug
       - lodash
 
-  '@rgbpp-sdk/service@0.0.0-snap-20250214040152':
+  '@rgbpp-sdk/service@0.0.0-snap-20250214153203':
     dependencies:
       '@ckb-lumos/base': 0.22.2
       '@ckb-lumos/codec': 0.22.2
-      '@nervosnetwork/ckb-types': 0.109.3
+      '@nervosnetwork/ckb-types': 0.109.5
       lodash: 4.17.21
 
   '@rollup/pluginutils@4.2.1':
@@ -4610,7 +4591,7 @@ snapshots:
 
   '@types/uuid@9.0.8': {}
 
-  '@typescript-eslint/eslint-plugin@6.21.0(@typescript-eslint/parser@6.21.0)(eslint@8.57.1)(typescript@5.7.3)':
+  '@typescript-eslint/eslint-plugin@6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.7.3))(eslint@8.57.1)(typescript@5.7.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.1
       '@typescript-eslint/parser': 6.21.0(eslint@8.57.1)(typescript@5.7.3)
@@ -4625,6 +4606,7 @@ snapshots:
       natural-compare: 1.4.0
       semver: 7.7.1
       ts-api-utils: 1.4.3(typescript@5.7.3)
+    optionalDependencies:
       typescript: 5.7.3
     transitivePeerDependencies:
       - supports-color
@@ -4637,6 +4619,7 @@ snapshots:
       '@typescript-eslint/visitor-keys': 6.21.0
       debug: 4.4.0
       eslint: 8.57.1
+    optionalDependencies:
       typescript: 5.7.3
     transitivePeerDependencies:
       - supports-color
@@ -4653,6 +4636,7 @@ snapshots:
       debug: 4.4.0
       eslint: 8.57.1
       ts-api-utils: 1.4.3(typescript@5.7.3)
+    optionalDependencies:
       typescript: 5.7.3
     transitivePeerDependencies:
       - supports-color
@@ -4669,6 +4653,7 @@ snapshots:
       minimatch: 9.0.3
       semver: 7.7.1
       ts-api-utils: 1.4.3(typescript@5.7.3)
+    optionalDependencies:
       typescript: 5.7.3
     transitivePeerDependencies:
       - supports-color
@@ -4852,7 +4837,7 @@ snapshots:
       magicast: 0.3.5
       picocolors: 1.1.1
       test-exclude: 6.0.0
-      vitest: 1.6.1(@types/node@20.17.19)(@vitest/ui@1.6.1)
+      vitest: 1.6.1(@edge-runtime/vm@3.2.0)(@types/node@20.17.19)(@vitest/ui@1.6.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -4887,7 +4872,7 @@ snapshots:
       pathe: 1.1.2
       picocolors: 1.1.1
       sirv: 2.0.4
-      vitest: 1.6.1(@types/node@20.17.19)(@vitest/ui@1.6.1)
+      vitest: 1.6.1(@edge-runtime/vm@3.2.0)(@types/node@20.17.19)(@vitest/ui@1.6.1)
 
   '@vitest/utils@1.6.1':
     dependencies:
@@ -4925,11 +4910,11 @@ snapshots:
       - supports-color
 
   ajv-formats@2.1.1(ajv@8.17.1):
-    dependencies:
+    optionalDependencies:
       ajv: 8.17.1
 
   ajv-formats@3.0.1(ajv@8.17.1):
-    dependencies:
+    optionalDependencies:
       ajv: 8.17.1
 
   ajv@6.12.6:
@@ -5027,6 +5012,14 @@ snapshots:
       fast-glob: 3.3.3
 
   axios@1.6.7:
+    dependencies:
+      follow-redirects: 1.15.9
+      form-data: 4.0.1
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+
+  axios@1.7.4:
     dependencies:
       follow-redirects: 1.15.9
       form-data: 4.0.1
@@ -5292,7 +5285,7 @@ snapshots:
   core-util-is@1.0.3: {}
 
   crc@4.3.2(buffer@6.0.3):
-    dependencies:
+    optionalDependencies:
       buffer: 6.0.3
 
   create-hash@1.2.0:
@@ -5415,26 +5408,6 @@ snapshots:
       time-span: 4.0.0
 
   electron-to-chromium@1.5.99: {}
-
-  elliptic@6.5.4:
-    dependencies:
-      bn.js: 4.12.1
-      brorand: 1.1.0
-      hash.js: 1.1.7
-      hmac-drbg: 1.0.1
-      inherits: 2.0.4
-      minimalistic-assert: 1.0.1
-      minimalistic-crypto-utils: 1.0.1
-
-  elliptic@6.6.0:
-    dependencies:
-      bn.js: 4.12.1
-      brorand: 1.1.0
-      hash.js: 1.1.7
-      hmac-drbg: 1.0.1
-      inherits: 2.0.4
-      minimalistic-assert: 1.0.1
-      minimalistic-crypto-utils: 1.0.1
 
   elliptic@6.6.1:
     dependencies:
@@ -7264,21 +7237,19 @@ snapshots:
 
   vite@5.4.14(@types/node@20.17.19):
     dependencies:
-      '@types/node': 20.17.19
       esbuild: 0.21.5
       postcss: 8.5.2
       rollup: 4.34.6
     optionalDependencies:
+      '@types/node': 20.17.19
       fsevents: 2.3.3
 
-  vitest@1.6.1(@types/node@20.17.19)(@vitest/ui@1.6.1):
+  vitest@1.6.1(@edge-runtime/vm@3.2.0)(@types/node@20.17.19)(@vitest/ui@1.6.1):
     dependencies:
-      '@types/node': 20.17.19
       '@vitest/expect': 1.6.1
       '@vitest/runner': 1.6.1
       '@vitest/snapshot': 1.6.1
       '@vitest/spy': 1.6.1
-      '@vitest/ui': 1.6.1(vitest@1.6.1)
       '@vitest/utils': 1.6.1
       acorn-walk: 8.3.4
       chai: 4.5.0
@@ -7295,6 +7266,10 @@ snapshots:
       vite: 5.4.14(@types/node@20.17.19)
       vite-node: 1.6.1(@types/node@20.17.19)
       why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@edge-runtime/vm': 3.2.0
+      '@types/node': 20.17.19
+      '@vitest/ui': 1.6.1(vitest@1.6.1)
     transitivePeerDependencies:
       - less
       - lightningcss
