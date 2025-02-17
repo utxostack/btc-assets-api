@@ -131,6 +131,7 @@ TRANSACTION_QUEUE_JOB_DELAY=120000
 TRANSACTION_QUEUE_JOB_ATTEMPTS=6
 # Pay fee for transaction with pool reject by min fee rate, false by default
 TRANSACTION_PAY_FOR_MIN_FEE_RATE_REJECT=false
+#
 ```
 
 More configuration options can be found in the `src/env.ts` file.
