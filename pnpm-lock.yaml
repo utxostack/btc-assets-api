@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@cell-studio/mempool.js':
-        specifier: ^2.4.0
-        version: 2.5.3
       '@ckb-lumos/base':
         specifier: '^0.22.2 '
         version: 0.22.2
@@ -56,6 +53,9 @@ importers:
       '@immobiliarelabs/fastify-sentry':
         specifier: ^8.0.1
         version: 8.0.2
+      '@mempool/mempool.js':
+        specifier: ^3.0.0
+        version: 3.0.0
       '@nervosnetwork/ckb-sdk-utils':
         specifier: ^0.109.5
         version: 0.109.5
@@ -276,9 +276,6 @@ packages:
 
   '@bitcoinerlab/secp256k1@1.2.0':
     resolution: {integrity: sha512-jeujZSzb3JOZfmJYI0ph1PVpCRV5oaexCgy+RvCXV8XlY+XFB/2n3WOcvBsKLsOw78KYgnQrQWb2HrKE4be88Q==}
-
-  '@cell-studio/mempool.js@2.5.3':
-    resolution: {integrity: sha512-GRJYCErcL4kMWo4us1gAn/rwXuhPgrIzKQgPO+Ppg7Js0lD2IU80+VzLuNLeRw/6NyezfjjBSKXUFWqKh0aJ3w==}
 
   '@ckb-lumos/base@0.22.2':
     resolution: {integrity: sha512-nosUCSa5rTV2IzxbEpqzrvUeQNXB66mgA0h40+QEdnE/gV/s4ke83AScrTAxWkErJy1G/sToIHCc2kWwO95DfQ==}
@@ -777,6 +774,9 @@ packages:
   '@mapbox/node-pre-gyp@1.0.11':
     resolution: {integrity: sha512-Yhlar6v9WQgUp/He7BdgzOz8lqMQ8sU+jkCq7Wx8Myc5YFJLbEe7lgui/V7G1qB1DJykHSGwreceSaD60Y0PUQ==}
     hasBin: true
+
+  '@mempool/mempool.js@3.0.0':
+    resolution: {integrity: sha512-ZfNDcPA0HLpE8u+6/Tl/53F0WTL1CebwIrOIUeajvlXiXlDkhj/pTxnXQhMoxKOJK3qQnUjt6CQuX/TGBaFw7A==}
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3':
     resolution: {integrity: sha512-QZHtlVgbAdy2zAqNA9Gu1UpIuI8Xvsd1v8ic6B2pZmeFnFcMWiPLfWXh7TVw4eGEZ/C9TH281KwhVoeQUKbyjw==}
@@ -1363,9 +1363,6 @@ packages:
   awilix@10.0.2:
     resolution: {integrity: sha512-hFatb7eZFdtiWjjmGRSm/K/uxZpmcBlM+YoeMB3VpOPXk3xa6+7zctg3LRbUzoimom5bwGrePF0jXReO6b4zNQ==}
     engines: {node: '>=14.0.0'}
-
-  axios@1.6.7:
-    resolution: {integrity: sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==}
 
   axios@1.7.4:
     resolution: {integrity: sha512-DukmaFRnY6AzAALSH4J2M3k6PkaC+MfaAGdEERRWcC9q3/TWQwLpHR8ZRLKTdQ3aBDL64EdluRDjJqKw+BPZEw==}
@@ -3611,18 +3608,6 @@ packages:
       utf-8-validate:
         optional: true
 
-  ws@8.3.0:
-    resolution: {integrity: sha512-Gs5EZtpqZzLvmIM59w4igITU57lrtYVFneaa434VROv4thzJyV6UjIL3D42lslWlI+D4KzLYnxSwtfuiO79sNw==}
-    engines: {node: '>=10.0.0'}
-    peerDependencies:
-      bufferutil: ^4.0.1
-      utf-8-validate: ^5.0.2
-    peerDependenciesMeta:
-      bufferutil:
-        optional: true
-      utf-8-validate:
-        optional: true
-
   xdg-app-paths@5.1.0:
     resolution: {integrity: sha512-RAQ3WkPf4KTU1A8RtFx3gWywzVKe00tfOPFfl2NDGqbIFENQO4kqAJp7mhQjNj/33W5x5hiWWUdyfPq/5SU3QA==}
     engines: {node: '>=6'}
@@ -3789,15 +3774,6 @@ snapshots:
   '@bitcoinerlab/secp256k1@1.2.0':
     dependencies:
       '@noble/curves': 1.8.1
-
-  '@cell-studio/mempool.js@2.5.3':
-    dependencies:
-      axios: 1.6.7
-      ws: 8.3.0
-    transitivePeerDependencies:
-      - bufferutil
-      - debug
-      - utf-8-validate
 
   '@ckb-lumos/base@0.22.2':
     dependencies:
@@ -4308,6 +4284,15 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  '@mempool/mempool.js@3.0.0':
+    dependencies:
+      axios: 1.7.4
+      ws: 8.18.0
+    transitivePeerDependencies:
+      - bufferutil
+      - debug
+      - utf-8-validate
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3':
     optional: true
@@ -5010,14 +4995,6 @@ snapshots:
     dependencies:
       camel-case: 4.1.2
       fast-glob: 3.3.3
-
-  axios@1.6.7:
-    dependencies:
-      follow-redirects: 1.15.9
-      form-data: 4.0.1
-      proxy-from-env: 1.1.0
-    transitivePeerDependencies:
-      - debug
 
   axios@1.7.4:
     dependencies:
@@ -7329,8 +7306,6 @@ snapshots:
   wrappy@1.0.2: {}
 
   ws@8.18.0: {}
-
-  ws@8.3.0: {}
 
   xdg-app-paths@5.1.0:
     dependencies:
