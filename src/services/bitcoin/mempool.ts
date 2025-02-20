@@ -1,9 +1,9 @@
 import { Cradle } from '../../container';
 import { IBitcoinDataProvider } from './interface';
-import mempoolJS from '@cell-studio/mempool.js';
+import mempoolJS from '@mempool/mempool.js';
 import { Block, RecommendedFees, Transaction, UTXO } from './schema';
 import * as Sentry from '@sentry/node';
-import { FeesMempoolBlocks } from '@cell-studio/mempool.js/lib/interfaces/bitcoin/fees';
+import { FeesMempoolBlocks } from '@mempool/mempool.js/lib/interfaces/bitcoin/fees';
 
 export class MempoolClient implements IBitcoinDataProvider {
   private mempool: ReturnType<typeof mempoolJS>;

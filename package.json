@@ -1,6 +1,6 @@
 {
   "name": "btc-assets-api",
-  "version": "2.5.7",
+  "version": "2.5.10",
   "title": "Bitcoin/RGB++ Assets API",
   "description": "",
   "main": "index.js",
@@ -26,7 +26,6 @@
     ]
   },
   "dependencies": {
-    "@cell-studio/mempool.js": "^2.4.0",
     "@ckb-lumos/base": "^0.22.2 ",
     "@ckb-lumos/ckb-indexer": "^0.22.2",
     "@ckb-lumos/codec": "^0.22.2",
@@ -42,10 +41,11 @@
     "@fastify/swagger": "8.14.0",
     "@fastify/swagger-ui": "^3.0.0",
     "@immobiliarelabs/fastify-sentry": "^8.0.1",
-    "@nervosnetwork/ckb-sdk-utils": "^0.109.1",
-    "@rgbpp-sdk/btc": "0.0.0-snap-20250110025940",
-    "@rgbpp-sdk/ckb": "0.0.0-snap-20250110025940",
-    "@rgbpp-sdk/service": "0.0.0-snap-20250110025940",
+    "@mempool/mempool.js": "^3.0.0",
+    "@nervosnetwork/ckb-sdk-utils": "^0.109.5",
+    "@rgbpp-sdk/btc": "0.7.0",
+    "@rgbpp-sdk/ckb": "0.7.0",
+    "@rgbpp-sdk/service": "0.7.0",
     "@sentry/node": "^7.102.1",
     "@sentry/profiling-node": "^7.102.1",
     "@spore-sdk/core": "^0.2.0-beta.9",
