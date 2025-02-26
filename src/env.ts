@@ -210,6 +210,15 @@ const envSchema = z
      * RGB++ collect data cache expire duration, used to cache the RGB++ collect data
      */
     RGBPP_COLLECT_DATA_CACHE_EXPIRE: z.coerce.number().default(30 * 60 * 1000),
+
+    /**
+     * The number of blocks to process in each batch during RGB++ transaction retry
+     */
+    TRANSACTION_RETRY_BLOCK_BATCH_SIZE: z.coerce.number().default(100),
+    /**
+     * The delay (in milliseconds) between processing block batches during RGB++ transaction retry
+     */
+    TRANSACTION_RETRY_BLOCK_BATCH_DELAY: z.coerce.number().default(1000),
   })
   .and(
     z.union([
