@@ -19,7 +19,10 @@ export default fp(async (fastify) => {
   });
 
   fastify.addHealthCheck('mempool', async () => {
-    await axios.get(`${env.BITCOIN_MEMPOOL_SPACE_API_URL}/api/blocks/tip/height`);
+    // NETWORK: z.enum(['mainnet', 'testnet', 'signet']).default('testnet')
+    const networkPath = env.NETWORK === 'mainnet' ? '' : `/${env.NETWORK}`;
+
+    await axios.get(`${env.BITCOIN_MEMPOOL_SPACE_API_URL}${networkPath}/api/blocks/tip/height`);
   });
 
   fastify.addHealthCheck('electrs', async () => {
