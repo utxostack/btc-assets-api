@@ -25,7 +25,6 @@ import { Cradle } from '../container';
 import { Transaction } from '../routes/bitcoin/types';
 import { CKBRawTransaction, CKBVirtualResult, Cell } from '../routes/rgbpp/types';
 import { BitcoinSPVError } from './spv';
-import { BloomFilter } from 'bloom-filters';
 import { BI } from '@ckb-lumos/lumos';
 import { CKBRpcError, CKBRPCErrorCodes } from './ckb';
 import { cloneDeep } from 'lodash';
@@ -96,6 +95,7 @@ export default class TransactionProcessor
   implements ITransactionProcessor
 {
   private cradle: Cradle;
+  private isRetryMissingTransactionsRunning = false;
 
   constructor(cradle: Cradle) {
     const defaultJobOptions = TransactionProcessor.getDefaultJobOptions(cradle.env);
@@ -499,39 +499,74 @@ export default class TransactionProcessor
    * retry the mempool missing transactions when the blockchain block is confirmed
    */
   public async retryMissingTransactions() {
-    const blockchainInfo = await this.cradle.bitcoin.getBlockchainInfo();
-    // get the block height that has latest one confirmation
-    const targetHeight = blockchainInfo.blocks - 1;
+    if (this.isRetryMissingTransactionsRunning) {
+      this.cradle.logger.info('Previous retry missing transactions job is still running, skipping...');
+      return;
+    }
 
-    const previousHeight = await this.cradle.redis.get('missing-transactions-height');
-    const startHeight = BI.from(previousHeight ?? targetHeight - 1).toNumber();
+    this.isRetryMissingTransactionsRunning = true;
 
-    if (targetHeight > startHeight) {
-      this.cradle.logger.info(`[TransactionProcessor] Missing transactions handling started`);
-      // get all the txids from previousHeight to currentHeight
-      const heights = Array.from({ length: targetHeight - startHeight }, (_, i) => startHeight + i + 1);
-      const txidsGroups = await Promise.all(
+    try {
+      const blockchainInfo = await this.cradle.bitcoin.getBlockchainInfo();
+      // get the block height that has latest one confirmation
+      const targetHeight = blockchainInfo.blocks - 1;
+
+      const previousHeight = await this.cradle.redis.get('missing-transactions-height');
+      const startHeight = BI.from(previousHeight ?? targetHeight - 1).toNumber();
+
+      if (targetHeight <= startHeight) {
+        return;
+      }
+
+      const failedJobs = await this.queue.getJobs(['failed']);
+      const failedJobsMap = new Map(failedJobs.filter((job) => job.id).map((job) => [job.id!, job] as [string, Job]));
+
+      for (let height = startHeight + 1; height <= targetHeight; ) {
+        const batchEnd = Math.min(height + this.cradle.env.TRANSACTION_RETRY_BLOCK_BATCH_SIZE - 1, targetHeight);
+
+        this.cradle.logger.debug(`[TransactionProcessor] Processing blocks ${height}-${batchEnd}`);
+
+        await this.processBatch(height, batchEnd, failedJobsMap);
+        height = batchEnd + 1;
+
+        await new Promise((resolve) => setTimeout(resolve, this.cradle.env.TRANSACTION_RETRY_BLOCK_BATCH_DELAY));
+      }
+    } catch (error) {
+      this.cradle.logger.error('[TransactionProcessor] Error in retryMissingTransactions:', error);
+      throw error;
+    } finally {
+      this.isRetryMissingTransactionsRunning = false;
+    }
+  }
+
+  private async processBatch(startHeight: number, endHeight: number, failedJobs: Map<string, Job>) {
+    try {
+      const blockTxids = new Set<string>();
+      const heights = Array.from({ length: endHeight - startHeight + 1 }, (_, i) => startHeight + i);
+
+      const blockTxidsArrays = await Promise.all(
         heights.map(async (height) => {
           const blockHash = await this.cradle.bitcoin.getBlockHeight({ height });
           return this.cradle.bitcoin.getBlockTxids({ hash: blockHash });
         }),
       );
-      const txids = txidsGroups.flat();
-      // create a bloom filter to test if the txid is in the filter
-      const filter = BloomFilter.create(txids.length, 0.01);
-      txids.forEach((txid) => filter.add(txid));
-      // get all failed jobs from the queue and retry the transactions that are missing
-      const jobs = await this.queue.getJobs(['failed']);
-      await Promise.all(
-        jobs.map(async (job) => {
-          const txid = job.id as string;
-          if (filter.has(txid)) {
-            this.cradle.logger.info(`[TransactionProcessor] Retry missing transaction: ${txid}`);
-            await job.retry();
-          }
-        }),
+
+      blockTxidsArrays.forEach((txids) => txids.forEach((txid) => blockTxids.add(txid)));
+
+      const retryJobs = Array.from(blockTxids)
+        .filter((txid) => failedJobs.has(txid))
+        .map((txid) => failedJobs.get(txid)!.retry());
+
+      this.cradle.logger.debug(
+        `[TransactionProcessor] Batch ${startHeight}-${endHeight}: found ${blockTxids.size} transactions, retrying ${retryJobs.length} transactions`,
       );
-      await this.cradle.redis.set('missing-transactions-height', BI.from(targetHeight).toHexString());
+
+      await Promise.all(retryJobs);
+
+      await this.cradle.redis.set('missing-transactions-height', BI.from(endHeight).toHexString());
+    } catch (error) {
+      this.cradle.logger.error(`Error processing batch ${startHeight}-${endHeight}:`, error);
+      throw error;
     }
   }
 
