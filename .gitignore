@@ -15,6 +15,7 @@ tmp
 .env
 
 node_modules
+node-compile-cache/
 
 .idea
 *.iml
